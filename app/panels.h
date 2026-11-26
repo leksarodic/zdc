@@ -11,10 +11,16 @@ void panels_init(lv_obj_t *parent,
                  void (*on_home)(void),
                  void (*on_accent)(uint32_t),
                  void (*on_clock)(bool),
-                 void (*on_set_time)(long));
+                 void (*on_set_time)(long),
+                 void (*on_volume)(int),
+                 void (*on_theme)(bool),
+                 void (*on_night)(bool),
+                 void (*on_saver)(bool));
 void panels_show(int idx);
 void panels_hide(void);
 void panels_set_files_root(const char *root);
 void panels_set_now(long epoch);
+void panels_set_volume(int value);
+void panels_set_modes(bool light, bool night, bool saver);
 
 #endif

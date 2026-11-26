@@ -18,7 +18,12 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Incoming call | [incoming.png](docs/screenshots/incoming.png) |
 | Active call | [active.png](docs/screenshots/active.png) |
 | Error | [error.png](docs/screenshots/error.png) |
-| Call | [call.png](docs/screenshots/call.png) |
+| Call popup | [call.png](docs/screenshots/call.png) |
+| Volume overlay | [volume.png](docs/screenshots/volume.png) |
+| Light theme | [light.png](docs/screenshots/light.png) |
+| Light settings | [light-settings.png](docs/screenshots/light-settings.png) |
+| Night dim | [night-dim.png](docs/screenshots/night-dim.png) |
+| Screensaver | [screensaver.png](docs/screenshots/screensaver.png) |
 | Files, no storage | [files-no-storage.png](docs/screenshots/files-no-storage.png) |
 
 ## Functional panels
@@ -33,8 +38,9 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Six presets (87.5, 90.1, 94.3, 98.1, 101.7, 104.9)
 * **Save preset**: press Save, then 1–6 to store the current station
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
+* **RDS line** shows the station name and programme type for the tuned preset
 * Power and mute states
-* Simulated tuner in the emulator; on hardware the same actions map to the MCU/BT UART protocol
+* Simulated tuner and RDS in the emulator; on hardware those map to the MCU/BT UART protocol
 
 ### Files
 
@@ -57,8 +63,29 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * 24 h / 12 h clock switch
 * **Date and time setting** — native +/- controls; browser date/time pickers
 * Volume slider with live percentage
+* **Dark / Light theme** — the whole 800×480 UI recolors immediately
+* **Night dim** — a 50% black overlay for night driving
+* **Screensaver** — idle screen with the clock after 30 seconds; tap to wake
 * About/build information and “Reset UI”
 * Settings apply immediately; the emulator does not persist them across restarts yet
+
+### Volume overlay
+
+![Volume](docs/screenshots/volume.png)
+
+The top-bar speaker button opens a volume popup with **- / +**, a live bar and percentage. The popup also appears when the Settings slider changes, then hides after 1.8 s. The top-bar button and the Settings slider share one volume value.
+
+### Theme, night dim and screensaver
+
+![Light theme](docs/screenshots/light.png)
+
+![Light settings](docs/screenshots/light-settings.png)
+
+Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after 30 seconds of no input; tap anywhere to wake.
+
+![Night dim](docs/screenshots/night-dim.png)
+
+![Screensaver](docs/screenshots/screensaver.png)
 
 ### Now Playing
 
@@ -70,7 +97,9 @@ Pressing Play maximises the player automatically. It shows a large album art, tr
 
 ![Call](docs/screenshots/call.png)
 
-The phone card **Call** button now opens recent contacts and a dial pad instead of only simulating an incoming call. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer.
+The phone card **Call** button opens a **560×280 popup** with recent contacts and a dial pad, over a dimmed scrim. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer. The scrim closes the popup when tapped.
+
+The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select STRADA on your phone**. The car advertises; the phone connects to the car.
 
 ## Interactive testing
 
@@ -91,7 +120,7 @@ prototype/index.html?state=incoming
 prototype/index.html?clean=1&state=pairing
 ```
 
-Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')`, `window.strada.showScreen('files')` and `window.strada.action('storage')` are available for browser automation.
+Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')`, `window.strada.showScreen('files')`, `window.strada.setVolume(40)`, `window.strada.showVolume()`, `window.strada.setTheme(true)`, `window.strada.nightDim(true)` and `window.strada.showScreensaver()` are available for browser automation.
 
 ### Native SDL emulator
 
@@ -99,7 +128,7 @@ Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, 
 make emulator
 ```
 
-The buttons are clickable. Test keys:
+The buttons are clickable. Screenshot/demo flags: `--light`, `--dim`, `--saver`, `--volume 0-100`. Test keys:
 
 | Key | Action |
 |---|---|

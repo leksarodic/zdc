@@ -25,7 +25,9 @@ def read_ppm(path: str):
             j += 1
         parts.append(data[i:j])
         i = j
-    while i < len(data) and data[i] in b" \t\r\n":
+    if i < len(data) and data[i:i + 2] == b"\r\n":
+        i += 2
+    elif i < len(data) and data[i] in b" \t\r\n":
         i += 1
     w, h, maxv = (int(x) for x in parts)
     if maxv != 255:

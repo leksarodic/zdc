@@ -107,6 +107,8 @@ This repo gives you three separate things:
 
 The new UI removes **camera, navigation and apps**, removes the **weather widget**, uses **English**, keeps **Radio / Bluetooth / Files / Settings**, and shows the local BT name as **STRADA**. The music player and call states are simulated in the emulator; the real BT action map still has to be completed on hardware (see below).
 
+> **DiPlay port spike:** see [docs/DIPLAY_PORT.md](docs/DIPLAY_PORT.md). Verdict: DiPlay cannot be ported directly to the stock 7010B; CarPlay needs an Android head unit or a new Linux receiver with Wi-Fi, USB host, hardware H.264 and a lawful accessory identity.
+
 > **Important:** the new UI is not a drop-in replacement for the stock Melis app. The stock app is a proprietary ePDK binary, and the ePDK SDK is not part of this repo. The flashable artifact is the original image with only the Bluetooth name patched. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the exact gap and the port path.
 
 ## Features

@@ -40,9 +40,11 @@ Test keys in the native emulator:
 
 ### Functional panels
 
-* **Radio** — tune, seek, presets, power, mute
-* **Files** — real directory list for the native build (root `media/`), up/refresh, text/binary preview
-* **Settings** — accent color, 12/24 h clock, volume, About, reset
+* **Radio** — tune, seek, presets, **save preset to 1–6**, power, mute
+* **Files** — real directory list for the native build (root `media/`), up/refresh, text/binary preview, **No USB or SD card connected** message
+* **Settings** — accent color, 12/24 h clock, **date and time**, volume, About, reset
+* **Now Playing** — maximises when playback starts, with large art and controls
+* **Call** — recent contacts and dial pad from the phone card Call button
 
 ### Browser test UI
 

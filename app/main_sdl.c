@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
     const char *shot = NULL;
     const char *state = "connected";
     const char *panel = NULL;
+    const char *files_root = "media";
+    bool show_call = false;
     int frames = 0;
     bool interactive = true;
 
@@ -91,8 +93,12 @@ int main(int argc, char **argv) {
             state = argv[++i];
         } else if (!strcmp(argv[i], "--panel") && i + 1 < argc) {
             panel = argv[++i];
+        } else if (!strcmp(argv[i], "--files-root") && i + 1 < argc) {
+            files_root = argv[++i];
+        } else if (!strcmp(argv[i], "--call")) {
+            show_call = true;
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state off|ready|pairing|connected|playing|incoming|active|error] [--panel radio|files|settings]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR]\n", argv[0]);
             return 0;
         }
     }
@@ -108,13 +114,14 @@ int main(int argc, char **argv) {
     lv_sdl_keyboard_create();
     lv_display_set_default(disp);
 
-    ui_set_files_root("media");
+    ui_set_files_root(files_root);
     ui_init(&model);
     if (panel) {
         if (!strcmp(panel, "radio")) ui_show_panel(0);
         else if (!strcmp(panel, "files")) ui_show_panel(1);
         else if (!strcmp(panel, "settings")) ui_show_panel(2);
     }
+    if (show_call) ui_show_call();
 
     if (shot) {
         if (frames <= 0) frames = 90;

@@ -7,6 +7,7 @@
 
 #include "lvgl.h"
 #include "panels.h"
+#include "call_panel.h"
 
 #define C_BG      0x15171C
 #define C_CARD    0x1E2128
@@ -25,12 +26,26 @@ static bt_model_t *M;
 
 static uint32_t accent = C_ACCENT;
 static bool clock_24h = true;
+static time_t clock_base;
+static time_t clock_base_at;
+static bool clock_base_set = false;
 static int screen_idx = -1;
 
 static lv_obj_t *home;
 static lv_obj_t *dock_circles[4];
 static lv_obj_t *dock_labels[4];
 static lv_obj_t *audio_source;
+
+static lv_obj_t *player_panel;
+static lv_obj_t *np_art;
+static lv_obj_t *np_track;
+static lv_obj_t *np_artist;
+static lv_obj_t *np_time;
+static lv_obj_t *np_bar;
+static lv_obj_t *np_play_lbl;
+static bool player_expanded = false;
+static bt_state_t last_bt_state = BT_OFF;
+static char call_target[48];
 
 static lv_obj_t *time_label;
 static lv_obj_t *date_label;
@@ -170,8 +185,13 @@ static void tick_cb(lv_timer_t *t) {
     ui_update();
 }
 
+static time_t clock_now(void) {
+    if (!clock_base_set) return time(NULL);
+    return clock_base + (time(NULL) - clock_base_at);
+}
+
 static void clock_update(void) {
-    time_t now = time(NULL);
+    time_t now = clock_now();
     struct tm tm;
     localtime_r(&now, &tm);
     char buf[64];
@@ -213,16 +233,21 @@ static void update_dock(int screen) {
     }
 }
 
+static void update_player_visibility(void);
+
 static void show_screen(int idx) {
     screen_idx = idx;
+    call_panel_hide();
     if (idx < 0) {
         if (home) lv_obj_remove_flag(home, LV_OBJ_FLAG_HIDDEN);
         panels_hide();
     } else {
         if (home) lv_obj_add_flag(home, LV_OBJ_FLAG_HIDDEN);
+        if (idx == 2) panels_set_now((long)clock_now());
         panels_show(idx);
     }
     update_dock(idx);
+    update_player_visibility();
 }
 
 static void on_home(void) { show_screen(-1); }
@@ -239,6 +264,14 @@ static void apply_accent(uint32_t c) {
 
 static void on_accent(uint32_t c) { apply_accent(c); }
 static void on_clock(bool is24) { clock_24h = is24; clock_update(); }
+static void on_set_time(long epoch) {
+    clock_base = (time_t)epoch;
+    clock_base_at = time(NULL);
+    clock_base_set = true;
+    clock_update();
+}
+
+static void settings_cb(lv_event_t *e) { (void)e; show_screen(2); }
 
 static void dock_cb(lv_event_t *e) {
     int idx = (int)(intptr_t)lv_event_get_user_data(e);
@@ -246,6 +279,63 @@ static void dock_cb(lv_event_t *e) {
     else if (idx == 1) show_screen(-1);
     else if (idx == 2) show_screen(1);
     else show_screen(2);
+}
+
+static void update_player_visibility(void) {
+    bool show = player_expanded && M && M->state == BT_PLAYING && screen_idx < 0 && !call_panel_visible();
+    if (show) {
+        lv_obj_remove_flag(player_panel, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_foreground(player_panel);
+    } else {
+        lv_obj_add_flag(player_panel, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+static void player_close_cb(lv_event_t *e) {
+    (void)e;
+    player_expanded = false;
+    update_player_visibility();
+}
+
+static void art_open_cb(lv_event_t *e) {
+    (void)e;
+    if (M->state == BT_PLAYING) {
+        player_expanded = true;
+        update_player_visibility();
+    }
+}
+
+static void on_outgoing_call(const char *number) {
+    snprintf(call_target, sizeof(call_target), "%s", number ? number : "");
+    bt_sim_set_state(M, BT_ACTIVE);
+    M->call_seconds = 0;
+    player_expanded = false;
+    ui_update();
+}
+
+static void on_call_close(void) {
+    show_screen(-1);
+}
+
+static void call_open_cb(lv_event_t *e) {
+    (void)e;
+    if (bt_sim_connected(M->state)) call_panel_show();
+}
+
+static void update_player(void) {
+    if (!player_panel) return;
+    const bt_track_t *t = bt_sim_track(M);
+    char pos[32], dur[32], line[64];
+    set_text_if(np_track, t->title);
+    set_text_if(np_artist, t->artist);
+    fmt_time(M->position, pos, sizeof(pos));
+    fmt_time(t->duration, dur, sizeof(dur));
+    snprintf(line, sizeof(line), "%s / %s", pos, dur);
+    set_text_if(np_time, line);
+    lv_label_set_text(np_play_lbl, (M->state == BT_PLAYING) ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
+    lv_bar_set_range(np_bar, 0, t->duration);
+    lv_bar_set_value(np_bar, M->position, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(np_art, col(accent), 0);
 }
 
 static void update_phone(void) {
@@ -300,7 +390,7 @@ static void update_bt(void) {
     case BT_READY:
         value = 18; core = 0x3A3E48;
         title = "Ready to pair";
-        sub = BT_LOCAL_NAME " / PIN 0000 / 800x480";
+        sub = BT_LOCAL_NAME " / PIN 0000";
         primary = "Pair";
         secondary = "Scan";
         break;
@@ -336,10 +426,13 @@ static void update_bt(void) {
     case BT_ACTIVE:
         value = 78; arc_color = C_GREEN; core = C_GREEN;
         title = "In call";
-        fmt_time(M->call_seconds, callbuf, sizeof(callbuf));
-        sub = callbuf;
-        strncat(callbuf, " / car audio", sizeof(callbuf) - strlen(callbuf) - 1);
-        sub = callbuf;
+        {
+            char tbuf[16];
+            fmt_time(M->call_seconds, tbuf, sizeof(tbuf));
+            if (call_target[0]) snprintf(callbuf, sizeof(callbuf), "%s / %s", tbuf, call_target);
+            else snprintf(callbuf, sizeof(callbuf), "%s / car audio", tbuf);
+            sub = callbuf;
+        }
         primary = "Hang up";
         secondary = M->muted ? "Unmute" : "Mute";
         primary_bg = C_RED;
@@ -404,9 +497,56 @@ static void update_audio(void) {
 
 void ui_update(void) {
     if (!M) return;
+
+    if (M->state == BT_PLAYING && last_bt_state != BT_PLAYING) player_expanded = true;
+    if (M->state != BT_PLAYING) player_expanded = false;
+    if (M->state != BT_ACTIVE) call_target[0] = '\0';
+
     update_phone();
     update_bt();
     update_audio();
+    update_player();
+    update_player_visibility();
+    last_bt_state = M->state;
+}
+
+static void build_player(lv_obj_t *scr) {
+    player_panel = card(scr, 12, 50, 776, 297);
+    lv_obj_add_flag(player_panel, LV_OBJ_FLAG_HIDDEN);
+
+    label(player_panel, "NOW PLAYING", 18, 12, 200, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    label(player_panel, "BLUETOOTH", 520, 12, 200, 18, &lv_font_montserrat_12, accent, LV_TEXT_ALIGN_RIGHT);
+    button(player_panel, LV_SYMBOL_DOWN, 726, 8, 32, 32, C_INNER, 0xFFFFFF, &lv_font_montserrat_12, player_close_cb, NULL);
+
+    np_art = circle(player_panel, 40, 44, 200, accent);
+    icon_center(np_art, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
+
+    np_track = label(player_panel, "Test Song", 280, 52, 460, 38, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    np_artist = label(player_panel, "StradaOS", 280, 96, 460, 22, &lv_font_montserrat_16, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    np_time = label(player_panel, "1:08 / 3:35", 280, 124, 460, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+
+    np_bar = lv_bar_create(player_panel);
+    lv_obj_set_pos(np_bar, 280, 150);
+    lv_obj_set_size(np_bar, 440, 8);
+    lv_bar_set_range(np_bar, 0, 100);
+    lv_bar_set_value(np_bar, 68, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(np_bar, col(C_BTN), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(np_bar, col(accent), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(np_bar, 4, LV_PART_MAIN);
+    lv_obj_set_style_radius(np_bar, 4, LV_PART_INDICATOR);
+
+    lv_obj_t *prev = button(player_panel, LV_SYMBOL_PREV, 280, 190, 54, 54, C_BTN, 0xFFFFFF,
+                            &lv_font_montserrat_20, prev_cb, NULL);
+    lv_obj_set_style_radius(prev, LV_RADIUS_CIRCLE, 0);
+    lv_obj_t *play = button(player_panel, LV_SYMBOL_PLAY, 350, 182, 70, 70, accent, 0xFFFFFF,
+                            &lv_font_montserrat_28, pc_cb, &np_play_lbl);
+    lv_obj_set_style_radius(play, LV_RADIUS_CIRCLE, 0);
+    lv_obj_t *next = button(player_panel, LV_SYMBOL_NEXT, 436, 190, 54, 54, C_BTN, 0xFFFFFF,
+                            &lv_font_montserrat_20, next_cb, NULL);
+    lv_obj_set_style_radius(next, LV_RADIUS_CIRCLE, 0);
+
+    label(player_panel, "Tap the album art on the home card to reopen this player", 280, 270, 460, 14,
+          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 }
 
 void ui_init(bt_model_t *model) {
@@ -435,6 +575,7 @@ void ui_init(bt_model_t *model) {
 
     lv_obj_t *gear = circle(scr, 752, 8, 32, C_CIRCLE);
     icon_center(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT);
+    lv_obj_add_event_cb(gear, settings_cb, LV_EVENT_CLICKED, NULL);
 
     /* ── phone card ─────────────────────────────────────────── */
     lv_obj_t *phone = card(home, 12, 50, 234, 297);
@@ -465,7 +606,7 @@ void ui_init(bt_model_t *model) {
     disconnect_btn = button(phone, "Disconnect", 14, 245, 130, 36, C_INNER, C_TEXT,
                             &lv_font_montserrat_12, sc_cb, &disconnect_lbl);
     call_btn = button(phone, "Call", 150, 245, 70, 36, C_INNER, C_TEXT,
-                      &lv_font_montserrat_12, incoming_cb, NULL);
+                      &lv_font_montserrat_12, call_open_cb, NULL);
 
     /* ── bluetooth card ─────────────────────────────────────── */
     lv_obj_t *bt = card(home, 256, 50, 328, 297);
@@ -512,6 +653,7 @@ void ui_init(bt_model_t *model) {
 
     art_circle = circle(audio, 33, 32, 128, accent);
     icon_center(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
+    lv_obj_add_event_cb(art_circle, art_open_cb, LV_EVENT_CLICKED, NULL);
 
     track_lbl = label(audio, "Test Song", 8, 170, 178, 20, &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_CENTER);
     artist_lbl = label(audio, "StradaOS", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
@@ -541,7 +683,9 @@ void ui_init(bt_model_t *model) {
         lv_obj_add_event_cb(c, dock_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
-    panels_init(scr, on_home, on_accent, on_clock);
+    panels_init(scr, on_home, on_accent, on_clock, on_set_time);
+    build_player(scr);
+    call_panel_init(scr, on_call_close, on_outgoing_call);
     show_screen(-1);
 
     ui_update();
@@ -559,6 +703,10 @@ void ui_set_files_root(const char *root) {
 
 void ui_show_panel(int idx) {
     show_screen(idx);
+}
+
+void ui_show_call(void) {
+    if (M && bt_sim_connected(M->state)) call_panel_show();
 }
 
 void ui_screenshot(const char *path) {

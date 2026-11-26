@@ -55,6 +55,46 @@ The app is substantial and Android-specific. The native C is a small part: Speex
 
 The stock 7010B does not even expose a general Android USB host stack or Wi-Fi. Its USB is used for mass storage/update and its MCU owns audio/radio/BT. There is no Android `MediaCodec`, `SurfaceFlinger`, `UsbManager`, `WifiP2pManager`, or `BouncyCastle` runtime to port against.
 
+## USB cable only — verdict
+
+**Verdict: USB does not make DiPlay portable to the stock 7010B. It is still not possible as a direct port.**
+
+DiPlay's wired mode is an **Android USB host/accessory** path. The app uses Android `UsbManager`/USB APIs, Android `MediaCodec`/Surface for H.264, Android audio/routing, and the same Kotlin session layer as wireless. The USB cable removes Wi-Fi from the equation, but it does not remove Android, the CarPlay accessory protocol, the authenticated accessory identity, or the H.264/audio/touch pipeline.
+
+For the 7010B:
+
+| USB requirement | 7010B stock reality |
+|---|---|
+| Android USB host/accessory stack | Melis/ePDK; no Android USB host stack for apps |
+| Kotlin/Compose session layer | No Android runtime; ARMv5 cannot run ART |
+| CarPlay accessory authentication | No MFi identity; upstream identity is experimental/legal-risk |
+| H.264 decode through MediaCodec/Surface | CedarX exists, but a different API/pipeline |
+| Audio/AEC + HID/touch forwarding | Not implemented in the stock firmware |
+| Enough RAM/flash | 64 MiB / 8 MiB total; Android + buffers do not fit |
+| Accessible USB role control | The stock USB path is MCU/firmware-owned (storage/update), not a documented CarPlay host |
+
+A wired-only **Linux** port is more plausible than wireless because it avoids Wi-Fi Direct/hotspot and mDNS, but it is still a ground-up receiver:
+
+* USB host/device role control and Apple accessory protocol framing.
+* CarPlay session setup and a lawful accessory identity.
+* H.264 decode on CedarX with a new pipeline.
+* Audio, microphone/AEC, touch/HID.
+* A UI that can survive reconnects.
+
+On an ARM926 at ~600 MHz with 64 MiB RAM, even wired 720p H.264 + audio + UI is tight. The 7010B also has no documented general-purpose USB host port for this use; the stock USB is for storage/update through the MCU.
+
+### USB feasibility gates
+
+Do not start a 7010B port until all of these are true:
+
+1. The board exposes a USB host port with controllable role and enough power for an iPhone.
+2. CedarX can decode the CarPlay stream at the requested size/fps with CPU headroom for UI/audio.
+3. You have a lawful CarPlay accessory identity and can provision it without shipping extracted keys.
+4. A wired-only receiver works on a Linux SBC with the same decoder class.
+5. You have a full SPI flash backup and a recovery path.
+
+If those fail, use an Android head unit with DiPlay, a separate CarPlay dongle, or a more capable Linux SBC. A USB cable alone does not close the gap.
+
 ## What could be reused
 
 | DiPlay part | Reuse on 7010B? | Notes |

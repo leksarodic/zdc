@@ -4,15 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#define C_CARD    0x1E2128
-#define C_INNER   0x262A33
-#define C_BTN     0x2A2E37
-#define C_TEXT    0xF2F3F5
-#define C_MUTED   0x8B9099
-#define C_SOFT    0xC5C8CE
+#include "theme.h"
+
+#define C_CARD    theme_color(0x1E2128)
+#define C_INNER   theme_color(0x262A33)
+#define C_BTN     theme_color(0x2A2E37)
+#define C_TEXT    theme_color(0xF2F3F5)
+#define C_MUTED   theme_color(0x8B9099)
+#define C_SOFT    theme_color(0xC5C8CE)
 #define C_GREEN   0x2DBE6C
 
 static lv_obj_t *panel;
+static lv_obj_t *scrim;
 static lv_obj_t *display_lbl;
 static char dial[40];
 static void (*cb_close)(void);
@@ -124,12 +127,18 @@ void call_panel_init(lv_obj_t *parent, void (*on_close)(void), void (*on_call)(c
     cb_close = on_close;
     cb_call = on_call;
 
-    panel = box(parent, 12, 50, 776, 297, C_CARD, 16);
+    scrim = box(parent, 0, 0, 800, 480, 0x000000, 0);
+    lv_obj_set_style_bg_opa(scrim, LV_OPA_50, 0);
+    lv_obj_add_flag(scrim, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(scrim, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(scrim, close_cb, LV_EVENT_CLICKED, NULL);
+
+    panel = box(parent, 120, 60, 560, 280, C_CARD, 16);
     lv_obj_add_flag(panel, LV_OBJ_FLAG_HIDDEN);
 
     label(panel, "CALL", 18, 12, 200, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(panel, "RECENT", 24, 42, 260, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(panel, LV_SYMBOL_CLOSE, 726, 8, 32, 32, C_INNER, &lv_font_montserrat_12, close_cb, NULL);
+    label(panel, "RECENT", 20, 42, 200, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(panel, LV_SYMBOL_CLOSE, 510, 8, 32, 32, C_INNER, &lv_font_montserrat_12, close_cb, NULL);
 
     static const char *CONTACTS[][2] = {
         {"Aleksa", "+381 60 123 4567"},
@@ -137,14 +146,14 @@ void call_panel_init(lv_obj_t *parent, void (*on_close)(void), void (*on_call)(c
         {"Work", "+381 11 987 654"},
     };
     for (int i = 0; i < 3; i++) {
-        lv_obj_t *b = button(panel, CONTACTS[i][0], 24, 62 + i * 42, 280, 34, C_INNER,
+        lv_obj_t *b = button(panel, CONTACTS[i][0], 20, 64 + i * 40, 210, 34, C_INNER,
                              &lv_font_montserrat_12, contact_cb, (void *)CONTACTS[i][1]);
         (void)b;
     }
 
-    display_lbl = label(panel, "Enter number", 360, 44, 300, 34, &lv_font_montserrat_18,
+    display_lbl = label(panel, "Enter number", 260, 42, 220, 34, &lv_font_montserrat_18,
                         C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(panel, "DEL", 668, 44, 50, 34, C_INNER, &lv_font_montserrat_10, backspace_cb, NULL);
+    button(panel, "DEL", 488, 42, 54, 34, C_INNER, &lv_font_montserrat_10, backspace_cb, NULL);
 
     static const char DIGITS[4][3] = {
         {'1', '2', '3'},
@@ -155,13 +164,13 @@ void call_panel_init(lv_obj_t *parent, void (*on_close)(void), void (*on_call)(c
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 3; c++) {
             char s[2] = {DIGITS[r][c], '\0'};
-            button(panel, s, 360 + c * 90, 90 + r * 42, 80, 34, C_INNER,
+            button(panel, s, 260 + c * 70, 88 + r * 36, 60, 30, C_INNER,
                    &lv_font_montserrat_16, digit_cb, (void *)(intptr_t)DIGITS[r][c]);
         }
     }
 
-    button(panel, "Call", 360, 262, 240, 32, C_GREEN, &lv_font_montserrat_12, call_cb, NULL);
-    button(panel, "Clear", 610, 262, 108, 32, C_BTN, &lv_font_montserrat_10, clear_cb, NULL);
+    button(panel, "Call", 260, 238, 200, 30, C_GREEN, &lv_font_montserrat_12, call_cb, NULL);
+    button(panel, "Clear", 470, 238, 64, 30, C_BTN, &lv_font_montserrat_10, clear_cb, NULL);
 
     update_display();
 }
@@ -170,11 +179,14 @@ void call_panel_show(void) {
     if (!panel) return;
     dial[0] = '\0';
     update_display();
+    lv_obj_remove_flag(scrim, LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_flag(panel, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(scrim);
     lv_obj_move_foreground(panel);
 }
 
 void call_panel_hide(void) {
+    if (scrim) lv_obj_add_flag(scrim, LV_OBJ_FLAG_HIDDEN);
     if (panel) lv_obj_add_flag(panel, LV_OBJ_FLAG_HIDDEN);
 }
 

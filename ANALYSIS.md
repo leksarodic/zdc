@@ -722,23 +722,24 @@ Keep the exact three-column geometry. Replace the center map with the Bluetooth 
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 17:37  Miércoles, 26 de noviembre      ☁ 22°C  Buenas tardes   [⚙]  │
+│ 17:37  Thursday, 26 November                              [🔊]  [⚙]  │
 │                                                                      │
 │ ┌──────────────┐  ┌──────────────────────────┐  ┌────────────────┐  │
-│ │ TELÉFONO     │  │ BLUETOOTH       CAR-KIT  │  │ AUDIO  BLUETOOTH│ │
-│ │              │  │                          │  │                │ │
-│ │  (phone)     │  │        ( BT ring )       │  │   (album art)  │ │
-│ │ iPhone       │  │                          │  │                │ │
-│ │ Conectado    │  │      Conectado           │  │ Canción        │ │
-│ │ ▮▮▮▮ 82%     │  │  iPhone · A2DP           │  │ Artista        │ │
-│ │              │  │                          │  │ 1:08 / 3:35    │ │
-│ │ [Desconectar]│  │  [ Reproducir ]          │  │  ⏮   ▶   ⏭   │ │
-│ │              │  │  [ Buscar dispositivos ] │  │                │ │
+│ │ PHONE        │  │ BLUETOOTH        STRADA  │  │ AUDIO BLUETOOTH│  │
+│ │              │  │                          │  │                │  │
+│ │  (phone)     │  │        ( BT ring )       │  │   (album art)  │  │
+│ │ Aleksa's     │  │                          │  │                │  │
+│ │ iPhone       │  │      Connected           │  │ Test Song      │  │
+│ │ Connected    │  │  Aleksa's iPhone · A2DP  │  │ StradaOS       │  │
+│ │ ▮▮▮▮ 82%     │  │                          │  │ 1:08 / 3:35    │  │
+│ │              │  │                          │  │                │  │
+│ │ [Disconnect] │  │  [ Play ]  [Disconnect]  │  │  ⏮   ▶   ⏭    │  │
+│ │ [Call]       │  │                          │  │                │  │
 │ └──────────────┘  └──────────────────────────┘  └────────────────┘  │
 │                                                                      │
 │ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │   (radio)   (BT)   (camera)   (globe)   (folder)   (gear)  (apps)│ │
-│ │   Radio   Bluetooth Cámara   Navegador Archivos  Ajustes   Apps  │ │
+│ │      (radio)        (BT)        (folder)        (gear)           │ │
+│ │       Radio      Bluetooth       Files         Settings          │ │
 │ └──────────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -747,16 +748,16 @@ Center card states:
 
 | State | Big icon | Title | Subtitle | Primary | Secondary |
 |---|---|---|---|---|---|
-| OFF | BT crossed | “Bluetooth apagado” | “Toca para encender” | Encender | — |
-| READY | BT | “Listo para emparejar” | “CAR-KIT · PIN 0000” | Emparejar | Buscar |
-| PAIRING | spinner ring | “Emparejando…” | “Buscando teléfonos” | Cancelar | — |
-| CONNECTED | BT + check | “Conectado” | “iPhone de Aleksa · A2DP” | Reproducir | Desconectar |
-| PLAYING | BT + equalizer | “Reproduciendo” | track title | Pausa | Desconectar |
-| INCOMING | phone ring | “Llamada entrante” | caller name/number | Answer (green) | Reject (red) |
-| ACTIVE | phone | “En llamada” | duration | Colgar (red) | Teclado |
-| ERROR | ! | “No se pudo conectar” | reason | Reintentar | Ajustes |
+| OFF | BT crossed | “Bluetooth off” | “Tap to power on” | Power on | — |
+| READY | BT | “Pair from your phone” | “STRADA · PIN 0000” | Start pairing | Settings |
+| PAIRING | spinner ring | “Waiting for phone” | “Select STRADA on your phone” | Cancel | — |
+| CONNECTED | BT + check | “Connected” | “Aleksa's iPhone · A2DP” | Play | Disconnect |
+| PLAYING | BT + equalizer | “Playing” | track title | Pause | Disconnect |
+| INCOMING | phone ring | “Incoming call” | caller name/number | Answer (green) | Reject (red) |
+| ACTIVE | phone | “In call” | duration | Hang up (red) | Mute |
+| ERROR | ! | “Connection failed” | reason | Retry | Settings |
 
-The prototype implements these states with mock data and working buttons.
+The prototype implements these states with mock data and working buttons. The shipped UI is English-only and the dock has four items: Radio, Bluetooth, Files and Settings.
 
 ---
 

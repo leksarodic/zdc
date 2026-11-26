@@ -9,12 +9,14 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#define C_CARD    0x1E2128
-#define C_INNER   0x262A33
-#define C_BTN     0x2A2E37
-#define C_TEXT    0xF2F3F5
-#define C_MUTED   0x8B9099
-#define C_SOFT    0xC5C8CE
+#include "theme.h"
+
+#define C_CARD    theme_color(0x1E2128)
+#define C_INNER   theme_color(0x262A33)
+#define C_BTN     theme_color(0x2A2E37)
+#define C_TEXT    theme_color(0xF2F3F5)
+#define C_MUTED   theme_color(0x8B9099)
+#define C_SOFT    theme_color(0xC5C8CE)
 #define C_GREEN   0x2DBE6C
 
 static lv_obj_t *radio_panel;
@@ -25,6 +27,14 @@ static void (*cb_home)(void);
 static void (*cb_accent)(uint32_t);
 static void (*cb_clock)(bool);
 static void (*cb_set_time)(long);
+static void (*cb_volume)(int);
+static void (*cb_theme)(bool);
+static void (*cb_night)(bool);
+static void (*cb_saver)(bool);
+
+static bool night_on = false;
+static bool saver_on = true;
+static bool light_on = false;
 
 static lv_color_t col(uint32_t hex) { return lv_color_hex(hex); }
 
@@ -107,6 +117,7 @@ static lv_obj_t *make_panel(lv_obj_t *parent) {
 
 static lv_obj_t *radio_freq_lbl;
 static lv_obj_t *radio_status_lbl;
+static lv_obj_t *radio_rds_lbl;
 static lv_obj_t *radio_power_lbl;
 static lv_obj_t *radio_mute_lbl;
 static lv_obj_t *radio_save_lbl;
@@ -118,6 +129,41 @@ static bool radio_mute = false;
 
 static double presets[6] = {87.5, 90.1, 94.3, 98.1, 101.7, 104.9};
 static bool radio_save_mode = false;
+
+static const char *RDS_NAMES[6] = {
+    "STRADA FM", "Radio One", "Top 40", "Jazz FM", "Rock 101", "News 24"
+};
+static const char *RDS_GENRES[6] = {
+    "Pop music", "News / Talk", "Hits", "Jazz", "Rock", "News"
+};
+
+static int rds_slot(void) {
+    int best = 0;
+    double best_d = 99.0;
+    for (int i = 0; i < 6; i++) {
+        double d = fabs(radio_freq - presets[i]);
+        if (d < best_d) { best_d = d; best = i; }
+    }
+    return best;
+}
+
+static void presets_load(void) {
+    FILE *f = fopen("strada.conf", "r");
+    if (!f) return;
+    for (int i = 0; i < 6; i++) {
+        double v;
+        if (fscanf(f, "%lf", &v) != 1) break;
+        if (v >= 87.5 && v <= 108.0) presets[i] = v;
+    }
+    fclose(f);
+}
+
+static void presets_save(void) {
+    FILE *f = fopen("strada.conf", "w");
+    if (!f) return;
+    for (int i = 0; i < 6; i++) fprintf(f, "%.1f\n", presets[i]);
+    fclose(f);
+}
 
 static void radio_update(void) {
     char buf[48];
@@ -135,6 +181,16 @@ static void radio_update(void) {
     lv_label_set_text(radio_power_lbl, radio_on ? "Power off" : "Power on");
     lv_label_set_text(radio_mute_lbl, radio_mute ? "Unmute" : "Mute");
     lv_label_set_text(radio_save_lbl, radio_save_mode ? "Cancel save" : "Save preset");
+
+    if (radio_rds_lbl) {
+        if (radio_on) {
+            int slot = rds_slot();
+            lv_label_set_text_fmt(radio_rds_lbl, "RDS  -  %s  -  %s",
+                                  RDS_NAMES[slot], RDS_GENRES[slot]);
+        } else {
+            lv_label_set_text(radio_rds_lbl, "RDS  -  off");
+        }
+    }
 
     for (int i = 0; i < 6; i++) {
         bool selected = radio_on && fabs(radio_freq - presets[i]) < 0.05;
@@ -174,6 +230,7 @@ static void radio_preset_cb(lv_event_t *e) {
     if (idx < 0 || idx >= 6) return;
     if (radio_save_mode) {
         presets[idx] = radio_freq;
+        presets_save();
         radio_save_mode = false;
     } else {
         radio_on = true;
@@ -192,29 +249,32 @@ static void build_radio(lv_obj_t *parent) {
     radio_panel = make_panel(parent);
     panel_header(radio_panel, "RADIO", "FM / STEREO");
 
-    radio_freq_lbl = label(radio_panel, "98.1 MHz", 0, 38, 776, 60,
+    radio_freq_lbl = label(radio_panel, "98.1 MHz", 0, 34, 776, 60,
                            &lv_font_montserrat_40, C_TEXT, LV_TEXT_ALIGN_CENTER);
-    radio_status_lbl = label(radio_panel, "Stereo / 5 bars", 0, 100, 776, 16,
+    radio_status_lbl = label(radio_panel, "Stereo / 5 bars", 0, 94, 776, 16,
                              &lv_font_montserrat_12, C_GREEN, LV_TEXT_ALIGN_CENTER);
+    radio_rds_lbl = label(radio_panel, "RDS  -  off", 0, 112, 776, 14,
+                          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    button(radio_panel, "- 0.1", 40, 128, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_down_cb, NULL);
-    button(radio_panel, "Seek -", 180, 128, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_down_cb, NULL);
-    button(radio_panel, "Seek +", 466, 128, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_up_cb, NULL);
-    button(radio_panel, "+ 0.1", 606, 128, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_up_cb, NULL);
+    button(radio_panel, "- 0.1", 40, 134, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_down_cb, NULL);
+    button(radio_panel, "Seek -", 180, 134, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_down_cb, NULL);
+    button(radio_panel, "Seek +", 466, 134, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_up_cb, NULL);
+    button(radio_panel, "+ 0.1", 606, 134, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_up_cb, NULL);
 
     label(radio_panel, "PRESETS", 40, 180, 300, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 6; i++) {
         char b[8];
         snprintf(b, sizeof(b), "%d", i + 1);
-        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 200, 104, 32, C_INNER,
+        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 198, 104, 32, C_INNER,
                                       &lv_font_montserrat_12, NULL, NULL);
         lv_obj_add_event_cb(radio_preset_btns[i], radio_preset_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
-    button(radio_panel, "Power off", 40, 248, 150, 34, 0xFE3211, &lv_font_montserrat_12, radio_power_cb, &radio_power_lbl);
-    button(radio_panel, "Save preset", 310, 248, 160, 34, C_INNER, &lv_font_montserrat_12, radio_save_cb, &radio_save_lbl);
-    button(radio_panel, "Mute", 586, 248, 150, 34, C_INNER, &lv_font_montserrat_12, radio_mute_cb, &radio_mute_lbl);
+    button(radio_panel, "Power off", 40, 244, 150, 34, 0xFE3211, &lv_font_montserrat_12, radio_power_cb, &radio_power_lbl);
+    button(radio_panel, "Save preset", 310, 244, 160, 34, C_INNER, &lv_font_montserrat_12, radio_save_cb, &radio_save_lbl);
+    button(radio_panel, "Mute", 586, 244, 150, 34, C_INNER, &lv_font_montserrat_12, radio_mute_cb, &radio_mute_lbl);
 
+    presets_load();
     radio_update();
 }
 
@@ -428,6 +488,10 @@ static lv_obj_t *clock12_lbl;
 static lv_obj_t *volume_lbl;
 static lv_obj_t *volume_slider;
 static bool clock_is_24 = true;
+static lv_obj_t *theme_dark_lbl;
+static lv_obj_t *theme_light_lbl;
+static lv_obj_t *night_lbl;
+static lv_obj_t *saver_lbl;
 
 static struct tm cal;
 static bool cal_ready = false;
@@ -497,6 +561,18 @@ static void settings_refresh(void) {
         int v = lv_slider_get_value(volume_slider);
         lv_label_set_text_fmt(volume_lbl, "%d%%", v);
     }
+    if (theme_dark_lbl) {
+        lv_obj_set_style_bg_color(lv_obj_get_parent(theme_dark_lbl),
+                                  col(light_on ? C_INNER : C_BTN), 0);
+        lv_obj_set_style_bg_color(lv_obj_get_parent(theme_light_lbl),
+                                  col(light_on ? C_BTN : C_INNER), 0);
+        lv_obj_set_style_border_width(lv_obj_get_parent(theme_dark_lbl), light_on ? 0 : 2, 0);
+        lv_obj_set_style_border_width(lv_obj_get_parent(theme_light_lbl), light_on ? 2 : 0, 0);
+        lv_obj_set_style_border_color(lv_obj_get_parent(theme_dark_lbl), col(ACCENTS[accent_idx]), 0);
+        lv_obj_set_style_border_color(lv_obj_get_parent(theme_light_lbl), col(ACCENTS[accent_idx]), 0);
+        lv_label_set_text(night_lbl, night_on ? "Dim on" : "Dim off");
+        lv_label_set_text(saver_lbl, saver_on ? "Saver on" : "Saver off");
+    }
     cal_show();
 }
 
@@ -529,6 +605,35 @@ static void clock12_cb(lv_event_t *e) {
 static void volume_cb(lv_event_t *e) {
     (void)e;
     settings_refresh();
+    if (cb_volume) cb_volume(lv_slider_get_value(volume_slider));
+}
+
+static void theme_dark_cb(lv_event_t *e) {
+    (void)e;
+    light_on = false;
+    if (cb_theme) cb_theme(false);
+    settings_refresh();
+}
+
+static void theme_light_cb(lv_event_t *e) {
+    (void)e;
+    light_on = true;
+    if (cb_theme) cb_theme(true);
+    settings_refresh();
+}
+
+static void night_cb(lv_event_t *e) {
+    (void)e;
+    night_on = !night_on;
+    if (cb_night) cb_night(night_on);
+    settings_refresh();
+}
+
+static void saver_cb(lv_event_t *e) {
+    (void)e;
+    saver_on = !saver_on;
+    if (cb_saver) cb_saver(saver_on);
+    settings_refresh();
 }
 
 static void settings_reset_cb(lv_event_t *e) {
@@ -540,6 +645,12 @@ static void settings_reset_cb(lv_event_t *e) {
     if (cb_set_time) cb_set_time((long)time(NULL));
     if (cb_accent) cb_accent(ACCENTS[0]);
     if (cb_clock) cb_clock(true);
+    light_on = false;
+    night_on = false;
+    saver_on = true;
+    if (cb_theme) cb_theme(false);
+    if (cb_night) cb_night(false);
+    if (cb_saver) cb_saver(true);
     settings_refresh();
 }
 
@@ -591,6 +702,21 @@ static void build_settings(lv_obj_t *parent) {
                              &lv_font_montserrat_10, NULL, NULL);
         lv_obj_add_event_cb(b, cal_btn_cb, LV_EVENT_CLICKED, (void *)(intptr_t)(6 + i));
     }
+    label(settings_panel, "THEME", 552, 44, 52, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    lv_obj_t *td = button(settings_panel, "Dark", 610, 38, 66, 28, C_BTN, &lv_font_montserrat_10,
+                          theme_dark_cb, &theme_dark_lbl);
+    lv_obj_t *tl = button(settings_panel, "Light", 682, 38, 66, 28, C_INNER, &lv_font_montserrat_10,
+                          theme_light_cb, &theme_light_lbl);
+    (void)td; (void)tl;
+
+    label(settings_panel, "NIGHT", 552, 80, 52, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(settings_panel, "Dim off", 610, 74, 138, 28, C_INNER, &lv_font_montserrat_10,
+           night_cb, &night_lbl);
+
+    label(settings_panel, "IDLE", 552, 114, 52, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(settings_panel, "Saver on", 610, 108, 138, 28, C_INNER, &lv_font_montserrat_10,
+           saver_cb, &saver_lbl);
+
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "STRADA 7010B / LVGL 9.3", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
@@ -605,15 +731,32 @@ static void build_settings(lv_obj_t *parent) {
 
 /* ── public API ──────────────────────────────────────────────── */
 
-void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long)) {
+void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long), void (*on_volume)(int), void (*on_theme)(bool), void (*on_night)(bool), void (*on_saver)(bool)) {
     cb_home = on_home;
     cb_accent = on_accent;
     cb_clock = on_clock;
     cb_set_time = on_set_time;
+    cb_volume = on_volume;
+    cb_theme = on_theme;
+    cb_night = on_night;
+    cb_saver = on_saver;
 
     build_radio(parent);
     build_files(parent);
     build_settings(parent);
+}
+
+void panels_set_volume(int value) {
+    if (!volume_slider) return;
+    lv_slider_set_value(volume_slider, value, LV_ANIM_OFF);
+    if (volume_lbl) lv_label_set_text_fmt(volume_lbl, "%d%%", value);
+}
+
+void panels_set_modes(bool light, bool night, bool saver) {
+    light_on = light;
+    night_on = night;
+    saver_on = saver;
+    if (settings_panel) settings_refresh();
 }
 
 void panels_show(int idx) {

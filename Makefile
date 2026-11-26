@@ -36,6 +36,16 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/call.ppm artifacts/call.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-no-storage.ppm --frames 30 --state connected --panel files --files-root /nonexistent
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-no-storage.ppm artifacts/files-no-storage.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/volume.ppm --frames 30 --state connected --volume 62
+	@$(PYTHON) tools/ppm_to_png.py artifacts/volume.ppm artifacts/volume.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/light.ppm --frames 30 --state connected --light
+	@$(PYTHON) tools/ppm_to_png.py artifacts/light.ppm artifacts/light.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/light-settings.ppm --frames 30 --state connected --panel settings --light
+	@$(PYTHON) tools/ppm_to_png.py artifacts/light-settings.ppm artifacts/light-settings.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/night-dim.ppm --frames 30 --state connected --dim
+	@$(PYTHON) tools/ppm_to_png.py artifacts/night-dim.ppm artifacts/night-dim.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/screensaver.ppm --frames 30 --state connected --saver
+	@$(PYTHON) tools/ppm_to_png.py artifacts/screensaver.ppm artifacts/screensaver.png
 
 arm:
 	$(CMAKE) -S . -B build-arm \

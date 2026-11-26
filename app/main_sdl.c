@@ -80,6 +80,11 @@ int main(int argc, char **argv) {
     const char *panel = NULL;
     const char *files_root = "media";
     bool show_call = false;
+    bool light = false;
+    bool dim = false;
+    bool saver = false;
+    bool show_vol = false;
+    int vol_value = 70;
     int frames = 0;
     bool interactive = true;
 
@@ -97,8 +102,17 @@ int main(int argc, char **argv) {
             files_root = argv[++i];
         } else if (!strcmp(argv[i], "--call")) {
             show_call = true;
+        } else if (!strcmp(argv[i], "--light")) {
+            light = true;
+        } else if (!strcmp(argv[i], "--dim")) {
+            dim = true;
+        } else if (!strcmp(argv[i], "--saver")) {
+            saver = true;
+        } else if (!strcmp(argv[i], "--volume") && i + 1 < argc) {
+            show_vol = true;
+            vol_value = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100]\n", argv[0]);
             return 0;
         }
     }
@@ -122,6 +136,13 @@ int main(int argc, char **argv) {
         else if (!strcmp(panel, "settings")) ui_show_panel(2);
     }
     if (show_call) ui_show_call();
+    if (light) ui_set_theme(true);
+    if (dim) ui_set_night_dim(true);
+    if (saver) ui_show_screensaver();
+    if (show_vol) {
+        ui_set_volume(vol_value);
+        ui_show_volume();
+    }
 
     if (shot) {
         if (frames <= 0) frames = 90;

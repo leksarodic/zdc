@@ -3,7 +3,7 @@
 #include <string.h>
 
 static const bt_track_t TRACKS[] = {
-    {"Test Song", "StradaOS", 215},
+    {"Test Song", "Demo Artist", 215},
     {"Blinding Lights", "The Weeknd", 200},
     {"Midnight City", "M83", 243},
     {"Nocturne No. 2", "Chopin", 275},
@@ -45,12 +45,20 @@ const char *bt_sim_state_name(bt_state_t state) {
 }
 
 void bt_sim_set_state(bt_model_t *m, bt_state_t state) {
+    bt_state_t prev = m->state;
+    if (state == BT_INCOMING && prev == BT_PLAYING) m->music_interrupted = true;
+    else if (state != BT_INCOMING && state != BT_ACTIVE) m->music_interrupted = false;
+
     m->state = state;
     m->pair_seconds = 0;
     if (state != BT_ACTIVE) m->call_seconds = 0;
     if (state == BT_OFF || state == BT_READY || state == BT_ERROR) {
         m->muted = false;
     }
+}
+
+bool bt_sim_music_interrupted(const bt_model_t *m) {
+    return m->music_interrupted && (m->state == BT_INCOMING || m->state == BT_ACTIVE);
 }
 
 void bt_sim_primary(bt_model_t *m) {
@@ -61,7 +69,14 @@ void bt_sim_primary(bt_model_t *m) {
     case BT_CONNECTED: bt_sim_set_state(m, BT_PLAYING); break;
     case BT_PLAYING: bt_sim_set_state(m, BT_CONNECTED); break;
     case BT_INCOMING: bt_sim_set_state(m, BT_ACTIVE); break;
-    case BT_ACTIVE: bt_sim_set_state(m, BT_CONNECTED); break;
+    case BT_ACTIVE:
+        if (m->music_interrupted) {
+            m->music_interrupted = false;
+            bt_sim_set_state(m, BT_PLAYING);
+        } else {
+            bt_sim_set_state(m, BT_CONNECTED);
+        }
+        break;
     case BT_ERROR: bt_sim_set_state(m, BT_PAIRING); break;
     default: break;
     }
@@ -72,7 +87,14 @@ void bt_sim_secondary(bt_model_t *m) {
     case BT_READY: bt_sim_set_state(m, BT_PAIRING); break;
     case BT_CONNECTED:
     case BT_PLAYING: bt_sim_set_state(m, BT_READY); break;
-    case BT_INCOMING: bt_sim_set_state(m, BT_CONNECTED); break;
+    case BT_INCOMING:
+        if (m->music_interrupted) {
+            m->music_interrupted = false;
+            bt_sim_set_state(m, BT_PLAYING);
+        } else {
+            bt_sim_set_state(m, BT_CONNECTED);
+        }
+        break;
     case BT_ACTIVE: m->muted = !m->muted; break;
     case BT_OFF:
     case BT_ERROR: break;

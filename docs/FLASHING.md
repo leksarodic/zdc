@@ -2,7 +2,7 @@
 
 The 7010B stores its firmware on an **8 MiB SPI NOR flash** (commonly `25L6406E`, `25QH64`, `QH64`). The dump in `firmware/7010b-original.bin` is the complete flash, not just the app.
 
-> **The patched image in this repo is the stock firmware with only the Bluetooth name changed.** It keeps the original Melis UI. The new Strada UI in `app/` is a Linux/SDL build and is **not** a replacement for the stock Melis app. Do not flash the UI binary into this image.
+> **The patched image in this repo is the stock firmware with only the Bluetooth name changed.** It keeps the original Melis UI. The new CAR_482 UI in `app/` is a Linux/SDL build and is **not** a replacement for the stock Melis app. Do not flash the UI binary into this image.
 
 ## 1. Before you touch the radio
 
@@ -39,19 +39,19 @@ Do not continue until both reads are identical and the hash matches the known du
 ## 3. Build the patched image
 
 ```bash
-python3 tools/patch_bt_name.py backup1.bin -o 7010b-STRADA.img --name STRADA
-python3 tools/patch_bt_name.py 7010b-STRADA.img --verify-against backup1.bin
+python3 tools/patch_bt_name.py backup1.bin -o 7010b-CAR_482.img --name CAR_482
+python3 tools/patch_bt_name.py 7010b-CAR_482.img --verify-against backup1.bin
 ```
 
-The tool only changes the 7-byte `CAR-KIT` slots to `STRADA\0`. It does not move data, change sizes, or touch MINFS entries. `--verify-against` must report **0 bytes outside BT-name slots**.
+The tool only changes the 7-byte `CAR-KIT` slots to `CAR_482`. It does not move data, change sizes, or touch MINFS entries. `--verify-against` must report **0 bytes outside BT-name slots**.
 
-Expected default output: `artifacts/7010b-STRADA.img` from `make image`.
+Expected default output: `artifacts/7010b-CAR_482.img` from `make image`.
 
 ## 4. Write the patched image
 
 ```bash
-flashrom -p ch341a_spi -w 7010b-STRADA.img
-flashrom -p ch341a_spi -v 7010b-STRADA.img
+flashrom -p ch341a_spi -w 7010b-CAR_482.img
+flashrom -p ch341a_spi -v 7010b-CAR_482.img
 ```
 
 If the write is interrupted, do not power the radio; re-read and retry. A failed SPI write is recoverable with the programmer as long as you have the original dump.
@@ -64,7 +64,7 @@ The F1C200s boot ROM can expose **FEL over USB OTG**. The 7010B may not route US
 sunxi-fel -l
 sunxi-fel spiflash-info
 sunxi-fel spiflash-read 0 0x800000 backup.bin
-sunxi-fel spiflash-write 0 0x800000 7010b-STRADA.img
+sunxi-fel spiflash-write 0 0x800000 7010b-CAR_482.img
 ```
 
 Verify the exact `sunxi-fel` support for your SoC revision before relying on this. The SPI programmer is the safer primary method.
@@ -76,7 +76,7 @@ The factory updater expects a vendor container named `ePDKv100.img` under `f:\C5
 ## 7. After flashing
 
 * The radio should boot to the original UI.
-* On a phone, the Bluetooth name should be `STRADA` (PIN `0000`).
+* On a phone, the Bluetooth name should be `CAR_482` (PIN `0000`).
 * If the name still says `CAR-KIT`, the BT module kept its own stored name. The stock app normally sends the configured name at boot; if it does not, use the module's own update/vendor tool. Do not flash `hsn_6905.bfu` unless you have the exact file for your board.
 
 ## 8. Recovery

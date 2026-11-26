@@ -1,6 +1,6 @@
 CMAKE ?= cmake
 PYTHON ?= python3
-BT_NAME ?= STRADA
+BT_NAME ?= CAR_482
 BUILD ?= build
 UNAME_S := $(shell uname -s)
 
@@ -46,6 +46,12 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/night-dim.ppm artifacts/night-dim.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/screensaver.ppm --frames 30 --state connected --saver
 	@$(PYTHON) tools/ppm_to_png.py artifacts/screensaver.ppm artifacts/screensaver.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-music.ppm --frames 30 --state connected --panel files --file media/Music/sunset_drive.wav
+	@$(PYTHON) tools/ppm_to_png.py artifacts/files-music.ppm artifacts/files-music.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-photo.ppm --frames 30 --state connected --panel files --file media/Photos/sunset.bmp
+	@$(PYTHON) tools/ppm_to_png.py artifacts/files-photo.ppm artifacts/files-photo.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call-interrupt.ppm --frames 30 --state connected --interrupt
+	@$(PYTHON) tools/ppm_to_png.py artifacts/call-interrupt.ppm artifacts/call-interrupt.png
 
 arm:
 	$(CMAKE) -S . -B build-arm \

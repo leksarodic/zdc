@@ -1,4 +1,4 @@
 Photos folder.
 
-The stock firmware uses the CedarX / BMP / JPEG / PNG decoders.
-The emulator only lists files; it does not render images.
+Sample BMP files render in the Files panel.
+PNG and JPG are also enabled in the emulator build.

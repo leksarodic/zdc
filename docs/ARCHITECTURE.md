@@ -71,14 +71,14 @@ The same UI for a **Linux port** of the 7010B:
 
 This is not a Melis app. It will not run on the stock firmware. It is useful if you replace the stock OS with a small Linux system (Buildroot/mainline F1C200s support) or if you port the UI to another ARM Linux board with the same panel.
 
-### `7010b-STRADA.img` (stock SPI image, BT name patched)
+### `7010b-CAR_482.img` (stock SPI image, BT name patched)
 
-The original 8 MiB dump with `CAR-KIT` replaced by `STRADA` in the two uncompressed config locations:
+The original 8 MiB dump with `CAR-KIT` replaced by `CAR_482` in the two uncompressed config locations:
 
 * `app_config.bin` string blob
 * `app_config.fex` text config
 
-The replacement is 7 bytes exactly (`STRADA\0`), so no file size, offset, MINFS entry, or checksum changes. The stock app reads the name from this config at boot and sends it to the BT module.
+The replacement is 7 bytes exactly (`CAR_482`), so no file size, offset, MINFS entry, or checksum changes. The stock app reads the name from this config at boot and sends it to the BT module.
 
 This is the only artifact in the repo intended to be flashed to a stock 7010B. Use an SPI programmer; see [FLASHING.md](FLASHING.md).
 
@@ -117,7 +117,7 @@ A simpler path is a **Linux port**: mainline F1C200s support + a minimal Buildro
 
 ### Path C — keep the stock UI, change only the BT name
 
-This is what `7010b-STRADA.img` does. It is low risk and reversible. It does not remove weather/camera/navigation/apps, because those are compiled into the stock Melis app.
+This is what `7010b-CAR_482.img` does. It is low risk and reversible. It does not remove weather/camera/navigation/apps, because those are compiled into the stock Melis app.
 
 ## 6. Testing
 

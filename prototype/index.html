@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Strada 7010B — interactive UI test</title>
+<title>CAR_482 7010B — interactive UI test</title>
 <style>
   :root{
     --bg:#15171C;
@@ -139,6 +139,9 @@
   .device-state.err{color:var(--accent)}
   .device-state .mini-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
   .device-mac{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.03em}
+  .phone-hint{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.55}
+  .phone-hint span{font-size:10px;color:var(--muted)}
+  .phone-hint b{color:var(--soft);font-weight:600}
   .metrics{display:flex;align-items:center;gap:10px;margin-top:12px;color:var(--muted);font-size:10px}
   .bars{display:flex;align-items:flex-end;gap:2px;height:12px}
   .bars i{width:3px;background:var(--soft);border-radius:1px;display:block}
@@ -256,23 +259,45 @@
   }
   .app-panel.show{display:block}
   .panel-head{display:flex;align-items:center;justify-content:space-between;height:18px}
+  .panel-head .source{margin-left:auto;margin-right:12px}
   .panel-close{
     border:0;border-radius:8px;background:var(--inner);color:var(--text);
     width:30px;height:30px;font-size:16px;line-height:1;cursor:pointer;
   }
   .panel-close:hover{background:var(--btn)}
-  .radio-freq{font-size:52px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:6px}
-  .radio-status{text-align:center;font-size:12px;color:var(--green);margin-top:-2px}
-  .radio-row{display:flex;gap:10px;margin-top:12px}
-  .radio-row .btn{flex:1;height:38px;font-size:12px}
+  .radio-top{display:flex;align-items:center;justify-content:flex-end;height:24px;margin-top:-2px}
+  .radio-band{display:flex;gap:6px;margin-right:34px}
+  .radio-band .clock-btn{padding:3px 12px;font-size:11px}
+  .radio-freq{font-size:52px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:-2px}
+  .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:14px;line-height:14px}
+  .radio-row{display:flex;gap:10px;margin-top:10px}
+  .radio-row .btn{flex:1;height:42px;font-size:12px}
+  .radio-ic svg{width:20px;height:20px}
+  .radio-bottom .radio-ic{display:grid;place-items:center;padding:0}
+  .radio-bottom .btn.sel{background:var(--accent);color:#fff}
   .radio-presets{display:flex;gap:10px;margin-top:8px}
   .radio-presets .btn{flex:1;height:32px;font-size:12px}
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
   .radio-bottom{display:flex;justify-content:space-between;margin-top:12px}
-  .radio-bottom .btn{width:170px;height:34px;font-size:12px}
+  .radio-bottom .btn{width:110px;height:34px;font-size:12px}
   .files-path{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .files-tools{display:flex;gap:8px;margin-top:6px}
+  .files-tools{display:flex;gap:8px;margin-top:6px;align-items:center}
   .files-tools .btn{width:54px;height:30px;font-size:14px}
+  .files-tools .file-filter{width:auto;padding:0 12px;font-size:11px}
+  .files-tools .file-filter.sel{background:var(--accent);color:#fff}
+  .tools-spacer{flex:1}
+  .mini-player{
+    position:absolute;left:18px;right:18px;bottom:10px;height:38px;background:var(--inner);
+    border-radius:8px;display:none;align-items:center;gap:10px;padding:0 8px 0 12px;z-index:5;
+  }
+  .mini-player.show{display:flex}
+  .mini-title{flex:1;min-width:0;font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:flex-start;margin-top:5px}
+  .mini-bar{position:absolute;left:12px;right:110px;bottom:8px;height:5px;border-radius:3px;background:var(--btn);overflow:hidden}
+  .mini-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px}
+  .mini-btn{border:0;border-radius:7px;background:var(--btn);color:var(--text);width:34px;height:28px;display:grid;place-items:center;cursor:pointer;flex:none}
+  .mini-btn svg{width:14px;height:14px}
+  .file-preview img{display:none;width:680px;height:150px;object-fit:contain;margin-top:6px;border-radius:8px}
+  .file-preview img.show{display:block}
   .files-list{height:158px;overflow:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px;padding-right:4px}
   .file-row{
     display:flex;align-items:center;gap:8px;min-height:27px;background:var(--inner);
@@ -300,6 +325,10 @@
   .settings-col{flex:1;min-width:0}
   .settings-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--muted)}
   .settings-input{background:var(--inner);border:0;border-radius:8px;color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;color-scheme:dark;width:180px}
+  .setval{min-width:96px;font-size:12px;font-weight:600;color:var(--text)}
+  .cal-btns{display:flex;gap:5px;margin:6px 0 0 54px}
+  .cal-btns button{border:0;border-radius:6px;background:var(--inner);color:var(--soft);font-family:inherit;font-size:10px;font-weight:600;width:36px;height:24px;cursor:pointer}
+  .cal-btns button:hover{background:var(--btn);color:var(--text)}
   .settings-row .value{color:var(--text);font-weight:600;font-size:12px;margin-left:8px}
   .swatches{display:flex;gap:8px}
   .swatch{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer}
@@ -335,9 +364,12 @@
     padding:12px 16px;z-index:9;display:none;box-shadow:0 24px 60px rgba(0,0,0,.55);
   }
   .call-panel.show{display:block}
+  .call-panel .panel-close{width:24px;height:24px;font-size:13px}
   .call-body{display:flex;gap:22px;margin-top:6px}
   .call-recent{width:210px}
-  .call-contact{display:block;width:100%;height:34px;margin-top:8px;border:0;border-radius:8px;background:var(--inner);color:var(--soft);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left;padding:0 10px}
+  .call-contact{display:block;width:100%;height:40px;margin-top:8px;border:0;border-radius:8px;background:var(--inner);color:var(--soft);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left;padding:4px 10px;line-height:1.2}
+  .call-contact b{display:block;font-size:12px;font-weight:600}
+  .call-contact span{display:block;font-size:9px;font-weight:400;color:var(--muted);margin-top:2px}
   .call-contact:hover{background:var(--btn);color:var(--text)}
   .call-number{height:34px;border-radius:8px;background:var(--inner);color:var(--text);font-size:18px;font-weight:600;display:flex;align-items:center;padding:0 10px;width:280px}
   .call-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:280px;margin-top:10px}
@@ -394,7 +426,7 @@
 <body>
 <div id="app">
 <div id="frame">
-<div id="stage" aria-label="Strada 7010B 800x480 interactive UI">
+<div id="stage" aria-label="CAR_482 7010B 800x480 interactive UI">
 
   <!-- ICONS -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -445,6 +477,11 @@
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M10.5 5 4 12l6.5 7M4.5 12H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 6.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M6.5 6.5a8 8 0 1 0 11 0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5V4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Z" fill="currentColor"/><path d="m17 9 5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></symbol>
     <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 19h3v-4H4v4Zm5 0h3v-8H9v8Zm5 0h3V7h-3v12Zm5 0h3V3h-3v16Z" fill="currentColor"/></symbol>
   </svg>
@@ -483,12 +520,7 @@
       <span id="signalText">5/5</span>
       <div class="battery"><div class="cell"><i id="battFill"></i></div><div class="nub"></div><span id="battText">82%</span></div>
     </div>
-    <div class="divider"></div>
-    <div class="sub-label">Paired devices</div>
-    <div class="paired">
-      <div class="pair-row"><svg><use href="#i-bt"/></svg>STRADA<span class="ok">✓</span></div>
-      <div class="pair-row"><svg><use href="#i-phone"/></svg>Galaxy S23<span class="add">+</span></div>
-    </div>
+    <div class="phone-hint">Phone connects to the car<br><span>Open Bluetooth on your phone and select <b id="pairName">CAR_482</b></span></div>
     <div class="phone-actions">
       <button class="btn ghost full" id="btnDisconnect">Disconnect</button>
       <button class="btn ghost" id="btnCallSim" title="Open call panel">Call</button>
@@ -497,7 +529,7 @@
 
   <!-- CENTER: BLUETOOTH -->
   <section class="card bt-card">
-    <div class="card-head"><span class="label">Bluetooth</span><span class="source" id="btLocalName">STRADA</span></div>
+    <div class="card-head"><span class="label">Bluetooth</span><span class="source" id="btLocalName">CAR_482</span></div>
 
     <div class="bt-wrap">
       <div class="bt-circle" id="btCircle">
@@ -530,7 +562,7 @@
       <div class="art" id="art"><svg style="color:#fff"><use href="#i-note"/></svg></div>
     </div>
     <div class="track" id="track">Test Song</div>
-    <div class="artist" id="artist">StradaOS</div>
+    <div class="artist" id="artist">Demo Artist</div>
     <div class="time" id="time">1:08 / 3:35</div>
     <div class="media-actions">
       <button class="circle-btn sm" id="btnPrev" title="Previous"><svg><use href="#i-prev"/></svg></button>
@@ -550,15 +582,21 @@
 
   <!-- RADIO PANEL -->
   <section class="app-panel" id="radioPanel">
-    <div class="panel-head"><span class="label">Radio</span><span class="source">FM / Stereo</span><button class="panel-close" data-close>×</button></div>
+    <div class="panel-head"><span class="label">Radio</span><span class="source">FM / AM</span><button class="panel-close" data-close>×</button></div>
+    <div class="radio-top">
+      <div class="radio-band">
+        <button class="clock-btn sel" id="bandFm">FM</button>
+        <button class="clock-btn" id="bandAm">AM</button>
+      </div>
+    </div>
     <div class="radio-freq" id="radioFreq">98.1 MHz</div>
-    <div class="radio-status" id="radioStatus">Stereo / 5 bars</div>
-    <div class="radio-rds" id="radioRds">RDS - STRADA FM - Pop music</div>
+    <div class="radio-hint" id="radioHint"></div>
+    <div class="radio-rds" id="radioRds">RDS - CAR_482 FM</div>
     <div class="radio-row">
-      <button class="btn ghost" data-radio="-0.1">- 0.1</button>
-      <button class="btn ghost" data-radio="-1">Seek -</button>
-      <button class="btn ghost" data-radio="1">Seek +</button>
-      <button class="btn ghost" data-radio="0.1">+ 0.1</button>
+      <button class="btn ghost radio-ic" data-radio="-0.1" title="Tune down"><svg><use href="#i-left"/></svg></button>
+      <button class="btn ghost radio-ic" data-radio="-1" title="Seek down"><svg><use href="#i-prev"/></svg></button>
+      <button class="btn ghost radio-ic" data-radio="1" title="Seek up"><svg><use href="#i-next"/></svg></button>
+      <button class="btn ghost radio-ic" data-radio="0.1" title="Tune up"><svg><use href="#i-right"/></svg></button>
     </div>
     <div class="sub-label" style="margin-top:10px">Presets</div>
     <div class="radio-presets" id="radioPresets">
@@ -570,9 +608,9 @@
       <button class="btn ghost" data-preset="5">6</button>
     </div>
     <div class="radio-bottom">
-      <button class="btn primary" id="radioPower">Power off</button>
-      <button class="btn ghost" id="radioSave">Save preset</button>
-      <button class="btn ghost" id="radioMute">Mute</button>
+      <button class="btn primary radio-ic" id="radioPower" title="Power"><svg><use href="#i-power"/></svg></button>
+      <button class="btn ghost radio-ic" id="radioSave" title="Save preset"><svg><use href="#i-save"/></svg></button>
+      <button class="btn ghost radio-ic" id="radioMute" title="Mute"><svg><use id="muteIcon" href="#i-mute"/></svg></button>
     </div>
   </section>
 
@@ -581,21 +619,32 @@
     <div class="panel-head"><span class="label">Files</span><span class="source" id="filesStatus">USB / SD</span><button class="panel-close" data-close>×</button></div>
     <div class="files-path" id="filesPath">media</div>
     <div class="files-tools">
+      <button class="btn ghost file-filter sel" data-filter="all">All</button>
+      <button class="btn ghost file-filter" data-filter="music">Music</button>
+      <button class="btn ghost file-filter" data-filter="photos">Photos</button>
+      <span class="tools-spacer"></span>
       <button class="btn ghost" id="filesUp" title="Up">↑</button>
       <button class="btn ghost" id="filesRefresh" title="Refresh">⟳</button>
     </div>
     <div class="files-list" id="filesList"></div>
     <div class="files-info" id="filesInfo"></div>
+    <div class="mini-player" id="miniPlayer">
+      <div class="mini-title" id="miniTitle"></div>
+      <div class="mini-bar"><i id="miniFill"></i></div>
+      <button class="mini-btn" id="miniToggle" title="Play / pause"><svg><use id="miniIcon" href="#i-pause"/></svg></button>
+      <button class="mini-btn" id="miniStop" title="Stop"><svg><use href="#i-close"/></svg></button>
+    </div>
     <div class="file-preview" id="filePreview">
       <button class="panel-close" data-preview-close>×</button>
       <h3 id="filePreviewTitle"></h3>
+      <img id="filePreviewImg" alt="">
       <pre id="filePreviewText"></pre>
     </div>
   </section>
 
   <!-- SETTINGS PANEL -->
   <section class="app-panel" id="settingsPanel">
-    <div class="panel-head"><span class="label">Settings</span><span class="source">STRADA 7010B</span><button class="panel-close" data-close>×</button></div>
+    <div class="panel-head"><span class="label">Settings</span><span class="source">CAR_482 / 7010B</span><button class="panel-close" data-close>×</button></div>
     <div class="settings-cols">
       <div class="settings-col">
         <div class="settings-row">
@@ -614,7 +663,7 @@
           <button class="clock-btn" id="clock12">12 h</button>
         </div>
         <div class="settings-row">
-          <span>Volume</span>
+          <span>Boot vol</span>
           <input type="range" id="volumeRange" min="0" max="100" value="70">
           <span class="value" id="volumeValue">70%</span>
         </div>
@@ -635,15 +684,24 @@
       <div class="settings-col">
         <div class="settings-row">
           <span>Date</span>
-          <input class="settings-input" type="date" id="setDate">
+          <span class="setval" id="dateValue">2026-11-26</span>
+        </div>
+        <div class="cal-btns">
+          <button data-cal="y-">Y-</button><button data-cal="y+">Y+</button>
+          <button data-cal="m-">M-</button><button data-cal="m+">M+</button>
+          <button data-cal="d-">D-</button><button data-cal="d+">D+</button>
         </div>
         <div class="settings-row">
           <span>Time</span>
-          <input class="settings-input" type="time" id="setTime">
+          <span class="setval" id="timeValue">17:37</span>
+        </div>
+        <div class="cal-btns">
+          <button data-cal="h-">H-</button><button data-cal="h+">H+</button>
+          <button data-cal="n-">m-</button><button data-cal="n+">m+</button>
         </div>
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
-          <span>Bluetooth</span><b>STRADA</b>
+          <span>Bluetooth</span><b>CAR_482</b>
           <span>UI</span><b>LVGL 9.3 / 800x480</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
@@ -659,7 +717,7 @@
       <div class="player-art" id="playerArt"><svg><use href="#i-note"/></svg></div>
       <div class="player-info">
         <div class="player-track" id="playerTrack">Test Song</div>
-        <div class="player-artist" id="playerArtist">StradaOS</div>
+        <div class="player-artist" id="playerArtist">Demo Artist</div>
         <div class="player-time" id="playerTime">1:08 / 3:35</div>
         <div class="player-bar"><i id="playerBar"></i></div>
         <div class="player-controls">
@@ -678,9 +736,9 @@
     <div class="call-body">
       <div class="call-recent">
         <div class="sub-label">Recent</div>
-        <button class="call-contact" data-contact="Aleksa">Aleksa</button>
-        <button class="call-contact" data-contact="Home">Home</button>
-        <button class="call-contact" data-contact="Work">Work</button>
+        <button class="call-contact" data-contact="Aleksa"><b>Aleksa</b><span>+381 60 123 4567</span></button>
+        <button class="call-contact" data-contact="Home"><b>Home</b><span>+381 11 123 456</span></button>
+        <button class="call-contact" data-contact="Work"><b>Work</b><span>+381 11 987 654</span></button>
       </div>
       <div>
         <div class="call-number" id="callNumber">Enter number</div>
@@ -713,7 +771,7 @@
 
   <!-- SCREENSAVER -->
   <div class="saver" id="saver">
-    <div class="saver-brand">STRADA</div>
+    <div class="saver-brand">CAR_482</div>
     <div class="saver-time" id="saverTime">17:37</div>
     <div class="saver-date" id="saverDate">Thursday, 26 November</div>
     <div class="saver-hint">Tap anywhere to wake</div>
@@ -737,6 +795,7 @@
   <button data-state="error">Error</button>
   <span class="tb-sep"></span>
   <button data-action="incoming">Simulate call</button>
+  <button data-action="calldemo">Call demo</button>
   <button data-action="next">Next track</button>
   <button data-action="prev">Prev track</button>
   <button data-action="reset">Reset</button>
@@ -751,7 +810,12 @@
   const el = (id) => document.getElementById(id);
 
   let clock24 = true;
-  let volume = 70;
+  let defaultVolume = 70;
+  try {
+    const dv = Number(localStorage.getItem('strada.defaultVolume'));
+    if (Number.isFinite(dv) && dv >= 0 && dv <= 100) defaultVolume = dv;
+  } catch (e) {}
+  let volume = defaultVolume;
   let clockSet = false;
   let clockBase = new Date();
   let clockBaseAt = Date.now();
@@ -765,10 +829,11 @@
     dial: '',
     callTimer: null,
     callTarget: '',
+    interrupted: false,
   };
 
   const tracks = [
-    { title: 'Test Song', artist: 'StradaOS', dur: 215 },
+    { title: 'Test Song', artist: 'Demo Artist', dur: 215 },
     { title: 'Blinding Lights', artist: 'The Weeknd', dur: 200 },
     { title: 'Midnight City', artist: 'M83', dur: 243 },
     { title: 'Nocturne No. 2', artist: 'Chopin', dur: 275 },
@@ -796,12 +861,16 @@
     el('volumeRange').value = volume;
     el('volumeValue').textContent = volume + '%';
   }
-  function setVolume(v, show) {
+  function setVolume(v, show, saveDefault) {
     volume = Math.max(0, Math.min(100, Math.round(v)));
+    if (saveDefault) {
+      defaultVolume = volume;
+      try { localStorage.setItem('strada.defaultVolume', String(defaultVolume)); } catch (e) {}
+    }
     renderVolume();
     if (show) showVolume();
   }
-  el('volBtn').addEventListener('click', showVolume);
+  el('volBtn').addEventListener('click', () => { showScreen('settings'); showVolume(); });
   el('volDown').addEventListener('click', () => setVolume(volume - 5, true));
   el('volUp').addEventListener('click', () => setVolume(volume + 5, true));
 
@@ -905,8 +974,8 @@
     );
     const titles = {
       off: ['Bluetooth off', 'Tap to power on'],
-      ready: ['Pair from your phone', 'STRADA / PIN 0000 / Open Bluetooth on your phone'],
-      pairing: ['Waiting for phone', 'Select STRADA on your phone'],
+      ready: ['Pair from your phone', 'CAR_482 / PIN 0000 / Open Bluetooth on your phone'],
+      pairing: ['Waiting for phone', 'Select CAR_482 on your phone'],
       connected: ['Connected', "Aleksa's iPhone / A2DP / AVRCP"],
       playing: ['Playing', "Aleksa's iPhone / A2DP / AVRCP"],
       incoming: ['Incoming call', "Aleksa's iPhone / +381 60 123 4567"],
@@ -944,9 +1013,12 @@
 
     // audio card
     const t = tracks[state.track];
+    const paused = (m === 'incoming' || m === 'active') && state.interrupted;
     el('track').textContent = (connected && m !== 'off') ? t.title : 'Nothing playing';
-    el('artist').textContent = (connected && m !== 'off') ? t.artist : 'Radio, Bluetooth or USB';
-    el('time').textContent = (connected && m !== 'off') ? `${fmt(state.pos)} / ${fmt(t.dur)}` : '—';
+    el('artist').textContent = paused ? 'Paused for call'
+      : (connected && m !== 'off') ? t.artist : 'Radio, Bluetooth or USB';
+    el('time').textContent = paused ? 'music paused'
+      : (connected && m !== 'off') ? `${fmt(state.pos)} / ${fmt(t.dur)}` : '—';
     el('btnPlay').innerHTML = `<svg><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`;
     el('btnPlay').disabled = !connected;
     el('btnPlay').classList.toggle('off', !connected);
@@ -975,9 +1047,12 @@
 
   function go(next) {
     const prev = state.mode;
+    if (next === 'incoming' && prev === 'playing') state.interrupted = true;
+    if (next !== 'incoming' && next !== 'active') state.interrupted = false;
     if (next === 'playing' && prev !== 'playing') playerExpanded = true;
     if (next !== 'playing') playerExpanded = false;
-    if (next !== 'active') state.callTarget = '';
+    if (next !== 'active' && next !== 'incoming') state.callTarget = '';
+    if (next === 'active' && !state.callTarget) state.callTarget = '+381 60 123 4567';
     closeCallPanel();
     state.mode = next;
     if (next === 'pairing') {
@@ -1016,8 +1091,14 @@
       case 'pairing': go('ready'); break;
       case 'connected': state.playing = true; go('playing'); break;
       case 'playing': state.playing = false; go('connected'); break;
-      case 'incoming': go('active'); toast('Call contestada'); break;
-      case 'active': go('connected'); toast('Call finalizada'); break;
+      case 'incoming': go('active'); toast('Call answered'); break;
+      case 'active': {
+        const resume = state.interrupted;
+        state.interrupted = false;
+        go(resume ? 'playing' : 'connected');
+        toast(resume ? 'Call ended - music resumed' : 'Call ended');
+        break;
+      }
       case 'error': go('pairing'); break;
     }
   });
@@ -1027,7 +1108,13 @@
       case 'ready': go('pairing'); break;
       case 'connected':
       case 'playing': go('ready'); toast('Disconnected'); break;
-      case 'incoming': go('connected'); toast('Call rejected'); break;
+      case 'incoming': {
+        const resume = state.interrupted;
+        state.interrupted = false;
+        go(resume ? 'playing' : 'connected');
+        toast(resume ? 'Call rejected - music resumed' : 'Call rejected');
+        break;
+      }
       case 'active': openCallPanel(); break;
       case 'off':
       case 'error': showScreen('settings'); break;
@@ -1065,28 +1152,67 @@
     else render();
   });
 
+  // ── realistic call-interrupt demo ─────────────────────────
+  let demoTimers = [];
+  function callDemo() {
+    demoTimers.forEach(clearTimeout);
+    demoTimers = [];
+    if (!deviceConnected()) go('connected');
+    state.playing = true;
+    if (state.mode !== 'playing') go('playing');
+    toast('Music playing');
+    demoTimers.push(setTimeout(() => {
+      if (state.mode !== 'playing') return;
+      go('incoming');
+      toast('Incoming call - music paused');
+    }, 1600));
+    demoTimers.push(setTimeout(() => {
+      if (state.mode !== 'incoming') return;
+      go('active');
+      toast('Call answered');
+    }, 3800));
+    demoTimers.push(setTimeout(() => {
+      if (state.mode !== 'active') return;
+      state.interrupted = false;
+      go('playing');
+      toast('Call ended - music resumed');
+    }, 7000));
+  }
+
   // ── dock ───────────────────────────────────────────────────
   // ── app panels: Radio / Files / Settings ───────────────────
   let screen = 'home';
-  let radioFreq = 98.1;
   let radioOn = true;
   let radioMute = false;
   let radioSaveMode = false;
-  let presets = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  let radioAm = false;
+  let freqFm = 98.1;
+  let freqAm = 810;
+  let presetsFm = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  let presetsAm = [540, 630, 720, 810, 900, 990];
   try {
     const saved = JSON.parse(localStorage.getItem('strada.presets') || 'null');
-    if (Array.isArray(saved) && saved.length === 6) presets = saved;
+    if (Array.isArray(saved) && saved.length === 6) presetsFm = saved;
+    else if (saved && Array.isArray(saved.fm) && Array.isArray(saved.am)) {
+      presetsFm = saved.fm;
+      presetsAm = saved.am;
+    }
   } catch (e) {}
   let playerExpanded = false;
-  const RDS_NAMES = ['STRADA FM', 'Radio One', 'Top 40', 'Jazz FM', 'Rock 101', 'News 24'];
-  const RDS_GENRES = ['Pop music', 'News / Talk', 'Hits', 'Jazz', 'Rock', 'News'];
+  const RDS_NAMES = ['CAR_482 FM', 'Radio One', 'Top 40', 'Jazz FM', 'Rock 101', 'News 24'];
+
+  function radioFreq() { return radioAm ? freqAm : freqFm; }
+  function bandPresets() { return radioAm ? presetsAm : presetsFm; }
   function rdsSlot() {
-    let best = 0, bestD = 99;
+    let best = 0, bestD = 9999;
     for (let i = 0; i < 6; i++) {
-      const d = Math.abs(radioFreq - presets[i]);
+      const d = Math.abs(freqFm - presetsFm[i]);
       if (d < bestD) { bestD = d; best = i; }
     }
     return best;
+  }
+  function savePresets() {
+    try { localStorage.setItem('strada.presets', JSON.stringify({ fm: presetsFm, am: presetsAm })); } catch (e) {}
   }
   const PANELS = { radio: el('radioPanel'), files: el('filesPanel'), settings: el('settingsPanel') };
 
@@ -1112,46 +1238,55 @@
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', showHome));
 
   function renderRadio() {
-    el('radioFreq').textContent = radioOn ? radioFreq.toFixed(1) + ' MHz' : 'OFF';
+    el('radioFreq').textContent = !radioOn ? 'OFF'
+      : radioAm ? Math.round(freqAm) + ' kHz' : freqFm.toFixed(1) + ' MHz';
     el('radioFreq').style.color = radioOn ? 'var(--text)' : 'var(--muted)';
-    el('radioStatus').textContent = radioSaveMode ? 'Tap 1-6 to save this station'
-      : !radioOn ? 'Radio off' : radioMute ? 'Muted' : 'Stereo / 5 bars';
-    el('radioStatus').style.color = radioSaveMode ? 'var(--accent)'
-      : radioOn && !radioMute ? 'var(--green)' : 'var(--muted)';
-    el('radioPower').textContent = radioOn ? 'Power off' : 'Power on';
-    el('radioMute').textContent = radioMute ? 'Unmute' : 'Mute';
-    el('radioSave').textContent = radioSaveMode ? 'Cancel save' : 'Save preset';
-    if (radioOn) {
-      const slot = rdsSlot();
-      el('radioRds').textContent = `RDS - ${RDS_NAMES[slot]} - ${RDS_GENRES[slot]}`;
-    } else {
-      el('radioRds').textContent = 'RDS - off';
-    }
+    el('radioHint').textContent = radioSaveMode ? 'Tap 1-6 to save this station'
+      : !radioOn ? 'Radio off' : radioMute ? 'Muted' : '';
+    el('radioHint').style.color = radioSaveMode ? 'var(--accent)' : 'var(--muted)';
+    el('radioRds').textContent = !radioOn ? 'RDS - off'
+      : radioAm ? 'AM band - RDS not available'
+      : 'RDS - ' + RDS_NAMES[rdsSlot()];
+    el('bandFm').classList.toggle('sel', !radioAm);
+    el('bandAm').classList.toggle('sel', radioAm);
+    el('radioSave').classList.toggle('sel', radioSaveMode);
+    el('muteIcon').setAttribute('href', radioMute ? '#i-volume' : '#i-mute');
     document.querySelectorAll('#radioPresets [data-preset]').forEach(b => {
       const i = Number(b.dataset.preset);
-      b.classList.toggle('sel', radioOn && Math.abs(radioFreq - presets[i]) < 0.05);
+      b.classList.toggle('sel', radioOn && Math.abs(radioFreq() - bandPresets()[i]) < (radioAm ? 1 : 0.05));
     });
   }
 
   document.querySelectorAll('[data-radio]').forEach(b => b.addEventListener('click', () => {
     if (!radioOn) return;
-    radioFreq += Number(b.dataset.radio);
-    if (radioFreq > 108) radioFreq = 87.5;
-    if (radioFreq < 87.5) radioFreq = 108;
+    let step = Number(b.dataset.radio);
+    if (radioAm) step = Math.sign(step) * (Math.abs(step) === 0.1 ? 10 : 100);
+    if (radioAm) {
+      freqAm += step;
+      if (freqAm > 1700) freqAm = 530;
+      if (freqAm < 530) freqAm = 1700;
+    } else {
+      freqFm += step;
+      if (freqFm > 108) freqFm = 87.5;
+      if (freqFm < 87.5) freqFm = 108;
+    }
     renderRadio();
   }));
   document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
     const i = Number(b.dataset.preset);
     if (radioSaveMode) {
-      presets[i] = radioFreq;
-      try { localStorage.setItem('strada.presets', JSON.stringify(presets)); } catch (e) {}
+      bandPresets()[i] = radioFreq();
+      savePresets();
       radioSaveMode = false;
     } else {
       radioOn = true;
-      radioFreq = presets[i];
+      if (radioAm) freqAm = presetsAm[i];
+      else freqFm = presetsFm[i];
     }
     renderRadio();
   }));
+  el('bandFm').addEventListener('click', () => { radioAm = false; radioSaveMode = false; renderRadio(); });
+  el('bandAm').addEventListener('click', () => { radioAm = true; radioSaveMode = false; renderRadio(); });
   el('radioPower').addEventListener('click', () => {
     radioOn = !radioOn;
     if (!radioOn) radioSaveMode = false;
@@ -1160,26 +1295,149 @@
   el('radioMute').addEventListener('click', () => { radioMute = !radioMute; renderRadio(); });
   el('radioSave').addEventListener('click', () => { radioSaveMode = !radioSaveMode; renderRadio(); });
 
+  // ── media demo helpers ────────────────────────────────────
+  function svgData(svg) {
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+  function photoSunset() {
+    return svgData('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#ff8a4c"/><stop offset="1" stop-color="#25121c"/></linearGradient></defs>' +
+      '<rect width="320" height="180" fill="url(#g)"/><circle cx="235" cy="60" r="30" fill="#ffe08a"/>' +
+      '<rect y="138" width="320" height="42" fill="#0f0b12" opacity=".7"/>' +
+      '<text x="16" y="30" fill="#fff" font-family="sans-serif" font-size="16" font-weight="700">SUNSET</text></svg>');
+  }
+  function photoGrid() {
+    return svgData('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180">' +
+      '<rect width="320" height="180" fill="#111827"/>' +
+      '<g stroke="#fe3211" stroke-width="2">' +
+      '<path d="M0 40h320M0 80h320M0 120h320M40 0v180M80 0v180M120 0v180M160 0v180M200 0v180M240 0v180M280 0v180"/></g>' +
+      '<circle cx="160" cy="90" r="46" fill="none" stroke="#2dbe6c" stroke-width="4"/>' +
+      '<text x="16" y="170" fill="#c5c8ce" font-family="sans-serif" font-size="12">PHOTO GRID</text></svg>');
+  }
+  function makeDemoWav() {
+    const sr = 8000, notes = [262, 330, 392, 523, 392, 330, 294, 349, 440, 587, 440, 349];
+    const dur = 0.28, total = Math.floor(sr * dur * notes.length);
+    const buf = new ArrayBuffer(44 + total), dv = new DataView(buf);
+    const str = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); dv.setUint32(4, 36 + total, true); str(8, 'WAVEfmt ');
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr, true); dv.setUint16(32, 1, true);
+    dv.setUint16(34, 8, true); str(36, 'data'); dv.setUint32(40, total, true);
+    for (let i = 0; i < total; i++) {
+      const note = notes[Math.floor(i / (sr * dur))];
+      const t = i / sr, env = Math.min(1, (i % (sr * dur)) / (sr * 0.02));
+      const v = 0.22 * env * Math.sin(2 * Math.PI * note * t);
+      dv.setUint8(44 + i, Math.max(0, Math.min(255, 128 + v * 127)));
+    }
+    let bin = '';
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  const demoAudio = new Audio(makeDemoWav());
+  demoAudio.loop = true;
+
   // ── virtual filesystem (browser demo) ─────────────────────
   const fsRoot = {
     name: 'media', type: 'dir', children: [
       { name: 'Music', type: 'dir', children: [
-        { name: 'README.txt', type: 'file', content: 'Music folder.\n\nThe stock 7010B plays MP3, WAV, FLAC, APE, OGG, WMA, AAC and more.\nThe emulator only lists files; it does not decode audio.' }
+        { name: 'sunset_drive.wav', type: 'file', kind: 'music', dur: 14, size: 317540, content: '' },
+        { name: 'night_loop.wav', type: 'file', kind: 'music', dur: 10, size: 211708, content: '' },
+        { name: 'README.txt', type: 'file', content: 'Music folder.\n\nClick a WAV file to play it. The browser demo synthesizes a short test tone; MP3/FLAC/OGG would use the stock decoders on hardware.' }
       ]},
       { name: 'Photos', type: 'dir', children: [
-        { name: 'README.txt', type: 'file', content: 'Photos folder.\n\nThe stock firmware uses CedarX / BMP / JPEG / PNG decoders.\nThe emulator only lists files; it does not render images.' }
+        { name: 'sunset.bmp', type: 'file', kind: 'photo', img: photoSunset(), size: 172854, content: '' },
+        { name: 'grid.bmp', type: 'file', kind: 'photo', img: photoGrid(), size: 172854, content: '' },
+        { name: 'README.txt', type: 'file', content: 'Photos folder.\n\nClick a BMP file to view it. PNG and JPG are also supported by the native emulator.' }
       ]},
       { name: 'System', type: 'dir', children: [
-        { name: 'info.txt', type: 'file', content: 'Build: Strada 7010B\nTarget: Allwinner F1C200s class, 800x480\nBT link: 55 AA LEN CMD DATA CHK\nBT name: STRADA' }
+        { name: 'info.txt', type: 'file', content: 'Build: CAR_482 7010B\nTarget: Allwinner F1C200s class, 800x480\nBT link: 55 AA LEN CMD DATA CHK\nBT name: CAR_482' }
       ]},
       { name: 'notes.txt', type: 'file', content: 'Test notes for the 7010B file browser.\n\n- Radio and Files are real screens now, not placeholders.\n- This text is loaded by the preview panel.\n- Use the Up button to leave this folder.' },
-      { name: 'README.txt', type: 'file', content: 'Strada 7010B media folder\n=========================\n\nThis is the file-browser demo root used by the browser test UI.\nOn the real radio, replace it with /media, /mnt or the USB/SD mount.' },
+      { name: 'README.txt', type: 'file', content: 'CAR_482 7010B media folder\n=========================\n\nThis is the file-browser demo root used by the browser test UI.\nOn the real radio, replace it with /media, /mnt or the USB/SD mount.' },
     ]
   };
   let fileStack = [fsRoot];
   let storageAvailable = true;
+  let fileFilter = 'all';
+  let miniItem = null, miniElapsed = 0, miniPlaying = false, miniTimer = null;
 
   function fileSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+
+  function setFilter(name) {
+    fileFilter = name;
+    document.querySelectorAll('[data-filter]').forEach(b =>
+      b.classList.toggle('sel', b.dataset.filter === name));
+    if (name === 'music' || name === 'photos') {
+      const want = name === 'music' ? 'Music' : 'Photos';
+      const folder = fsRoot.children.find(c => c.type === 'dir' && c.name === want);
+      fileStack = folder ? [fsRoot, folder] : [fsRoot];
+    } else {
+      fileStack = [fsRoot];
+    }
+    renderFiles();
+  }
+
+  function filtered(dir) {
+    if (fileFilter === 'all') return dir.children;
+    return dir.children.filter(i => i.type === 'file' &&
+      (fileFilter === 'music' ? i.kind === 'music' : i.kind === 'photo'));
+  }
+
+  function previewClose() {
+    el('filePreview').classList.remove('show');
+  }
+
+  function showTextPreview(item) {
+    el('filePreviewImg').classList.remove('show');
+    el('filePreviewText').style.display = '';
+    el('filePreviewTitle').textContent = item.name;
+    el('filePreviewText').textContent = item.content || '';
+    el('filePreview').classList.add('show');
+  }
+
+  function showPhotoPreview(item) {
+    el('filePreviewText').style.display = 'none';
+    el('filePreviewTitle').textContent = item.name;
+    el('filePreviewImg').src = item.img;
+    el('filePreviewImg').classList.add('show');
+    el('filePreview').classList.add('show');
+  }
+
+  function miniRender() {
+    el('miniTitle').textContent = miniItem ? miniItem.name : '';
+    const d = miniItem ? miniItem.dur : 1;
+    el('miniFill').style.width = Math.min(100, (miniElapsed / d) * 100) + '%';
+    el('miniIcon').setAttribute('href', miniPlaying ? '#i-pause' : '#i-play');
+  }
+
+  function startMusic(item) {
+    miniItem = item;
+    miniElapsed = 0;
+    miniPlaying = true;
+    demoAudio.currentTime = 0;
+    demoAudio.play().catch(() => {});
+    el('miniPlayer').classList.add('show');
+    miniRender();
+    clearInterval(miniTimer);
+    miniTimer = setInterval(() => {
+      if (!miniItem || !miniPlaying) return;
+      if (miniElapsed < miniItem.dur) miniElapsed++;
+      if (miniElapsed >= miniItem.dur) { miniElapsed = miniItem.dur; miniPlaying = false; demoAudio.pause(); }
+      miniRender();
+    }, 1000);
+    toast('Playing ' + item.name);
+  }
+
+  function stopMusic() {
+    miniPlaying = false;
+    demoAudio.pause();
+    demoAudio.currentTime = 0;
+    clearInterval(miniTimer);
+    el('miniPlayer').classList.remove('show');
+    miniItem = null;
+  }
 
   function renderFiles() {
     if (!storageAvailable) {
@@ -1188,7 +1446,7 @@
       el('filesPath').textContent = 'No USB or SD card connected';
       el('filesList').innerHTML = '<div class="files-empty"><b>No USB or SD card connected</b><span>Insert a USB drive or SD card, then press Refresh.</span></div>';
       el('filesInfo').textContent = '0 items';
-      el('filePreview').classList.remove('show');
+      previewClose();
       return;
     }
     el('filesStatus').textContent = 'USB / SD';
@@ -1197,36 +1455,62 @@
     const path = 'media' + fileStack.slice(1).map(d => '/' + d.name).join('');
     el('filesPath').textContent = path;
     el('filesList').innerHTML = '';
-    if (dir.children.length === 0) {
-      el('filesList').innerHTML = '<div class="files-empty"><b>USB/SD is empty</b><span>Copy files to the drive and press Refresh.</span></div>';
+    const items = filtered(dir);
+    if (items.length === 0) {
+      const title = fileFilter === 'music' ? 'No music files'
+        : fileFilter === 'photos' ? 'No photos' : 'USB/SD is empty';
+      const hint = fileFilter === 'music' ? 'Copy MP3, WAV, FLAC or OGG files to the Music folder.'
+        : fileFilter === 'photos' ? 'Copy BMP, PNG or JPG files to the Photos folder.'
+        : 'Copy files to the drive and press Refresh.';
+      el('filesList').innerHTML = `<div class="files-empty"><b>${title}</b><span>${hint}</span></div>`;
       el('filesInfo').textContent = '0 items';
       return;
     }
-    dir.children.forEach(item => {
+    items.forEach(item => {
       const row = document.createElement('button');
       row.className = 'file-row';
-      row.textContent = (item.type === 'dir' ? '📁  ' : '📄  ') + item.name;
+      const icon = item.type === 'dir' ? '📁' : item.kind === 'music' ? '🎵' : item.kind === 'photo' ? '🖼️' : '📄';
+      row.textContent = icon + '  ' + item.name;
       if (item.type === 'file') {
         const size = document.createElement('span');
         size.className = 'size';
-        size.textContent = fileSize(item.content.length);
+        size.textContent = fileSize(item.size || (item.content || '').length);
         row.appendChild(size);
       }
       row.addEventListener('click', () => {
         if (item.type === 'dir') { fileStack.push(item); renderFiles(); }
-        else { el('filePreviewTitle').textContent = item.name; el('filePreviewText').textContent = item.content; el('filePreview').classList.add('show'); }
+        else if (item.kind === 'music') { startMusic(item); }
+        else if (item.kind === 'photo') { showPhotoPreview(item); }
+        else { showTextPreview(item); }
       });
       el('filesList').appendChild(row);
     });
-    el('filesInfo').textContent = `${dir.children.length} items / ${path}`;
+    el('filesInfo').textContent = `${items.length} items / ${path}`;
   }
 
-  el('filesUp').addEventListener('click', () => { if (fileStack.length > 1) { fileStack.pop(); renderFiles(); } });
+  document.querySelectorAll('[data-filter]').forEach(b =>
+    b.addEventListener('click', () => setFilter(b.dataset.filter)));
+
+  el('filesUp').addEventListener('click', () => {
+    if (fileStack.length > 1) {
+      fileStack.pop();
+      if (fileStack.length === 1 && fileFilter !== 'all') setFilter('all');
+      else renderFiles();
+    }
+  });
   el('filesRefresh').addEventListener('click', () => {
     if (!storageAvailable) toast('No USB or SD card connected');
     renderFiles();
   });
-  document.querySelectorAll('[data-preview-close]').forEach(b => b.addEventListener('click', () => el('filePreview').classList.remove('show')));
+  el('miniToggle').addEventListener('click', () => {
+    if (!miniItem) return;
+    miniPlaying = !miniPlaying;
+    if (miniPlaying) demoAudio.play().catch(() => {});
+    else demoAudio.pause();
+    miniRender();
+  });
+  el('miniStop').addEventListener('click', stopMusic);
+  document.querySelectorAll('[data-preview-close]').forEach(b => b.addEventListener('click', previewClose));
 
   // ── settings ──────────────────────────────────────────────
   function setAccent(hex) {
@@ -1244,23 +1528,28 @@
   el('clock24').addEventListener('click', () => setClock(true));
   el('clock12').addEventListener('click', () => setClock(false));
   el('volumeRange').addEventListener('input', e => {
-    setVolume(Number(e.target.value), true);
+    setVolume(Number(e.target.value), true, true);
   });
-  function applyClockInputs() {
-    const [y, m, d] = el('setDate').value.split('-').map(Number);
-    const [hh, mm] = el('setTime').value.split(':').map(Number);
-    if (!y || !m || !d) return;
-    clockBase = new Date(y, m - 1, d, hh || 0, mm || 0, 0);
+  function calAdjust(field, delta) {
+    const d = currentClock();
+    if (field === 'y') d.setFullYear(d.getFullYear() + delta);
+    else if (field === 'm') d.setMonth(d.getMonth() + delta);
+    else if (field === 'd') d.setDate(d.getDate() + delta);
+    else if (field === 'h') d.setHours(d.getHours() + delta);
+    else if (field === 'n') d.setMinutes(d.getMinutes() + delta);
+    clockBase = d;
     clockBaseAt = Date.now();
     clockSet = true;
     tickClock();
   }
-  el('setDate').addEventListener('change', applyClockInputs);
-  el('setTime').addEventListener('change', applyClockInputs);
+  document.querySelectorAll('[data-cal]').forEach(b => b.addEventListener('click', () => {
+    const code = b.dataset.cal;
+    calAdjust(code[0], code[1] === '-' ? -1 : 1);
+  }));
   el('settingsReset').addEventListener('click', () => {
     setAccent('#FE3211');
     setClock(true);
-    setVolume(70, false);
+    setVolume(70, false, true);
     setTheme(false);
     setNightDim(false);
     setScreensaver(true);
@@ -1355,8 +1644,8 @@
   function syncClockInputs() {
     const d = currentClock();
     const p = (n) => String(n).padStart(2, '0');
-    el('setDate').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-    el('setTime').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
+    el('dateValue').textContent = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    el('timeValue').textContent = `${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
   function tickClock() {
@@ -1406,6 +1695,7 @@
     b.addEventListener('click', () => {
       const a = b.dataset.action;
       if (a === 'incoming') go('incoming');
+      else if (a === 'calldemo') callDemo();
       else if (a === 'next') el('btnNext').click();
       else if (a === 'prev') el('btnPrev').click();
       else if (a === 'reset') go('connected');
@@ -1434,8 +1724,10 @@
     showScreensaver: showSaver,
     setVolume: (v) => setVolume(v, false),
     showVolume: showVolume,
+    callDemo: callDemo,
     action: (a) => {
       if (a === 'incoming') go('incoming');
+      else if (a === 'calldemo') callDemo();
       else if (a === 'next') el('btnNext').click();
       else if (a === 'prev') el('btnPrev').click();
       else if (a === 'reset') go('connected');

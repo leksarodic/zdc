@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#include "audio_player.h"
+
 #include "theme.h"
 
 #define C_CARD    theme_color(0x1E2128)
@@ -116,101 +118,139 @@ static lv_obj_t *make_panel(lv_obj_t *parent) {
 /* ── Radio ───────────────────────────────────────────────────── */
 
 static lv_obj_t *radio_freq_lbl;
-static lv_obj_t *radio_status_lbl;
+static lv_obj_t *radio_hint_lbl;
 static lv_obj_t *radio_rds_lbl;
 static lv_obj_t *radio_power_lbl;
 static lv_obj_t *radio_mute_lbl;
 static lv_obj_t *radio_save_lbl;
+static lv_obj_t *radio_fm_lbl;
+static lv_obj_t *radio_am_lbl;
 static lv_obj_t *radio_preset_btns[6];
 
-static double radio_freq = 98.1;
 static bool radio_on = true;
 static bool radio_mute = false;
-
-static double presets[6] = {87.5, 90.1, 94.3, 98.1, 101.7, 104.9};
+static bool radio_am = false;
 static bool radio_save_mode = false;
 
+static double radio_fm_freq = 98.1;
+static double radio_am_freq = 810.0;
+
+static double presets_fm[6] = {87.5, 90.1, 94.3, 98.1, 101.7, 104.9};
+static double presets_am[6] = {540, 630, 720, 810, 900, 990};
+
 static const char *RDS_NAMES[6] = {
-    "STRADA FM", "Radio One", "Top 40", "Jazz FM", "Rock 101", "News 24"
-};
-static const char *RDS_GENRES[6] = {
-    "Pop music", "News / Talk", "Hits", "Jazz", "Rock", "News"
+    "CAR_482 FM", "Radio One", "Top 40", "Jazz FM", "Rock 101", "News 24"
 };
 
-static int rds_slot(void) {
-    int best = 0;
-    double best_d = 99.0;
-    for (int i = 0; i < 6; i++) {
-        double d = fabs(radio_freq - presets[i]);
-        if (d < best_d) { best_d = d; best = i; }
-    }
-    return best;
+static double radio_freq(void) {
+    return radio_am ? radio_am_freq : radio_fm_freq;
+}
+
+static double *band_presets(void) {
+    return radio_am ? presets_am : presets_fm;
 }
 
 static void presets_load(void) {
     FILE *f = fopen("strada.conf", "r");
     if (!f) return;
-    for (int i = 0; i < 6; i++) {
-        double v;
-        if (fscanf(f, "%lf", &v) != 1) break;
-        if (v >= 87.5 && v <= 108.0) presets[i] = v;
-    }
+    double v[12];
+    int n = 0;
+    while (n < 12 && fscanf(f, "%lf", &v[n]) == 1) n++;
     fclose(f);
+    for (int i = 0; i < 6 && i < n; i++) {
+        if (v[i] >= 87.5 && v[i] <= 108.0) presets_fm[i] = v[i];
+    }
+    for (int i = 0; i < 6; i++) {
+        int src = 6 + i;
+        if (src < n && v[src] >= 520.0 && v[src] <= 1710.0) presets_am[i] = v[src];
+    }
 }
 
 static void presets_save(void) {
     FILE *f = fopen("strada.conf", "w");
     if (!f) return;
-    for (int i = 0; i < 6; i++) fprintf(f, "%.1f\n", presets[i]);
+    for (int i = 0; i < 6; i++) fprintf(f, "%.1f\n", presets_fm[i]);
+    for (int i = 0; i < 6; i++) fprintf(f, "%.1f\n", presets_am[i]);
     fclose(f);
+}
+
+static int rds_slot(void) {
+    int best = 0;
+    double best_d = 9999.0;
+    for (int i = 0; i < 6; i++) {
+        double d = fabs(radio_fm_freq - presets_fm[i]);
+        if (d < best_d) { best_d = d; best = i; }
+    }
+    return best;
 }
 
 static void radio_update(void) {
     char buf[48];
-    if (radio_on) snprintf(buf, sizeof(buf), "%.1f MHz", radio_freq);
-    else snprintf(buf, sizeof(buf), "OFF");
+    if (!radio_on) snprintf(buf, sizeof(buf), "OFF");
+    else if (radio_am) snprintf(buf, sizeof(buf), "%.0f kHz", radio_am_freq);
+    else snprintf(buf, sizeof(buf), "%.1f MHz", radio_fm_freq);
     lv_label_set_text(radio_freq_lbl, buf);
     lv_obj_set_style_text_color(radio_freq_lbl, col(radio_on ? C_TEXT : C_MUTED), 0);
 
-    if (radio_save_mode) lv_label_set_text(radio_status_lbl, "Tap 1-6 to save this station");
-    else if (!radio_on) lv_label_set_text(radio_status_lbl, "Radio off");
-    else if (radio_mute) lv_label_set_text(radio_status_lbl, "Muted");
-    else lv_label_set_text(radio_status_lbl, "Stereo / 5 bars");
-    lv_obj_set_style_text_color(radio_status_lbl, col(radio_save_mode ? 0xFE3211 : (radio_on ? C_GREEN : C_MUTED)), 0);
+    if (radio_save_mode) lv_label_set_text(radio_hint_lbl, "Tap 1-6 to save this station");
+    else if (!radio_on) lv_label_set_text(radio_hint_lbl, "Radio off");
+    else if (radio_mute) lv_label_set_text(radio_hint_lbl, "Muted");
+    else lv_label_set_text(radio_hint_lbl, "");
+    lv_obj_set_style_text_color(radio_hint_lbl,
+                                col(radio_save_mode ? 0xFE3211 : (radio_on ? C_MUTED : C_MUTED)), 0);
 
-    lv_label_set_text(radio_power_lbl, radio_on ? "Power off" : "Power on");
-    lv_label_set_text(radio_mute_lbl, radio_mute ? "Unmute" : "Mute");
-    lv_label_set_text(radio_save_lbl, radio_save_mode ? "Cancel save" : "Save preset");
-
-    if (radio_rds_lbl) {
-        if (radio_on) {
-            int slot = rds_slot();
-            lv_label_set_text_fmt(radio_rds_lbl, "RDS  -  %s  -  %s",
-                                  RDS_NAMES[slot], RDS_GENRES[slot]);
-        } else {
-            lv_label_set_text(radio_rds_lbl, "RDS  -  off");
-        }
+    if (!radio_on) {
+        lv_label_set_text(radio_rds_lbl, "RDS  -  off");
+    } else if (radio_am) {
+        lv_label_set_text(radio_rds_lbl, "AM band  -  RDS not available");
+    } else {
+        int slot = rds_slot();
+        lv_label_set_text_fmt(radio_rds_lbl, "RDS  -  %s", RDS_NAMES[slot]);
     }
 
+    lv_label_set_text(radio_mute_lbl, radio_mute ? LV_SYMBOL_VOLUME_MAX : LV_SYMBOL_MUTE);
+
+    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_save_lbl),
+                              col(radio_save_mode ? 0xFE3211 : C_INNER), 0);
+    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_fm_lbl), col(radio_am ? C_INNER : C_BTN), 0);
+    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_am_lbl), col(radio_am ? C_BTN : C_INNER), 0);
+    lv_obj_set_style_text_color(radio_fm_lbl, col(radio_am ? C_MUTED : C_TEXT), 0);
+    lv_obj_set_style_text_color(radio_am_lbl, col(radio_am ? C_TEXT : C_MUTED), 0);
+
     for (int i = 0; i < 6; i++) {
-        bool selected = radio_on && fabs(radio_freq - presets[i]) < 0.05;
+        double *p = band_presets();
+        bool selected = radio_on && fabs(radio_freq() - p[i]) < (radio_am ? 1.0 : 0.05);
         lv_obj_set_style_border_width(radio_preset_btns[i], selected ? 2 : 0, 0);
         lv_obj_set_style_border_color(radio_preset_btns[i], col(0xFE3211), 0);
     }
 }
 
-static void radio_tune(double delta) {
+static void radio_step(double fm_delta, double am_delta) {
     if (!radio_on) return;
-    radio_freq += delta;
-    if (radio_freq > 108.0) radio_freq = 87.5;
-    if (radio_freq < 87.5) radio_freq = 108.0;
+    if (radio_am) {
+        radio_am_freq += am_delta;
+        if (radio_am_freq > 1700.0) radio_am_freq = 530.0;
+        if (radio_am_freq < 530.0) radio_am_freq = 1700.0;
+    } else {
+        radio_fm_freq += fm_delta;
+        if (radio_fm_freq > 108.0) radio_fm_freq = 87.5;
+        if (radio_fm_freq < 87.5) radio_fm_freq = 108.0;
+    }
     radio_update();
 }
 
-static void radio_tune_down_cb(lv_event_t *e) { (void)e; radio_tune(-0.1); }
-static void radio_tune_up_cb(lv_event_t *e) { (void)e; radio_tune(+0.1); }
-static void radio_seek_down_cb(lv_event_t *e) { (void)e; radio_tune(-1.0); }
-static void radio_seek_up_cb(lv_event_t *e) { (void)e; radio_tune(+1.0); }
+static void radio_tune_down_cb(lv_event_t *e) { (void)e; radio_step(-0.1, -10.0); }
+static void radio_tune_up_cb(lv_event_t *e) { (void)e; radio_step(+0.1, +10.0); }
+static void radio_seek_down_cb(lv_event_t *e) { (void)e; radio_step(-1.0, -100.0); }
+static void radio_seek_up_cb(lv_event_t *e) { (void)e; radio_step(+1.0, +100.0); }
+
+static void radio_band_cb(lv_event_t *e) {
+    bool am = (bool)(intptr_t)lv_event_get_user_data(e);
+    if (radio_am == am) return;
+    radio_am = am;
+    radio_save_mode = false;
+    radio_update();
+}
 
 static void radio_power_cb(lv_event_t *e) {
     (void)e;
@@ -228,13 +268,15 @@ static void radio_mute_cb(lv_event_t *e) {
 static void radio_preset_cb(lv_event_t *e) {
     int idx = (int)(intptr_t)lv_event_get_user_data(e);
     if (idx < 0 || idx >= 6) return;
+    double *p = band_presets();
     if (radio_save_mode) {
-        presets[idx] = radio_freq;
-        presets_save();
+        p[idx] = radio_freq();
         radio_save_mode = false;
+        presets_save();
     } else {
         radio_on = true;
-        radio_freq = presets[idx];
+        if (radio_am) radio_am_freq = p[idx];
+        else radio_fm_freq = p[idx];
     }
     radio_update();
 }
@@ -247,32 +289,47 @@ static void radio_save_cb(lv_event_t *e) {
 
 static void build_radio(lv_obj_t *parent) {
     radio_panel = make_panel(parent);
-    panel_header(radio_panel, "RADIO", "FM / STEREO");
+    panel_header(radio_panel, "RADIO", "FM / AM");
 
-    radio_freq_lbl = label(radio_panel, "98.1 MHz", 0, 34, 776, 60,
+    radio_freq_lbl = label(radio_panel, "98.1 MHz", 0, 30, 776, 64,
                            &lv_font_montserrat_40, C_TEXT, LV_TEXT_ALIGN_CENTER);
-    radio_status_lbl = label(radio_panel, "Stereo / 5 bars", 0, 94, 776, 16,
-                             &lv_font_montserrat_12, C_GREEN, LV_TEXT_ALIGN_CENTER);
-    radio_rds_lbl = label(radio_panel, "RDS  -  off", 0, 112, 776, 14,
+    radio_hint_lbl = label(radio_panel, "", 0, 94, 776, 14,
+                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
+    radio_rds_lbl = label(radio_panel, "RDS  -  off", 0, 110, 776, 14,
                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    button(radio_panel, "- 0.1", 40, 134, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_down_cb, NULL);
-    button(radio_panel, "Seek -", 180, 134, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_down_cb, NULL);
-    button(radio_panel, "Seek +", 466, 134, 130, 40, C_BTN, &lv_font_montserrat_14, radio_seek_up_cb, NULL);
-    button(radio_panel, "+ 0.1", 606, 134, 130, 40, C_INNER, &lv_font_montserrat_14, radio_tune_up_cb, NULL);
+    lv_obj_t *fm = button(radio_panel, "FM", 596, 34, 54, 28, C_BTN,
+                          &lv_font_montserrat_12, NULL, &radio_fm_lbl);
+    lv_obj_add_event_cb(fm, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)0);
+    lv_obj_t *am = button(radio_panel, "AM", 656, 34, 54, 28, C_INNER,
+                          &lv_font_montserrat_12, NULL, &radio_am_lbl);
+    lv_obj_add_event_cb(am, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)1);
+    (void)fm; (void)am;
 
-    label(radio_panel, "PRESETS", 40, 180, 300, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(radio_panel, LV_SYMBOL_LEFT, 96, 132, 84, 42, C_INNER,
+           &lv_font_montserrat_18, radio_tune_down_cb, NULL);
+    button(radio_panel, LV_SYMBOL_PREV, 204, 132, 84, 42, C_BTN,
+           &lv_font_montserrat_16, radio_seek_down_cb, NULL);
+    button(radio_panel, LV_SYMBOL_NEXT, 488, 132, 84, 42, C_BTN,
+           &lv_font_montserrat_16, radio_seek_up_cb, NULL);
+    button(radio_panel, LV_SYMBOL_RIGHT, 596, 132, 84, 42, C_INNER,
+           &lv_font_montserrat_18, radio_tune_up_cb, NULL);
+
+    label(radio_panel, "PRESETS", 40, 182, 300, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 6; i++) {
         char b[8];
         snprintf(b, sizeof(b), "%d", i + 1);
-        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 198, 104, 32, C_INNER,
+        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 200, 104, 32, C_INNER,
                                       &lv_font_montserrat_12, NULL, NULL);
         lv_obj_add_event_cb(radio_preset_btns[i], radio_preset_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
-    button(radio_panel, "Power off", 40, 244, 150, 34, 0xFE3211, &lv_font_montserrat_12, radio_power_cb, &radio_power_lbl);
-    button(radio_panel, "Save preset", 310, 244, 160, 34, C_INNER, &lv_font_montserrat_12, radio_save_cb, &radio_save_lbl);
-    button(radio_panel, "Mute", 586, 244, 150, 34, C_INNER, &lv_font_montserrat_12, radio_mute_cb, &radio_mute_lbl);
+    button(radio_panel, LV_SYMBOL_POWER, 120, 244, 90, 34, 0xFE3211,
+           &lv_font_montserrat_18, radio_power_cb, &radio_power_lbl);
+    button(radio_panel, LV_SYMBOL_SAVE, 328, 244, 120, 34, C_INNER,
+           &lv_font_montserrat_16, radio_save_cb, &radio_save_lbl);
+    button(radio_panel, LV_SYMBOL_MUTE, 566, 244, 90, 34, C_INNER,
+           &lv_font_montserrat_16, radio_mute_cb, &radio_mute_lbl);
 
     presets_load();
     radio_update();
@@ -290,18 +347,54 @@ typedef struct {
     long size;
 } file_entry_t;
 
+typedef enum { FILTER_ALL = 0, FILTER_MUSIC = 1, FILTER_PHOTOS = 2 } file_filter_t;
+
 static char file_root[STRADA_PATH_MAX] = "media";
 static char file_cwd[STRADA_PATH_MAX] = "";
 static file_entry_t file_entries[FILE_MAX];
 static int file_entry_count = 0;
+static file_filter_t file_filter = FILTER_ALL;
 
 static lv_obj_t *files_path_lbl;
 static lv_obj_t *files_status_lbl;
 static lv_obj_t *files_info_lbl;
 static lv_obj_t *files_list;
+static lv_obj_t *file_filter_btns[3];
 static lv_obj_t *file_preview;
 static lv_obj_t *file_preview_title;
 static lv_obj_t *file_preview_text;
+static lv_obj_t *file_preview_img;
+static char preview_src[STRADA_PATH_MAX + 4];
+
+static lv_obj_t *music_box;
+static lv_obj_t *music_title;
+static lv_obj_t *music_bar;
+static lv_obj_t *music_play_lbl;
+static lv_timer_t *music_timer;
+static int music_duration = 0;
+static int music_elapsed = 0;
+static bool music_playing = false;
+static bool music_real = false;
+
+static bool ext_in(const char *name, const char *const *exts) {
+    const char *dot = strrchr(name, '.');
+    if (!dot) return false;
+    dot++;
+    for (int i = 0; exts[i]; i++) {
+        if (!strcasecmp(dot, exts[i])) return true;
+    }
+    return false;
+}
+
+static bool is_music(const char *name) {
+    static const char *const exts[] = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma", NULL};
+    return ext_in(name, exts);
+}
+
+static bool is_photo(const char *name) {
+    static const char *const exts[] = {"png", "jpg", "jpeg", "bmp", "gif", NULL};
+    return ext_in(name, exts);
+}
 
 static int file_cmp(const void *a, const void *b) {
     const file_entry_t *x = a, *y = b;
@@ -327,10 +420,38 @@ static void show_preview(const file_entry_t *ent) {
         lv_obj_set_size(file_preview_text, 680, 160);
         lv_obj_set_style_text_font(file_preview_text, &lv_font_montserrat_10, 0);
         lv_obj_set_style_text_color(file_preview_text, col(C_SOFT), 0);
+
+        file_preview_img = lv_image_create(file_preview);
+        lv_obj_set_pos(file_preview_img, 18, 44);
+        lv_obj_set_size(file_preview_img, 680, 158);
+        lv_image_set_inner_align(file_preview_img, LV_IMAGE_ALIGN_CONTAIN);
+        lv_obj_add_flag(file_preview_img, LV_OBJ_FLAG_HIDDEN);
     }
     lv_obj_remove_flag(file_preview, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(file_preview);
     lv_label_set_text(file_preview_title, ent->name);
+    lv_obj_set_style_text_color(file_preview_title, col(C_TEXT), 0);
+
+    if (is_photo(ent->name)) {
+        lv_image_cache_drop(preview_src);
+        snprintf(preview_src, sizeof(preview_src), "A:%s", ent->full);
+        lv_image_header_t hdr;
+        if (lv_image_decoder_get_info(preview_src, &hdr) == LV_RESULT_OK) {
+            lv_obj_add_flag(file_preview_text, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_remove_flag(file_preview_img, LV_OBJ_FLAG_HIDDEN);
+            lv_image_set_src(file_preview_img, preview_src);
+            return;
+        }
+        lv_obj_set_style_text_color(file_preview_title, col(0xFE3211), 0);
+        lv_label_set_text(file_preview_text, "Cannot decode this image.\n\nSupported by the emulator: BMP, PNG, JPG.");
+        lv_obj_add_flag(file_preview_img, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(file_preview_text, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
+    lv_image_cache_drop(preview_src);
+    lv_obj_add_flag(file_preview_img, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(file_preview_text, LV_OBJ_FLAG_HIDDEN);
 
     char text[2200];
     text[0] = '\0';
@@ -355,6 +476,53 @@ static void show_preview(const file_entry_t *ent) {
     lv_label_set_text(file_preview_text, text);
 }
 
+static void music_update(void) {
+    if (!music_box) return;
+    lv_bar_set_range(music_bar, 0, music_duration > 0 ? music_duration : 1);
+    lv_bar_set_value(music_bar, music_elapsed, LV_ANIM_OFF);
+    lv_label_set_text(music_play_lbl, music_playing ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
+}
+
+static void music_tick_cb(lv_timer_t *t) {
+    (void)t;
+    if (!music_playing || !music_box) return;
+    if (music_elapsed < music_duration) music_elapsed++;
+    if (music_elapsed >= music_duration) {
+        music_playing = false;
+        audio_player_pause(true);
+    }
+    lv_bar_set_value(music_bar, music_elapsed, LV_ANIM_OFF);
+    lv_label_set_text(music_play_lbl, music_playing ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
+}
+
+static void music_toggle_cb(lv_event_t *e) {
+    (void)e;
+    music_playing = !music_playing;
+    audio_player_pause(!music_playing);
+    lv_label_set_text(music_play_lbl, music_playing ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
+}
+
+static void music_stop_cb(lv_event_t *e) {
+    (void)e;
+    music_playing = false;
+    audio_player_stop();
+    if (music_box) lv_obj_add_flag(music_box, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void music_start(const file_entry_t *ent) {
+    audio_player_stop();
+    int duration = 0;
+    music_real = audio_player_play(ent->full, &duration);
+    music_duration = duration > 0 ? duration : 180;
+    music_elapsed = 0;
+    music_playing = true;
+    if (!music_box) return;
+    lv_label_set_text_fmt(music_title, "%s%s", ent->name, music_real ? "" : "  (simulated)");
+    lv_obj_remove_flag(music_box, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(music_box);
+    music_update();
+}
+
 static void load_dir(const char *path);
 
 static void file_row_cb(lv_event_t *e) {
@@ -363,9 +531,38 @@ static void file_row_cb(lv_event_t *e) {
     file_entry_t *ent = &file_entries[idx];
     if (ent->is_dir) {
         load_dir(ent->full);
+    } else if (is_music(ent->name)) {
+        music_start(ent);
     } else {
         show_preview(ent);
     }
+}
+
+static void files_filter_refresh(void) {
+    for (int i = 0; i < 3; i++) {
+        bool selected = (int)file_filter == i;
+        lv_obj_set_style_bg_color(file_filter_btns[i], col(selected ? 0xFE3211 : C_INNER), 0);
+        lv_obj_set_style_text_color(lv_obj_get_child(file_filter_btns[i], 0),
+                                    col(selected ? 0xFFFFFF : C_SOFT), 0);
+    }
+}
+
+static void files_filter_cb(lv_event_t *e) {
+    int f = (int)(intptr_t)lv_event_get_user_data(e);
+    file_filter = (file_filter_t)f;
+    files_filter_refresh();
+    if (file_filter == FILTER_MUSIC || file_filter == FILTER_PHOTOS) {
+        char target[STRADA_PATH_MAX];
+        snprintf(target, sizeof(target), "%s/%s", file_root,
+                 file_filter == FILTER_MUSIC ? "Music" : "Photos");
+        DIR *d = opendir(target);
+        if (d) {
+            closedir(d);
+            load_dir(target);
+            return;
+        }
+    }
+    load_dir(file_root);
 }
 
 static void load_dir(const char *path) {
@@ -390,12 +587,17 @@ static void load_dir(const char *path) {
     struct dirent *de;
     while ((de = readdir(d)) != NULL && file_entry_count < FILE_MAX) {
         if (de->d_name[0] == '.') continue;
+        struct stat st;
+        char full[STRADA_PATH_MAX];
+        snprintf(full, sizeof(full), "%s/%s", path, de->d_name);
+        if (stat(full, &st) != 0) continue;
+        bool dir = S_ISDIR(st.st_mode);
+        if (file_filter == FILTER_MUSIC && (dir || !is_music(de->d_name))) continue;
+        if (file_filter == FILTER_PHOTOS && (dir || !is_photo(de->d_name))) continue;
         file_entry_t *e = &file_entries[file_entry_count];
         snprintf(e->name, sizeof(e->name), "%s", de->d_name);
-        snprintf(e->full, sizeof(e->full), "%s/%s", path, de->d_name);
-        struct stat st;
-        if (stat(e->full, &st) != 0) continue;
-        e->is_dir = S_ISDIR(st.st_mode);
+        snprintf(e->full, sizeof(e->full), "%s", full);
+        e->is_dir = dir;
         e->size = (long)st.st_size;
         file_entry_count++;
     }
@@ -408,10 +610,22 @@ static void load_dir(const char *path) {
 
     lv_obj_clean(files_list);
     if (file_entry_count == 0) {
-        label(files_list, "USB/SD is empty", 20, 20, 700, 24,
-              &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
-        label(files_list, "Copy files to the drive and press Refresh.", 20, 54, 700, 18,
-              &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+        if (file_filter == FILTER_MUSIC) {
+            label(files_list, "No music files", 20, 20, 700, 24,
+                  &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
+            label(files_list, "Copy MP3, WAV, FLAC or OGG files to the Music folder.", 20, 54, 700, 18,
+                  &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+        } else if (file_filter == FILTER_PHOTOS) {
+            label(files_list, "No photos", 20, 20, 700, 24,
+                  &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
+            label(files_list, "Copy BMP, PNG or JPG files to the Photos folder.", 20, 54, 700, 18,
+                  &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+        } else {
+            label(files_list, "USB/SD is empty", 20, 20, 700, 24,
+                  &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
+            label(files_list, "Copy files to the drive and press Refresh.", 20, 54, 700, 18,
+                  &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+        }
         lv_label_set_text(files_info_lbl, "0 items");
         return;
     }
@@ -426,11 +640,15 @@ static void load_dir(const char *path) {
         lv_obj_set_style_radius(row, 6, 0);
         lv_obj_set_style_pad_left(row, 8, 0);
 
+        const char *icon = e->is_dir ? LV_SYMBOL_DIRECTORY
+                          : is_music(e->name) ? LV_SYMBOL_AUDIO
+                          : is_photo(e->name) ? LV_SYMBOL_IMAGE
+                          : LV_SYMBOL_FILE;
         lv_obj_t *l = lv_label_create(row);
         if (e->is_dir) {
-            lv_label_set_text_fmt(l, "%s  %s", LV_SYMBOL_DIRECTORY, e->name);
+            lv_label_set_text_fmt(l, "%s  %s", icon, e->name);
         } else {
-            lv_label_set_text_fmt(l, "%s  %s   %ld B", LV_SYMBOL_FILE, e->name, e->size);
+            lv_label_set_text_fmt(l, "%s  %s   %ld B", icon, e->name, e->size);
         }
         lv_obj_set_style_text_font(l, &lv_font_montserrat_12, 0);
         lv_obj_set_style_text_color(l, col(e->is_dir ? C_TEXT : C_SOFT), 0);
@@ -463,18 +681,50 @@ static void build_files(lv_obj_t *parent) {
 
     files_path_lbl = label(files_panel, file_root, 18, 38, 700, 16,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(files_panel, LV_SYMBOL_UP, 18, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_up_cb, NULL);
-    button(files_panel, LV_SYMBOL_REFRESH, 80, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_refresh_cb, NULL);
 
-    files_list = box(files_panel, 18, 94, 740, 158, C_CARD, 8);
+    static const char *FILTERS[] = {"All", "Music", "Photos"};
+    static const int FILTER_X[] = {18, 86, 166};
+    static const int FILTER_W[] = {62, 74, 80};
+    for (int i = 0; i < 3; i++) {
+        file_filter_btns[i] = button(files_panel, FILTERS[i], FILTER_X[i], 58, FILTER_W[i], 30,
+                                     C_INNER, &lv_font_montserrat_10, NULL, NULL);
+        lv_obj_add_event_cb(file_filter_btns[i], files_filter_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+    }
+    button(files_panel, LV_SYMBOL_UP, 610, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_up_cb, NULL);
+    button(files_panel, LV_SYMBOL_REFRESH, 672, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_refresh_cb, NULL);
+
+    files_list = box(files_panel, 18, 94, 740, 134, C_CARD, 8);
     lv_obj_set_style_bg_opa(files_list, LV_OPA_TRANSP, 0);
     lv_obj_set_flex_flow(files_list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(files_list, 4, 0);
     lv_obj_set_style_pad_all(files_list, 2, 0);
     lv_obj_set_scroll_dir(files_list, LV_DIR_VER);
 
-    files_info_lbl = label(files_panel, "", 18, 258, 740, 18,
+    files_info_lbl = label(files_panel, "", 18, 232, 740, 14,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+
+    music_box = box(files_panel, 18, 250, 740, 38, C_INNER, 8);
+    lv_obj_add_flag(music_box, LV_OBJ_FLAG_HIDDEN);
+    music_title = label(music_box, "", 10, 3, 520, 14, &lv_font_montserrat_10, C_TEXT,
+                        LV_TEXT_ALIGN_LEFT);
+    music_bar = lv_bar_create(music_box);
+    lv_obj_set_pos(music_bar, 10, 23);
+    lv_obj_set_size(music_bar, 520, 6);
+    lv_bar_set_range(music_bar, 0, 180);
+    lv_bar_set_value(music_bar, 0, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(music_bar, col(C_BTN), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(music_bar, col(0xFE3211), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(music_bar, 3, LV_PART_MAIN);
+    lv_obj_set_style_radius(music_bar, 3, LV_PART_INDICATOR);
+    button(music_box, LV_SYMBOL_PAUSE, 548, 4, 34, 30, C_BTN, &lv_font_montserrat_12,
+           music_toggle_cb, &music_play_lbl);
+    button(music_box, LV_SYMBOL_CLOSE, 592, 4, 34, 30, C_BTN, &lv_font_montserrat_12,
+           music_stop_cb, NULL);
+
+    music_timer = lv_timer_create(music_tick_cb, 1000, NULL);
+    (void)music_timer;
+
+    files_filter_refresh();
     load_dir(file_root);
 }
 
@@ -641,6 +891,7 @@ static void settings_reset_cb(lv_event_t *e) {
     accent_idx = 0;
     clock_is_24 = true;
     lv_slider_set_value(volume_slider, 70, LV_ANIM_OFF);
+    if (cb_volume) cb_volume(70);
     cal_load_now();
     if (cb_set_time) cb_set_time((long)time(NULL));
     if (cb_accent) cb_accent(ACCENTS[0]);
@@ -656,7 +907,7 @@ static void settings_reset_cb(lv_event_t *e) {
 
 static void build_settings(lv_obj_t *parent) {
     settings_panel = make_panel(parent);
-    panel_header(settings_panel, "SETTINGS", "STRADA 7010B");
+    panel_header(settings_panel, "SETTINGS", "CAR_482 / 7010B");
 
     label(settings_panel, "ACCENT", 24, 44, 90, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 5; i++) {
@@ -671,7 +922,7 @@ static void build_settings(lv_obj_t *parent) {
     lv_obj_t *b12 = button(settings_panel, "12 h", 198, 74, 70, 28, C_INNER, &lv_font_montserrat_12, clock12_cb, &clock12_lbl);
     (void)b24; (void)b12;
 
-    label(settings_panel, "VOLUME", 24, 114, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    label(settings_panel, "BOOT VOL", 24, 114, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     volume_slider = lv_slider_create(settings_panel);
     lv_obj_set_pos(volume_slider, 120, 110);
     lv_obj_set_size(volume_slider, 300, 20);
@@ -718,7 +969,7 @@ static void build_settings(lv_obj_t *parent) {
            saver_cb, &saver_lbl);
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "STRADA 7010B / LVGL 9.3", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / LVGL 9.3", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
@@ -750,6 +1001,24 @@ void panels_set_volume(int value) {
     if (!volume_slider) return;
     lv_slider_set_value(volume_slider, value, LV_ANIM_OFF);
     if (volume_lbl) lv_label_set_text_fmt(volume_lbl, "%d%%", value);
+}
+
+void panels_open_file(const char *path) {
+    if (!path) return;
+    char dir[STRADA_PATH_MAX];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char *slash = strrchr(dir, '/');
+    if (slash) *slash = '\0';
+    else snprintf(dir, sizeof(dir), "%s", file_root);
+    file_filter = FILTER_ALL;
+    files_filter_refresh();
+    load_dir(dir);
+    for (int i = 0; i < file_entry_count; i++) {
+        if (strcmp(file_entries[i].full, path) != 0) continue;
+        if (is_music(file_entries[i].name)) music_start(&file_entries[i]);
+        else show_preview(&file_entries[i]);
+        break;
+    }
 }
 
 void panels_set_modes(bool light, bool night, bool saver) {

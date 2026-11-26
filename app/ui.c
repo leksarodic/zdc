@@ -32,6 +32,7 @@ static time_t clock_base_at;
 static bool clock_base_set = false;
 static int screen_idx = -1;
 static int volume = 70;
+static int volume_default = 70;
 static bool night_dim = false;
 static bool saver_enabled = true;
 
@@ -318,6 +319,24 @@ static void volume_show(void) {
     }
 }
 
+static void settings_load(void) {
+    FILE *f = fopen("strada.settings", "r");
+    if (!f) return;
+    int v = 70;
+    if (fscanf(f, "volume=%d", &v) == 1 && v >= 0 && v <= 100) {
+        volume = v;
+        volume_default = v;
+    }
+    fclose(f);
+}
+
+static void settings_save(void) {
+    FILE *f = fopen("strada.settings", "w");
+    if (!f) return;
+    fprintf(f, "volume=%d\n", volume_default);
+    fclose(f);
+}
+
 static void volume_apply(int v, bool show) {
     if (v < 0) v = 0;
     if (v > 100) v = 100;
@@ -328,10 +347,14 @@ static void volume_apply(int v, bool show) {
     if (show) volume_show();
 }
 
-static void volume_open_cb(lv_event_t *e) { (void)e; volume_show(); }
+static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show(); }
 static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(volume + 5, true); }
 static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(volume - 5, true); }
-static void on_volume(int v) { volume_apply(v, true); }
+static void on_volume(int v) {
+    volume_default = v;
+    settings_save();
+    volume_apply(v, true);
+}
 
 /* ── theme and night mode ───────────────────────────────────── */
 
@@ -393,6 +416,7 @@ void ui_set_screensaver(bool on) { on_saver(on); }
 void ui_show_screensaver(void) { saver_show_now(); }
 void ui_show_volume(void) { volume_show(); }
 void ui_set_volume(int v) { volume_apply(v, false); }
+void ui_open_file(const char *path) { panels_open_file(path); }
 
 static void settings_cb(lv_event_t *e) { (void)e; show_screen(2); }
 
@@ -520,7 +544,7 @@ static void update_bt(void) {
     case BT_PAIRING:
         value = 55; core = 0x4A4F5A;
         title = "Waiting for phone";
-        sub = "Select STRADA on your phone";
+        sub = "Select " BT_LOCAL_NAME " on your phone";
         primary = "Cancel";
         secondary = "";
         break;
@@ -599,8 +623,9 @@ static void update_audio(void) {
     const bt_track_t *t = bt_sim_track(M);
     char pos[32], dur[32], line[96];
 
+    bool interrupted = bt_sim_music_interrupted(M);
     set_text_if(track_lbl, connected ? t->title : "Nothing playing");
-    set_text_if(artist_lbl, connected ? t->artist : "Radio, Bluetooth or USB");
+    set_text_if(artist_lbl, interrupted ? "Paused for call" : (connected ? t->artist : "Radio, Bluetooth or USB"));
     fmt_time(M->position, pos, sizeof(pos));
     fmt_time(t->duration, dur, sizeof(dur));
     snprintf(line, sizeof(line), "%s / %s", pos, dur);
@@ -645,7 +670,7 @@ static void build_player(lv_obj_t *scr) {
     icon_center(np_art, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
 
     np_track = label(player_panel, "Test Song", 280, 52, 460, 38, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
-    np_artist = label(player_panel, "StradaOS", 280, 96, 460, 22, &lv_font_montserrat_16, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    np_artist = label(player_panel, "Demo Artist", 280, 96, 460, 22, &lv_font_montserrat_16, C_MUTED, LV_TEXT_ALIGN_LEFT);
     np_time = label(player_panel, "1:08 / 3:35", 280, 124, 460, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     np_bar = lv_bar_create(player_panel);
@@ -712,7 +737,7 @@ static void build_overlays(lv_obj_t *scr) {
     lv_obj_add_event_cb(saver, saver_wake_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_flag(saver, LV_OBJ_FLAG_HIDDEN);
 
-    label(saver, "STRADA", 0, 78, 800, 18, &lv_font_montserrat_12, 0xFE3211, LV_TEXT_ALIGN_CENTER);
+    label(saver, BT_LOCAL_NAME, 0, 78, 800, 18, &lv_font_montserrat_12, 0xFE3211, LV_TEXT_ALIGN_CENTER);
     saver_time = label(saver, "00:00", 0, 158, 800, 78, &lv_font_montserrat_40, 0xF7F8FA,
                        LV_TEXT_ALIGN_CENTER);
     saver_date = label(saver, "", 0, 248, 800, 20, &lv_font_montserrat_14, 0x9AA0A9,
@@ -724,6 +749,7 @@ static void build_overlays(lv_obj_t *scr) {
 void ui_init(bt_model_t *model) {
     M = model;
     setlocale(LC_TIME, "C");
+    settings_load();
 
     lv_obj_t *scr = lv_screen_active();
     lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
@@ -769,15 +795,12 @@ void ui_init(bt_model_t *model) {
     label(phone, "Battery 82%", 120, 100, 100, 14, &lv_font_montserrat_10, C_SOFT, LV_TEXT_ALIGN_LEFT);
 
     box(phone, 14, 120, 206, 1, C_BTN, 0);
-    label(phone, "PAIRED DEVICES", 14, 132, 180, 12, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-
-    symbol(phone, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_12, C_SOFT, 14, 152, 14, 14);
-    label(phone, BT_LOCAL_NAME, 34, 150, 140, 16, &lv_font_montserrat_12, C_SOFT, LV_TEXT_ALIGN_LEFT);
-    symbol(phone, LV_SYMBOL_OK, &lv_font_montserrat_12, C_GREEN, 208, 150, 14, 14);
-
-    symbol(phone, LV_SYMBOL_CALL, &lv_font_montserrat_12, C_SOFT, 14, 174, 14, 14);
-    label(phone, "Galaxy S23", 34, 172, 140, 16, &lv_font_montserrat_12, C_SOFT, LV_TEXT_ALIGN_LEFT);
-    symbol(phone, LV_SYMBOL_PLUS, &lv_font_montserrat_12, C_MUTED, 208, 172, 14, 14);
+    label(phone, "Phone connects to the car", 14, 136, 206, 14, &lv_font_montserrat_12,
+          C_SOFT, LV_TEXT_ALIGN_LEFT);
+    label(phone, "Open Bluetooth on your phone", 14, 156, 206, 12, &lv_font_montserrat_10,
+          C_MUTED, LV_TEXT_ALIGN_LEFT);
+    label(phone, "and select " BT_LOCAL_NAME, 14, 174, 206, 12, &lv_font_montserrat_10,
+          C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     disconnect_btn = button(phone, "Disconnect", 14, 245, 130, 36, C_INNER, C_TEXT,
                             &lv_font_montserrat_12, sc_cb, &disconnect_lbl);
@@ -831,7 +854,7 @@ void ui_init(bt_model_t *model) {
     lv_obj_add_event_cb(art_circle, art_open_cb, LV_EVENT_CLICKED, NULL);
 
     track_lbl = label(audio, "Test Song", 8, 170, 178, 20, &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_CENTER);
-    artist_lbl = label(audio, "StradaOS", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
+    artist_lbl = label(audio, "Demo Artist", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
     time_pos_lbl = label(audio, "1:08 / 3:35", 8, 206, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
     prev_btn = button(audio, LV_SYMBOL_PREV, 30, 230, 42, 42, C_BTN, 0xFFFFFF,
@@ -863,6 +886,7 @@ void ui_init(bt_model_t *model) {
     build_player(scr);
     call_panel_init(scr, on_call_close, on_outgoing_call);
     build_volume_osd(scr);
+    volume_apply(volume, false);
     build_overlays(scr);
     show_screen(-1);
 

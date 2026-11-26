@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define BT_LOCAL_NAME "STRADA"
+#define BT_LOCAL_NAME "CAR_482"
 #define BT_DEVICE_NAME "Aleksa's iPhone"
 #define BT_DEVICE_MAC "AA:BB:CC:DD:EE:FF"
 
@@ -32,6 +32,7 @@ typedef struct {
     int call_seconds;
     int pair_seconds;
     bool muted;
+    bool music_interrupted;
 } bt_model_t;
 
 void bt_sim_init(bt_model_t *m);
@@ -46,5 +47,6 @@ const bt_track_t *bt_sim_track(const bt_model_t *m);
 int bt_sim_track_count(void);
 const char *bt_sim_state_name(bt_state_t state);
 bool bt_sim_connected(bt_state_t state);
+bool bt_sim_music_interrupted(const bt_model_t *m);
 
 #endif

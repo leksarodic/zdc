@@ -14,6 +14,7 @@ void ui_set_screensaver(bool on);
 void ui_show_screensaver(void);
 void ui_show_volume(void);
 void ui_set_volume(int value);
+void ui_open_file(const char *path);
 void ui_screenshot(const char *path);
 
 #endif

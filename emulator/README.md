@@ -40,16 +40,16 @@ Test keys in the native emulator:
 
 ### Functional panels
 
-* **Radio** — tune, seek, presets, **save preset to 1–6**, RDS name/genre line, power, mute
-* **Files** — real directory list for the native build (root `media/`), up/refresh, text/binary preview, **No USB or SD card connected** message
-* **Settings** — accent color, 12/24 h clock, **date and time**, volume, **dark/light theme**, **night dim**, **screensaver**, About, reset
+* **Radio** — FM/AM, icon tune/seek, presets, **save preset to 1–6**, RDS station name, power, mute
+* **Files** — All/Music/Photos, real directory list for the native build (root `media/`), WAV playback, BMP/PNG/JPG viewer, up/refresh, text/binary preview, **No USB or SD card connected** message
+* **Settings** — accent color, 12/24 h clock, **in-device date/time buttons**, **boot volume**, **dark/light theme**, **night dim**, **screensaver**, About, reset
 * **Now Playing** — maximises when playback starts, with large art and controls
-* **Call** — 560×280 recent-contacts/dial-pad popup from the phone card Call button
-* **Volume** — top-bar speaker button shows a live volume overlay
+* **Call** — 560×280 recent-contacts/dial-pad popup with names and numbers
+* **Volume** — top-bar speaker button opens Settings and the live volume overlay together
 
 ### Browser test UI
 
-For a zero-install interactive test, open `prototype/index.html`. It has a **TEST** bar under the 800×480 screen with state buttons, simulate call, next/prev track, reset and hide. URL parameters `?state=incoming` and `?clean=1` work, and `window.strada` is exposed for automation.
+For a zero-install interactive test, open `prototype/index.html`. It has a **TEST** bar under the 800×480 screen with state buttons, simulate call, **Call demo**, next/prev track, reset and hide. URL parameters `?state=incoming` and `?clean=1` work, and `window.strada` is exposed for automation.
 
 ## Headless screenshots (CI)
 
@@ -59,6 +59,7 @@ python3 tools/ppm_to_png.py artifacts/connected.ppm artifacts/connected.png
 ```
 
 Supported states: `off`, `ready`, `pairing`, `connected`, `playing`, `incoming`, `active`, `error`.
+Extra demo flags: `--interrupt` (music paused by a call), `--file media/Music/sunset_drive.wav`, `--file media/Photos/sunset.bmp`, `--volume 55`, `--light`, `--dim`, `--saver`.
 
 ## Docker
 

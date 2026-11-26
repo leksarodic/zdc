@@ -62,7 +62,7 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: strada-7010b-armv5
+          name: car482-7010b-armv5
           path: build-arm/strada-ui-fb
           if-no-files-found: error
 
@@ -75,19 +75,19 @@ jobs:
         run: |
           mkdir -p artifacts
           python3 tools/patch_bt_name.py firmware/7010b-original.bin \
-            -o artifacts/7010b-STRADA.img --name STRADA
+            -o artifacts/7010b-CAR_482.img --name CAR_482
       - name: Verify patch scope
         run: |
-          python3 tools/patch_bt_name.py artifacts/7010b-STRADA.img \
+          python3 tools/patch_bt_name.py artifacts/7010b-CAR_482.img \
             --verify-against firmware/7010b-original.bin
       - name: Hashes
         run: |
-          sha256sum firmware/7010b-original.bin artifacts/7010b-STRADA.img
+          sha256sum firmware/7010b-original.bin artifacts/7010b-CAR_482.img
       - name: Upload image
         uses: actions/upload-artifact@v4
         with:
-          name: strada-7010b-image
-          path: artifacts/7010b-STRADA.img
+          name: car482-7010b-image
+          path: artifacts/7010b-CAR_482.img
           if-no-files-found: error
 
   release:
@@ -100,7 +100,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: strada-7010b-*
+          pattern: car482-7010b-*
           merge-multiple: true
       - name: Publish with gh
         env:

@@ -39,10 +39,15 @@ static void test_state(void) {
     assert(m.track_index == 1);
 
     bt_sim_set_state(&m, BT_INCOMING);
+    assert(m.music_interrupted);
     bt_sim_primary(&m);
     assert(m.state == BT_ACTIVE);
+    assert(bt_sim_music_interrupted(&m));
     bt_sim_secondary(&m);
     assert(m.muted);
+    bt_sim_primary(&m);
+    assert(m.state == BT_PLAYING);
+    assert(!m.music_interrupted);
 
     bt_sim_set_state(&m, BT_READY);
     bt_sim_primary(&m);

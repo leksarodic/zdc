@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StradaOS-like 800x480 — Bluetooth UI prototype</title>
+<title>Strada 7010B — interactive UI test</title>
 <style>
   :root{
     --bg:#15171C;
@@ -32,11 +32,36 @@
     color:var(--text);
     -webkit-font-smoothing:antialiased;
   }
+  #app{display:flex;flex-direction:column;align-items:center;gap:8px}
   #frame{
     position:relative;
+    width:min(100vw, calc((100vh - 92px) * 5 / 3));
+    height:min(calc(100vh - 92px), calc(100vw * 3 / 5));
+  }
+  body.clean #frame{
     width:min(100vw, calc(100vh * 5 / 3));
     height:min(100vh, calc(100vw * 3 / 5));
   }
+  #testbar{
+    width:min(800px, 96vw);
+    min-height:42px;
+    background:#0D0E11;
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:10px;
+    padding:6px 8px;
+    display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+    color:var(--muted);font-size:11px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  #testbar.hidden{display:none}
+  .tb-title{font-weight:700;letter-spacing:.10em;color:var(--accent)}
+  .tb-state{color:var(--text);min-width:66px;font-weight:600}
+  #testbar button{
+    border:0;border-radius:7px;background:var(--inner);color:var(--soft);
+    font-family:inherit;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;
+  }
+  #testbar button:hover{background:var(--btn);color:var(--text)}
+  #testbar .tb-sep{width:1px;height:18px;background:rgba(255,255,255,.10);margin:0 2px}
   #stage{
     width:800px;height:480px;
     position:absolute;left:0;top:0;
@@ -231,8 +256,9 @@
 </style>
 </head>
 <body>
+<div id="app">
 <div id="frame">
-<div id="stage" aria-label="Prototipo de interfaz StradaOS 800x480">
+<div id="stage" aria-label="Strada 7010B 800x480 interactive UI">
 
   <!-- ICONS -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -414,6 +440,27 @@
 </div>
 </div>
 
+<div id="testbar">
+  <span class="tb-title">TEST</span>
+  <span class="tb-state" id="testState">connected</span>
+  <span class="tb-sep"></span>
+  <button data-state="off">Off</button>
+  <button data-state="ready">Ready</button>
+  <button data-state="pairing">Pairing</button>
+  <button data-state="connected">Connected</button>
+  <button data-state="playing">Playing</button>
+  <button data-state="incoming">Incoming</button>
+  <button data-state="active">Active</button>
+  <button data-state="error">Error</button>
+  <span class="tb-sep"></span>
+  <button data-action="incoming">Simulate call</button>
+  <button data-action="next">Next track</button>
+  <button data-action="prev">Prev track</button>
+  <button data-action="reset">Reset</button>
+  <button data-action="hide">Hide</button>
+</div>
+</div>
+
 <script>
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -468,6 +515,7 @@
   function render() {
     const m = state.mode;
     const connected = deviceConnected();
+    el('testState').textContent = m;
     const playing = m === 'playing';
 
     // top dot
@@ -718,6 +766,51 @@
   }
   new ResizeObserver(fit).observe(frame);
   fit();
+
+  // ── test controls ─────────────────────────────────────────
+  document.querySelectorAll('#testbar [data-state]').forEach(b => {
+    b.addEventListener('click', () => go(b.dataset.state));
+  });
+  document.querySelectorAll('#testbar [data-action]').forEach(b => {
+    b.addEventListener('click', () => {
+      const a = b.dataset.action;
+      if (a === 'incoming') go('incoming');
+      else if (a === 'next') el('btnNext').click();
+      else if (a === 'prev') el('btnPrev').click();
+      else if (a === 'reset') go('connected');
+      else if (a === 'hide') { el('testbar').classList.add('hidden'); fit(); }
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!e.altKey) return;
+    const modes = ['off','ready','pairing','connected','playing','incoming','active','error'];
+    const i = Number(e.key) - 1;
+    if (i >= 0 && i < modes.length) { e.preventDefault(); go(modes[i]); }
+  });
+  window.strada = {
+    setState: (s) => go(s),
+    getState: () => state.mode,
+    action: (a) => {
+      if (a === 'incoming') go('incoming');
+      else if (a === 'next') el('btnNext').click();
+      else if (a === 'prev') el('btnPrev').click();
+      else if (a === 'reset') go('connected');
+      else if (a === 'primary') el('btnPrimary').click();
+      else if (a === 'secondary') el('btnSecondary').click();
+    }
+  };
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('clean') === '1') {
+    document.body.classList.add('clean');
+    el('testbar').classList.add('hidden');
+    fit();
+  }
+  const requested = params.get('state');
+  if (requested) {
+    const modes = ['off','ready','pairing','connected','playing','incoming','active','error'];
+    if (modes.includes(requested)) go(requested);
+  }
 
   render();
 })();

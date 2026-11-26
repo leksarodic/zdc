@@ -6,6 +6,55 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 
 ![Incoming call](docs/screenshots/incoming.png)
 
+### Screenshot gallery
+
+| State | Preview |
+|---|---|
+| Off | [off.png](docs/screenshots/off.png) |
+| Ready | [ready.png](docs/screenshots/ready.png) |
+| Pairing | [pairing.png](docs/screenshots/pairing.png) |
+| Connected | [connected.png](docs/screenshots/connected.png) |
+| Playing | [playing.png](docs/screenshots/playing.png) |
+| Incoming call | [incoming.png](docs/screenshots/incoming.png) |
+| Active call | [active.png](docs/screenshots/active.png) |
+| Error | [error.png](docs/screenshots/error.png) |
+
+## Interactive testing
+
+### Browser emulator (easiest)
+
+Open [prototype/index.html](prototype/index.html) in any browser. It is the same 800×480 design with a **TEST** bar under the screen:
+
+* **Off / Ready / Pairing / Connected / Playing / Incoming / Active / Error** — jump directly to a state
+* **Simulate call** — incoming call from the mock phone
+* **Next track / Prev track** — mock AVRCP
+* **Reset** — back to connected
+* **Hide** — hide the test bar for a clean view
+
+You can also use URL parameters:
+
+```
+prototype/index.html?state=incoming
+prototype/index.html?clean=1&state=pairing
+```
+
+Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')` are available for browser automation.
+
+### Native SDL emulator
+
+```bash
+make emulator
+```
+
+The buttons are clickable. Test keys:
+
+| Key | Action |
+|---|---|
+| `1` … `8` | Off, Ready, Pairing, Connected, Playing, Incoming, Active, Error |
+| `Space` | Primary action (power/pair/play/answer/hang up) |
+| `N` / `P` | Next / previous track |
+| `M` | Secondary action (mute in a call) |
+
 ## What this is
 
 The stock 7010B is **not Android** and not Linux. It runs **Allwinner Melis/ePDK** on an **F1C200s-class ARM926** SoC, with an external MCU and a **6905-family Bluetooth audio module** (very likely JieLi AC6905C). The stock image has **no Bluetooth stack on the SoC**; it talks over UART to the MCU/BT module using:

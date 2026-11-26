@@ -27,6 +27,19 @@ Click the buttons to drive the UI:
 | Media buttons | Play/pause, previous, next |
 | Center Bluetooth circle | Same as the primary button |
 
+Test keys in the native emulator:
+
+| Key | Action |
+|---|---|
+| `1` … `8` | Off, Ready, Pairing, Connected, Playing, Incoming, Active, Error |
+| `Space` | Primary action |
+| `N` / `P` | Next / previous track |
+| `M` | Secondary action (mute in a call) |
+
+### Browser test UI
+
+For a zero-install interactive test, open `prototype/index.html`. It has a **TEST** bar under the 800×480 screen with state buttons, simulate call, next/prev track, reset and hide. URL parameters `?state=incoming` and `?clean=1` work, and `window.strada` is exposed for automation.
+
 ## Headless screenshots (CI)
 
 ```bash

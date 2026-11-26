@@ -4,6 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <SDL2/SDL.h>
+
 #include "lvgl.h"
 #include "src/drivers/sdl/lv_sdl_keyboard.h"
 #include "src/drivers/sdl/lv_sdl_mouse.h"
@@ -11,6 +13,41 @@
 
 #include "bt_sim.h"
 #include "ui.h"
+
+static void handle_keys(bt_model_t *m) {
+    SDL_PumpEvents();
+    const Uint8 *k = SDL_GetKeyboardState(NULL);
+    static bool prev[8] = {0};
+    static bool prev_space = false, prev_n = false, prev_p = false, prev_m = false;
+    const SDL_Scancode codes[8] = {
+        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4,
+        SDL_SCANCODE_5, SDL_SCANCODE_6, SDL_SCANCODE_7, SDL_SCANCODE_8
+    };
+    const bt_state_t states[8] = {
+        BT_OFF, BT_READY, BT_PAIRING, BT_CONNECTED,
+        BT_PLAYING, BT_INCOMING, BT_ACTIVE, BT_ERROR
+    };
+    for (int i = 0; i < 8; i++) {
+        bool now = k[codes[i]] != 0;
+        if (now && !prev[i]) {
+            bt_sim_set_state(m, states[i]);
+            ui_update();
+        }
+        prev[i] = now;
+    }
+    bool space = k[SDL_SCANCODE_SPACE] != 0;
+    if (space && !prev_space) { bt_sim_primary(m); ui_update(); }
+    prev_space = space;
+    bool n = k[SDL_SCANCODE_N] != 0;
+    if (n && !prev_n) { bt_sim_next(m); ui_update(); }
+    prev_n = n;
+    bool p = k[SDL_SCANCODE_P] != 0;
+    if (p && !prev_p) { bt_sim_prev(m); ui_update(); }
+    prev_p = p;
+    bool mm = k[SDL_SCANCODE_M] != 0;
+    if (mm && !prev_m) { bt_sim_secondary(m); ui_update(); }
+    prev_m = mm;
+}
 
 static bt_state_t parse_state(const char *s) {
     if (!strcmp(s, "off")) return BT_OFF;
@@ -71,7 +108,9 @@ int main(int argc, char **argv) {
 
     if (!interactive) return 0;
 
+    printf("Test keys: 1-8 set state, Space primary, N next, P prev, M secondary/mute\n");
     for (;;) {
+        handle_keys(&model);
         uint32_t wait = lv_timer_handler();
         usleep((useconds_t)((wait ? wait : 5u) * 1000u));
     }

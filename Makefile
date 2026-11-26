@@ -24,7 +24,7 @@ emulator: build
 
 screenshot: build
 	mkdir -p artifacts
-	@for st in connected playing incoming pairing; do \
+	@for st in off ready pairing connected playing incoming active error; do \
 		$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/$$st.ppm --frames 30 --state $$st; \
 		$(PYTHON) tools/ppm_to_png.py artifacts/$$st.ppm artifacts/$$st.png; \
 	done

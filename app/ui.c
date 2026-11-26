@@ -130,6 +130,20 @@ static lv_obj_t *symbol(lv_obj_t *parent, const char *sym, const lv_font_t *font
     return label(parent, sym, x, y, w, h, font, color, LV_TEXT_ALIGN_CENTER);
 }
 
+/* Symbol label centered on both axes (labels are content-sized, so this
+ * centers the glyph box rather than a full-size text area). */
+static lv_obj_t *icon_center(lv_obj_t *parent, const char *sym, const lv_font_t *font, uint32_t color) {
+    lv_obj_t *l = lv_label_create(parent);
+    lv_label_set_text(l, sym);
+    lv_obj_set_style_text_font(l, font, 0);
+    lv_obj_set_style_text_color(l, col(color), 0);
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_bg_opa(l, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(l, 0, 0);
+    lv_obj_center(l);
+    return l;
+}
+
 static void pc_cb(lv_event_t *e) { (void)e; bt_sim_primary(M); ui_update(); }
 static void sc_cb(lv_event_t *e) { (void)e; bt_sim_secondary(M); ui_update(); }
 static void next_cb(lv_event_t *e) { (void)e; bt_sim_next(M); ui_update(); }
@@ -354,7 +368,7 @@ void ui_init(bt_model_t *model) {
     top_bt_dot = circle(scr, 706, 25, 6, C_GREEN);
 
     lv_obj_t *gear = circle(scr, 752, 8, 32, C_CIRCLE);
-    symbol(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT, 0, 0, 32, 32);
+    icon_center(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT);
 
     /* ── phone card ─────────────────────────────────────────── */
     lv_obj_t *phone = card(scr, 12, 50, 234, 297);
@@ -362,7 +376,7 @@ void ui_init(bt_model_t *model) {
     phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, C_ACCENT, LV_TEXT_ALIGN_RIGHT);
 
     lv_obj_t *dev_ic = circle(phone, 14, 34, 46, C_CIRCLE);
-    symbol(dev_ic, LV_SYMBOL_CALL, &lv_font_montserrat_24, C_SOFT, 0, 0, 46, 46);
+    icon_center(dev_ic, LV_SYMBOL_CALL, &lv_font_montserrat_24, C_SOFT);
 
     device_name = label(phone, BT_DEVICE_NAME, 70, 36, 150, 20, &lv_font_montserrat_16, C_TEXT, LV_TEXT_ALIGN_LEFT);
     device_status = label(phone, "Connected", 70, 58, 150, 14, &lv_font_montserrat_12, C_GREEN, LV_TEXT_ALIGN_LEFT);
@@ -413,7 +427,7 @@ void ui_init(bt_model_t *model) {
     lv_obj_set_style_pad_all(bt_arc, 0, LV_PART_KNOB);
 
     bt_circle = circle(bt, 99, 42, 130, C_ACCENT);
-    symbol(bt_circle, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_40, 0xFFFFFF, 0, 0, 130, 130);
+    icon_center(bt_circle, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_40, 0xFFFFFF);
 
     bt_title = label(bt, "Connected", 14, 186, 300, 28, &lv_font_montserrat_22, C_TEXT, LV_TEXT_ALIGN_CENTER);
     bt_sub = label(bt, "", 14, 212, 300, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
@@ -431,7 +445,7 @@ void ui_init(bt_model_t *model) {
     label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, C_ACCENT, LV_TEXT_ALIGN_RIGHT);
 
     art_circle = circle(audio, 33, 32, 128, C_ACCENT);
-    symbol(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF, 0, 0, 128, 128);
+    icon_center(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
 
     track_lbl = label(audio, "Test Song", 8, 170, 178, 20, &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_CENTER);
     artist_lbl = label(audio, "StradaOS", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
@@ -458,7 +472,7 @@ void ui_init(bt_model_t *model) {
             lv_obj_set_style_border_width(c, 2, 0);
             lv_obj_set_style_border_color(c, col(C_ACCENT), 0);
         }
-        symbol(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF, 0, 0, 50, 50);
+        icon_center(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF);
         label(dock, dock_names[i], slot + 5, 70, 100, 16, &lv_font_montserrat_12,
               i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
     }

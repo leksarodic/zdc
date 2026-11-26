@@ -8,10 +8,10 @@ tool replaces every occurrence with a new name padded to exactly 7 bytes,
 so no file sizes, offsets, MINFS entries, or checksums change.
 
 Only names of 1..7 printable ASCII characters are accepted.  The default
-is STRADA (6 characters + NUL = the exact width of "CAR-KIT").
+is CAR_482 (7 characters = the exact width of "CAR-KIT").
 
 Usage:
-  python3 tools/patch_bt_name.py firmware/7010b-original.bin -o out.img --name STRADA
+  python3 tools/patch_bt_name.py firmware/7010b-original.bin -o out.img --name CAR_482
   python3 tools/patch_bt_name.py out.img --verify-against firmware/7010b-original.bin
 """
 
@@ -61,7 +61,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", help="original or patched 8 MiB SPI-NOR dump")
     ap.add_argument("-o", "--output", help="write patched image here")
-    ap.add_argument("--name", default="STRADA", help="new Bluetooth name (1..7 ASCII, default STRADA)")
+    ap.add_argument("--name", default="CAR_482", help="new Bluetooth name (1..7 ASCII, default CAR_482)")
     ap.add_argument("--verify-against", metavar="ORIGINAL",
                     help="verify that input differs from ORIGINAL only at the BT-name offsets")
     ap.add_argument("--force", action="store_true", help="proceed if the input SHA-256 is not the known 7010B dump")

@@ -41,6 +41,7 @@ add_library(strada_core STATIC
     app/panels.c
     app/call_panel.c
     app/theme.c
+    app/audio_player.c
 )
 target_include_directories(strada_core PUBLIC app)
 target_link_libraries(strada_core PUBLIC lvgl m)

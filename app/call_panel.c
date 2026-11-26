@@ -138,7 +138,7 @@ void call_panel_init(lv_obj_t *parent, void (*on_close)(void), void (*on_call)(c
 
     label(panel, "CALL", 18, 12, 200, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
     label(panel, "RECENT", 20, 42, 200, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(panel, LV_SYMBOL_CLOSE, 510, 8, 32, 32, C_INNER, &lv_font_montserrat_12, close_cb, NULL);
+    button(panel, LV_SYMBOL_CLOSE, 522, 10, 24, 24, C_INNER, &lv_font_montserrat_10, close_cb, NULL);
 
     static const char *CONTACTS[][2] = {
         {"Aleksa", "+381 60 123 4567"},
@@ -146,8 +146,10 @@ void call_panel_init(lv_obj_t *parent, void (*on_close)(void), void (*on_call)(c
         {"Work", "+381 11 987 654"},
     };
     for (int i = 0; i < 3; i++) {
-        lv_obj_t *b = button(panel, CONTACTS[i][0], 20, 64 + i * 40, 210, 34, C_INNER,
-                             &lv_font_montserrat_12, contact_cb, (void *)CONTACTS[i][1]);
+        char line[64];
+        snprintf(line, sizeof(line), "%s\n%s", CONTACTS[i][0], CONTACTS[i][1]);
+        lv_obj_t *b = button(panel, line, 20, 64 + i * 40, 230, 34, C_INNER,
+                             &lv_font_montserrat_10, contact_cb, (void *)CONTACTS[i][1]);
         (void)b;
     }
 

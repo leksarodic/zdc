@@ -1,4 +1,4 @@
-# Strada 7010B
+# CAR_482 7010B
 
 A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, with a simulated Bluetooth stack, an SDL2 emulator, an ARMv5 framebuffer target, and a safe Bluetooth-name patch for the stock firmware.
 
@@ -19,11 +19,14 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Active call | [active.png](docs/screenshots/active.png) |
 | Error | [error.png](docs/screenshots/error.png) |
 | Call popup | [call.png](docs/screenshots/call.png) |
+| Music paused for call | [call-interrupt.png](docs/screenshots/call-interrupt.png) |
 | Volume overlay | [volume.png](docs/screenshots/volume.png) |
 | Light theme | [light.png](docs/screenshots/light.png) |
 | Light settings | [light-settings.png](docs/screenshots/light-settings.png) |
 | Night dim | [night-dim.png](docs/screenshots/night-dim.png) |
 | Screensaver | [screensaver.png](docs/screenshots/screensaver.png) |
+| Files music | [files-music.png](docs/screenshots/files-music.png) |
+| Files photo | [files-photo.png](docs/screenshots/files-photo.png) |
 | Files, no storage | [files-no-storage.png](docs/screenshots/files-no-storage.png) |
 
 ## Functional panels
@@ -34,24 +37,32 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 ![Radio](docs/screenshots/radio.png)
 
-* FM frequency display, tune ±0.1 MHz and seek ±1 MHz
-* Six presets (87.5, 90.1, 94.3, 98.1, 101.7, 104.9)
-* **Save preset**: press Save, then 1–6 to store the current station
+* **FM / AM bands** with a band selector; FM tunes 87.5–108.0 MHz in 0.1 steps, AM tunes 530–1700 kHz in 10 kHz steps
+* Icon controls: tune down/up, seek down/up, power, save and mute
+* Six presets per band; defaults are 87.5, 90.1, 94.3, 98.1, 101.7, 104.9 MHz and 540, 630, 720, 810, 900, 990 kHz
+* **Save preset**: press the save icon, then 1–6 to store the current station; the hint line tells you when save mode is active
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
-* **RDS line** shows the station name and programme type for the tuned preset
-* Power and mute states
+* **RDS** shows the tuned station name only, for example `RDS - Jazz FM`; AM shows `RDS not available`
+* Power and mute states; the old “Stereo / 5 bars” line is gone
 * Simulated tuner and RDS in the emulator; on hardware those map to the MCU/BT UART protocol
 
 ### Files
 
 ![Files](docs/screenshots/files.png)
 
+* **All / Music / Photos** filters; Music and Photos jump to their folders
 * Real directory browser in the native build (`opendir`/`stat`): folders first, files with sizes
-* Up and refresh buttons, scrollable list
-* Text/binary preview panel
+* **Music playback**: WAV files play through SDL audio in the emulator, with title, progress, play/pause and stop. Other formats show the same transport in simulated mode.
+* **Photos**: BMP, PNG and JPG previews in a contained viewer; BMP/PNG/JPG decoders are enabled in the LVGL build
+* Up and refresh buttons, scrollable list; text/binary preview for other files
+* Sample media in `media/Music/*.wav` and `media/Photos/*.bmp`
 * Emulator root is `media/`; the framebuffer build defaults to `/media`
 * If no USB/SD is available, the panel says **No USB or SD card connected** and asks you to insert one
-* The browser test UI uses the matching virtual tree; the Storage button simulates removal
+* The browser test UI mirrors the filters with working audio and image previews; the Storage button simulates removal
+
+![Files music](docs/screenshots/files-music.png)
+
+![Files photo](docs/screenshots/files-photo.png)
 
 ![Files with no storage](docs/screenshots/files-no-storage.png)
 
@@ -61,19 +72,19 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 * Accent color swatches (red, orange, green, blue, purple) update the whole UI
 * 24 h / 12 h clock switch
-* **Date and time setting** — native +/- controls; browser date/time pickers
-* Volume slider with live percentage
+* **Date and time setting** — in-device +/- buttons, no browser or system popups
+* **Boot volume** slider: sets the volume used when the device powers on; saved in `strada.settings` (native) and `localStorage` (browser)
 * **Dark / Light theme** — the whole 800×480 UI recolors immediately
 * **Night dim** — a 50% black overlay for night driving
 * **Screensaver** — idle screen with the clock after 30 seconds; tap to wake
 * About/build information and “Reset UI”
-* Settings apply immediately; the emulator does not persist them across restarts yet
+* Settings apply immediately; boot volume and radio presets persist, theme/night/saver reset on restart
 
 ### Volume overlay
 
 ![Volume](docs/screenshots/volume.png)
 
-The top-bar speaker button opens a volume popup with **- / +**, a live bar and percentage. The popup also appears when the Settings slider changes, then hides after 1.8 s. The top-bar button and the Settings slider share one volume value.
+The top-bar speaker button opens **Settings and the volume popup together**, with **- / +**, a live bar and percentage. The popup also appears when the Settings slider changes, then hides after 1.8 s. The top-bar button and the Settings slider share one current volume; the Settings slider sets the power-on default.
 
 ### Theme, night dim and screensaver
 
@@ -97,9 +108,15 @@ Pressing Play maximises the player automatically. It shows a large album art, tr
 
 ![Call](docs/screenshots/call.png)
 
-The phone card **Call** button opens a **560×280 popup** with recent contacts and a dial pad, over a dimmed scrim. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer. The scrim closes the popup when tapped.
+The phone card **Call** button opens a **560×280 popup** with recent contacts and a dial pad, over a dimmed scrim. Each recent entry shows both the **name and number**. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer. The scrim closes the popup when tapped, and the close button is intentionally small.
 
-The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select STRADA on your phone**. The car advertises; the phone connects to the car.
+The paired-device list on the Bluetooth page has been removed. The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select CAR_482 on your phone**. The car advertises; the phone connects to the car.
+
+### Music interrupted by a call
+
+![Music paused for call](docs/screenshots/call-interrupt.png)
+
+The Bluetooth model now remembers that music was playing when a call arrives. The player freezes, the audio card says **Paused for call**, and the track resumes when the call is answered and hung up (or rejected). The unit test covers this path, and the browser demo has a **Call demo** button that runs the whole sequence.
 
 ## Interactive testing
 
@@ -109,6 +126,7 @@ Open [prototype/index.html](prototype/index.html) in any browser. It is the same
 
 * **Off / Ready / Pairing / Connected / Playing / Incoming / Active / Error** — jump directly to a state
 * **Simulate call** — incoming call from the mock phone
+* **Call demo** — plays music, interrupts it with an incoming call, answers, hangs up and resumes
 * **Next track / Prev track** — mock AVRCP
 * **Reset** — back to connected
 * **Hide** — hide the test bar for a clean view
@@ -152,9 +170,9 @@ This repo gives you three separate things:
 |---|---|---|
 | `strada-ui` | SDL2 emulator, 800×480, mock Bluetooth | No — desktop test |
 | `strada-ui-fb` | ARMv5 Linux framebuffer/evdev build | No — needs a Linux port of the radio |
-| `7010b-STRADA.img` | Stock 8 MiB SPI image with the BT name changed to `STRADA` | **Yes**, via an SPI programmer |
+| `7010b-CAR_482.img` | Stock 8 MiB SPI image with the BT name changed to `CAR_482` | **Yes**, via an SPI programmer |
 
-The new UI removes **camera, navigation and apps**, removes the **weather widget**, uses **English**, keeps **Radio / Bluetooth / Files / Settings**, and shows the local BT name as **STRADA**. The music player and call states are simulated in the emulator; the real BT action map still has to be completed on hardware (see below).
+The new UI removes **camera, navigation and apps**, removes the **weather widget**, uses **English**, keeps **Radio / Bluetooth / Files / Settings**, and shows the local BT name as **CAR_482**. The Bluetooth player and call states are simulated in the emulator; the real BT action map still has to be completed on hardware (see below). Files can play WAV and show BMP/PNG/JPG in the emulator.
 
 > **DiPlay port spike:** see [docs/DIPLAY_PORT.md](docs/DIPLAY_PORT.md). Verdict: DiPlay cannot be ported directly to the stock 7010B; CarPlay needs an Android head unit or a new Linux receiver with Wi-Fi, USB host, hardware H.264 and a lawful accessory identity.
 
@@ -162,7 +180,7 @@ The new UI removes **camera, navigation and apps**, removes the **weather widget
 
 ## Features
 
-* 800×480, dark StradaOS-style palette (`#15171C` background, `#1E2128` cards, `#FE3211` accent)
+* 800×480, dark StradaOS-style palette (`#15171C` background, `#1E2128` cards, `#FE3211` accent), plus a light daytime theme
 * Three-card layout: Phone, Bluetooth, Audio
 * Bluetooth states: off, ready, pairing, connected, playing, incoming call, active call, error
 * Play/pause, previous/next, mock AVRCP metadata, call answer/reject/hang-up, mute
@@ -227,12 +245,12 @@ The UI is designed for 800×480 and a resistive touch panel. Calibrate the touch
 
 ## Patch the Bluetooth name in the stock image
 
-The stock image stores `CAR-KIT` in 7-byte slots. The patch tool replaces it with `STRADA` without moving anything:
+The stock image stores `CAR-KIT` in 7-byte slots. `CAR_482` is exactly 7 characters, so the patch tool replaces it without moving anything. To use a different random suffix, pass any 1–7 character name and set `BT_LOCAL_NAME` in `app/bt_sim.h` to match:
 
 ```bash
 make image
 make verify-image
-# artifacts/7010b-STRADA.img
+# artifacts/7010b-CAR_482.img
 ```
 
 Custom name (1–7 ASCII characters):
@@ -254,7 +272,7 @@ Flashing instructions, SPI programmer commands, FEL recovery and safety rules: *
 
 `.github/workflows/build.yml` runs on push, pull request and tag:
 
-* **emulator** — builds SDL2 UI, runs CTest, renders four states, uploads PNGs
+* **emulator** — builds SDL2 UI, runs CTest, renders screenshots for every state and demo, uploads PNGs
 * **arm** — cross-compiles `strada-ui-fb` for ARMv5TE/ARM926EJ-S, uploads the binary
 * **image** — patches the stock image, verifies only the BT-name bytes changed, uploads the image
 * **release** — on a `v*` tag, publishes the artifacts with `gh release`
@@ -262,7 +280,7 @@ Flashing instructions, SPI programmer commands, FEL recovery and safety rules: *
 ## Repository layout
 
 ```
-app/                 LVGL UI, Bluetooth simulator, UART frame codec
+app/                 LVGL UI, themes, music player, Bluetooth simulator, UART frame codec
 cmake/               ARMv5TE cross toolchain
 docs/                screenshots, flashing, architecture
 emulator/            Dockerfile and run script

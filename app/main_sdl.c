@@ -85,6 +85,8 @@ int main(int argc, char **argv) {
     bool saver = false;
     bool show_vol = false;
     int vol_value = 70;
+    const char *open_file = NULL;
+    bool interrupt_demo = false;
     int frames = 0;
     bool interactive = true;
 
@@ -108,11 +110,15 @@ int main(int argc, char **argv) {
             dim = true;
         } else if (!strcmp(argv[i], "--saver")) {
             saver = true;
+        } else if (!strcmp(argv[i], "--interrupt")) {
+            interrupt_demo = true;
+        } else if (!strcmp(argv[i], "--file") && i + 1 < argc) {
+            open_file = argv[++i];
         } else if (!strcmp(argv[i], "--volume") && i + 1 < argc) {
             show_vol = true;
             vol_value = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt]\n", argv[0]);
             return 0;
         }
     }
@@ -123,7 +129,7 @@ int main(int argc, char **argv) {
 
     lv_init();
     lv_display_t *disp = lv_sdl_window_create(800, 480);
-    lv_sdl_window_set_title(disp, "Strada 7010B");
+    lv_sdl_window_set_title(disp, "CAR_482 7010B");
     lv_sdl_mouse_create();
     lv_sdl_keyboard_create();
     lv_display_set_default(disp);
@@ -135,10 +141,16 @@ int main(int argc, char **argv) {
         else if (!strcmp(panel, "files")) ui_show_panel(1);
         else if (!strcmp(panel, "settings")) ui_show_panel(2);
     }
+    if (interrupt_demo) {
+        bt_sim_set_state(&model, BT_PLAYING);
+        bt_sim_set_state(&model, BT_INCOMING);
+        ui_update();
+    }
     if (show_call) ui_show_call();
     if (light) ui_set_theme(true);
     if (dim) ui_set_night_dim(true);
     if (saver) ui_show_screensaver();
+    if (open_file) ui_open_file(open_file);
     if (show_vol) {
         ui_set_volume(vol_value);
         ui_show_volume();

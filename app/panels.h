@@ -22,5 +22,6 @@ void panels_set_files_root(const char *root);
 void panels_set_now(long epoch);
 void panels_set_volume(int value);
 void panels_set_modes(bool light, bool night, bool saver);
+void panels_open_file(const char *path);
 
 #endif

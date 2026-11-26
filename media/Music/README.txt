@@ -1,4 +1,6 @@
 Music folder.
 
-The stock 7010B plays MP3, WAV, FLAC, APE, OGG, WMA, AAC and more.
-The emulator only lists files; it does not decode audio.
+Sample WAV files play in the SDL emulator (real audio).
+MP3, FLAC, OGG and other formats show the player in simulated mode
+because the emulator has no codec for them; the stock firmware has
+its own decoders.

@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 
     ui_set_files_root(files_root);
     ui_init(&model);
-    printf("Strada 7010B UI on %s (touch %s)\n", fb, touch);
+    printf("CAR_482 7010B UI on %s (touch %s)\n", fb, touch);
 
     for (;;) {
         uint32_t wait = lv_timer_handler();

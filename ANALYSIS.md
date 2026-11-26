@@ -725,7 +725,7 @@ Keep the exact three-column geometry. Replace the center map with the Bluetooth 
 │ 17:37  Thursday, 26 November                              [🔊]  [⚙]  │
 │                                                                      │
 │ ┌──────────────┐  ┌──────────────────────────┐  ┌────────────────┐  │
-│ │ PHONE        │  │ BLUETOOTH        STRADA  │  │ AUDIO BLUETOOTH│  │
+│ │ PHONE        │  │ BLUETOOTH       CAR_482  │  │ AUDIO BLUETOOTH│  │
 │ │              │  │                          │  │                │  │
 │ │  (phone)     │  │        ( BT ring )       │  │   (album art)  │  │
 │ │ Aleksa's     │  │                          │  │                │  │
@@ -749,8 +749,8 @@ Center card states:
 | State | Big icon | Title | Subtitle | Primary | Secondary |
 |---|---|---|---|---|---|
 | OFF | BT crossed | “Bluetooth off” | “Tap to power on” | Power on | — |
-| READY | BT | “Pair from your phone” | “STRADA · PIN 0000” | Start pairing | Settings |
-| PAIRING | spinner ring | “Waiting for phone” | “Select STRADA on your phone” | Cancel | — |
+| READY | BT | “Pair from your phone” | “CAR_482 · PIN 0000” | Start pairing | Settings |
+| PAIRING | spinner ring | “Waiting for phone” | “Select CAR_482 on your phone” | Cancel | — |
 | CONNECTED | BT + check | “Connected” | “Aleksa's iPhone · A2DP” | Play | Disconnect |
 | PLAYING | BT + equalizer | “Playing” | track title | Pause | Disconnect |
 | INCOMING | phone ring | “Incoming call” | caller name/number | Answer (green) | Reject (red) |

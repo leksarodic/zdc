@@ -277,6 +277,9 @@
   .file-row:hover{background:var(--btn);color:var(--text)}
   .file-row .size{margin-left:auto;color:var(--muted);font-size:10px}
   .files-info{font-size:10px;color:var(--muted);margin-top:6px}
+  .files-empty{padding:18px 20px}
+  .files-empty b{display:block;font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px}
+  .files-empty span{font-size:12px;color:var(--muted)}
   .file-preview{
     position:absolute;left:30px;top:40px;width:715px;height:220px;
     background:var(--inner);border-radius:12px;padding:14px 16px;display:none;z-index:8;
@@ -288,7 +291,10 @@
     font-size:11px;line-height:1.45;color:var(--soft);margin:0;
   }
   .file-preview .panel-close{position:absolute;right:12px;top:10px}
-  .settings-row{display:flex;align-items:center;gap:14px;margin-top:14px;font-size:11px;color:var(--muted)}
+  .settings-cols{display:flex;gap:28px;margin-top:8px}
+  .settings-col{flex:1;min-width:0}
+  .settings-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .settings-input{background:var(--inner);border:0;border-radius:8px;color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;color-scheme:dark;width:180px}
   .settings-row .value{color:var(--text);font-weight:600;font-size:12px;margin-left:8px}
   .swatches{display:flex;gap:8px}
   .swatch{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer}
@@ -302,6 +308,33 @@
   .about-grid{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:10px;color:var(--muted);margin-top:6px}
   .about-grid b{color:var(--text);font-weight:500}
   .settings-reset{position:absolute;right:24px;bottom:16px;width:140px;height:34px;font-size:12px}
+
+
+  /* ── now playing / call panels ─────────────────────────── */
+  .player-panel{z-index:7;display:none}
+  .player-panel.show{display:block}
+  .player-body{display:flex;gap:34px;align-items:center;margin-top:18px}
+  .player-art{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 34% 28%, #FF7048 0%, var(--accent) 48%, #B51E09 100%);display:grid;place-items:center;flex:none}
+  .player-art svg{width:70px;height:70px;color:#fff}
+  .player-info{flex:1;min-width:0}
+  .player-track{font-size:28px;font-weight:600;letter-spacing:-.01em}
+  .player-artist{font-size:15px;color:var(--muted);margin-top:3px}
+  .player-time{font-size:11px;color:var(--muted);margin-top:4px}
+  .player-bar{height:8px;background:var(--btn);border-radius:4px;margin-top:12px;overflow:hidden;width:420px;max-width:100%}
+  .player-bar i{display:block;height:100%;width:30%;background:var(--accent);border-radius:4px}
+  .player-controls{display:flex;align-items:center;gap:12px;margin-top:16px}
+  .call-panel{z-index:9;display:none}
+  .call-panel.show{display:block}
+  .call-body{display:flex;gap:28px;margin-top:8px}
+  .call-recent{width:260px}
+  .call-contact{display:block;width:100%;height:34px;margin-top:8px;border:0;border-radius:8px;background:var(--inner);color:var(--soft);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left;padding:0 10px}
+  .call-contact:hover{background:var(--btn);color:var(--text)}
+  .call-number{height:34px;border-radius:8px;background:var(--inner);color:var(--text);font-size:18px;font-weight:600;display:flex;align-items:center;padding:0 10px;width:360px}
+  .call-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:360px;margin-top:10px}
+  .call-keys button{height:36px;border:0;border-radius:8px;background:var(--inner);color:var(--text);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  .call-keys button:hover{background:var(--btn)}
+  .call-actions{display:flex;gap:8px;margin-top:10px;width:360px}
+  .call-actions .btn{flex:1;height:34px;font-size:12px}
 
   /* toast */
   .toast{
@@ -520,13 +553,14 @@
     </div>
     <div class="radio-bottom">
       <button class="btn primary" id="radioPower">Power off</button>
+      <button class="btn ghost" id="radioSave">Save preset</button>
       <button class="btn ghost" id="radioMute">Mute</button>
     </div>
   </section>
 
   <!-- FILES PANEL -->
   <section class="app-panel" id="filesPanel">
-    <div class="panel-head"><span class="label">Files</span><span class="source">Local / USB</span><button class="panel-close" data-close>×</button></div>
+    <div class="panel-head"><span class="label">Files</span><span class="source" id="filesStatus">USB / SD</span><button class="panel-close" data-close>×</button></div>
     <div class="files-path" id="filesPath">media</div>
     <div class="files-tools">
       <button class="btn ghost" id="filesUp" title="Up">↑</button>
@@ -544,34 +578,93 @@
   <!-- SETTINGS PANEL -->
   <section class="app-panel" id="settingsPanel">
     <div class="panel-head"><span class="label">Settings</span><span class="source">STRADA 7010B</span><button class="panel-close" data-close>×</button></div>
-    <div class="settings-row">
-      <span>Accent</span>
-      <div class="swatches" id="swatches">
-        <button class="swatch sel" data-color="#FE3211" style="background:#FE3211"></button>
-        <button class="swatch" data-color="#FF7A1A" style="background:#FF7A1A"></button>
-        <button class="swatch" data-color="#2DBE6C" style="background:#2DBE6C"></button>
-        <button class="swatch" data-color="#2F7CF6" style="background:#2F7CF6"></button>
-        <button class="swatch" data-color="#8E5CF7" style="background:#8E5CF7"></button>
+    <div class="settings-cols">
+      <div class="settings-col">
+        <div class="settings-row">
+          <span>Accent</span>
+          <div class="swatches" id="swatches">
+            <button class="swatch sel" data-color="#FE3211" style="background:#FE3211"></button>
+            <button class="swatch" data-color="#FF7A1A" style="background:#FF7A1A"></button>
+            <button class="swatch" data-color="#2DBE6C" style="background:#2DBE6C"></button>
+            <button class="swatch" data-color="#2F7CF6" style="background:#2F7CF6"></button>
+            <button class="swatch" data-color="#8E5CF7" style="background:#8E5CF7"></button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span>Clock</span>
+          <button class="clock-btn sel" id="clock24">24 h</button>
+          <button class="clock-btn" id="clock12">12 h</button>
+        </div>
+        <div class="settings-row">
+          <span>Volume</span>
+          <input type="range" id="volumeRange" min="0" max="100" value="70">
+          <span class="value" id="volumeValue">70%</span>
+        </div>
+      </div>
+      <div class="settings-col">
+        <div class="settings-row">
+          <span>Date</span>
+          <input class="settings-input" type="date" id="setDate">
+        </div>
+        <div class="settings-row">
+          <span>Time</span>
+          <input class="settings-input" type="time" id="setTime">
+        </div>
+        <div class="sub-label" style="margin-top:12px">About</div>
+        <div class="about-grid">
+          <span>Bluetooth</span><b>STRADA</b>
+          <span>UI</span><b>LVGL 9.3 / 800x480</b>
+          <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
+        </div>
       </div>
     </div>
-    <div class="settings-row">
-      <span>Clock</span>
-      <button class="clock-btn sel" id="clock24">24 h</button>
-      <button class="clock-btn" id="clock12">12 h</button>
-    </div>
-    <div class="settings-row">
-      <span>Volume</span>
-      <input type="range" id="volumeRange" min="0" max="100" value="70">
-      <span class="value" id="volumeValue">70%</span>
-    </div>
-    <div class="sub-label" style="margin-top:16px">About</div>
-    <div class="about-grid">
-      <span>Bluetooth name</span><b>STRADA</b>
-      <span>UI</span><b>LVGL 9.3 / 800x480</b>
-      <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
-      <span>Hardware</span><b>7010B / F1C200s class</b>
-    </div>
     <button class="btn ghost settings-reset" id="settingsReset">Reset UI</button>
+  </section>
+
+  <!-- NOW PLAYING -->
+  <section class="app-panel player-panel" id="playerPanel">
+    <div class="panel-head"><span class="label">Now Playing</span><span class="source">Bluetooth</span><button class="panel-close" data-player-close>×</button></div>
+    <div class="player-body">
+      <div class="player-art" id="playerArt"><svg><use href="#i-note"/></svg></div>
+      <div class="player-info">
+        <div class="player-track" id="playerTrack">Test Song</div>
+        <div class="player-artist" id="playerArtist">StradaOS</div>
+        <div class="player-time" id="playerTime">1:08 / 3:35</div>
+        <div class="player-bar"><i id="playerBar"></i></div>
+        <div class="player-controls">
+          <button class="circle-btn sm" id="playerPrev"><svg><use href="#i-prev"/></svg></button>
+          <button class="circle-btn lg" id="playerPlay"><svg><use href="#i-pause"/></svg></button>
+          <button class="circle-btn sm" id="playerNext"><svg><use href="#i-next"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL -->
+  <section class="app-panel call-panel" id="callPanel">
+    <div class="panel-head"><span class="label">Call</span><span class="source">Hands-free</span><button class="panel-close" data-call-close>×</button></div>
+    <div class="call-body">
+      <div class="call-recent">
+        <div class="sub-label">Recent</div>
+        <button class="call-contact" data-contact="Aleksa">Aleksa</button>
+        <button class="call-contact" data-contact="Home">Home</button>
+        <button class="call-contact" data-contact="Work">Work</button>
+      </div>
+      <div>
+        <div class="call-number" id="callNumber">Enter number</div>
+        <div class="call-keys" id="callKeys">
+          <button data-dial="1">1</button><button data-dial="2">2</button><button data-dial="3">3</button>
+          <button data-dial="4">4</button><button data-dial="5">5</button><button data-dial="6">6</button>
+          <button data-dial="7">7</button><button data-dial="8">8</button><button data-dial="9">9</button>
+          <button data-dial="*">*</button><button data-dial="0">0</button><button data-dial="#">#</button>
+        </div>
+        <div class="call-actions">
+          <button class="btn ghost" id="callDel">DEL</button>
+          <button class="btn ghost" id="callClear">Clear</button>
+          <button class="btn primary" id="callStart">Call</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <div class="toast" id="toast"></div>
@@ -595,6 +688,7 @@
   <button data-action="next">Next track</button>
   <button data-action="prev">Prev track</button>
   <button data-action="reset">Reset</button>
+  <button data-action="storage">Storage: on</button>
   <button data-action="hide">Hide</button>
 </div>
 </div>
@@ -606,6 +700,9 @@
 
   let clock24 = true;
   let volume = 70;
+  let clockSet = false;
+  let clockBase = new Date();
+  let clockBaseAt = Date.now();
 
   const state = {
     mode: 'connected',           // off | ready | pairing | connected | playing | incoming | active | error
@@ -615,6 +712,7 @@
     dur: 215,
     dial: '',
     callTimer: null,
+    callTarget: '',
   };
 
   const tracks = [
@@ -688,7 +786,7 @@
     );
     const titles = {
       off: ['Bluetooth apagado', 'Toca para encender el módulo'],
-      ready: ['Ready to pair', 'STRADA / PIN 0000 / 800x480'],
+      ready: ['Ready to pair', 'STRADA / PIN 0000'],
       pairing: ['Pairing...', 'Searching for phones nearby'],
       connected: ['Connected', "Aleksa's iPhone / A2DP / AVRCP"],
       playing: ['Playing', "Aleksa's iPhone / A2DP / AVRCP"],
@@ -697,7 +795,9 @@
       error: ['Connection failed', 'Check your phone and try again'],
     };
     el('btTitle').textContent = titles[m][0];
-    el('btSub').textContent = titles[m][1];
+    el('btSub').textContent = (m === 'active' && state.callTarget)
+      ? `${fmt(state.callSec || 0)} / ${state.callTarget}`
+      : titles[m][1];
 
     const primary = el('btnPrimary');
     const secondary = el('btnSecondary');
@@ -743,9 +843,29 @@
     setRing('artRing', connected ? state.pos / t.dur : 0);
     el('btnPrev').disabled = !connected;
     el('btnNext').disabled = !connected;
+    el('btnCallSim').disabled = !connected;
+    el('btnCallSim').style.opacity = connected ? '1' : '.5';
+    renderPlayer();
+  }
+
+  function renderPlayer() {
+    const show = playerExpanded && state.mode === 'playing' && screen === 'home';
+    el('playerPanel').classList.toggle('show', show);
+    if (!show) return;
+    const t = tracks[state.track];
+    el('playerTrack').textContent = t.title;
+    el('playerArtist').textContent = t.artist;
+    el('playerTime').textContent = `${fmt(state.pos)} / ${fmt(t.dur)}`;
+    el('playerBar').style.width = `${Math.min(100, (state.pos / t.dur) * 100)}%`;
+    el('playerPlay').innerHTML = `<svg><use href="#i-${state.mode === 'playing' ? 'pause' : 'play'}"/></svg>`;
   }
 
   function go(next) {
+    const prev = state.mode;
+    if (next === 'playing' && prev !== 'playing') playerExpanded = true;
+    if (next !== 'playing') playerExpanded = false;
+    if (next !== 'active') state.callTarget = '';
+    el('callPanel').classList.remove('show');
     state.mode = next;
     if (next === 'pairing') {
       clearTimeout(state.pairTimer);
@@ -807,10 +927,7 @@
     else { go('pairing'); }
   });
 
-  el('btnCallSim').addEventListener('click', () => {
-    if (!deviceConnected()) { toast('Connect a phone first'); return; }
-    go('incoming');
-  });
+  el('btnCallSim').addEventListener('click', openCallPanel);
 
   el('btnPlay').addEventListener('click', () => {
     if (state.mode === 'playing') go('connected');
@@ -867,7 +984,9 @@
   let radioFreq = 98.1;
   let radioOn = true;
   let radioMute = false;
-  const PRESETS = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  let radioSaveMode = false;
+  let presets = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  let playerExpanded = false;
   const PANELS = { radio: el('radioPanel'), files: el('filesPanel'), settings: el('settingsPanel') };
 
   function setDockActive(name) {
@@ -878,25 +997,32 @@
   function showScreen(name) {
     screen = name;
     Object.entries(PANELS).forEach(([key, panel]) => panel.classList.toggle('show', key === name));
+    el('callPanel').classList.remove('show');
     setDockActive(name);
+    renderPlayer();
     if (name === 'radio') renderRadio();
     if (name === 'files') renderFiles();
     if (name === 'settings') renderSettings();
   }
   function showHome() { showScreen('home'); }
 
+  document.querySelector('.gear').addEventListener('click', () => showScreen('settings'));
+
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', showHome));
 
   function renderRadio() {
     el('radioFreq').textContent = radioOn ? radioFreq.toFixed(1) + ' MHz' : 'OFF';
     el('radioFreq').style.color = radioOn ? 'var(--text)' : 'var(--muted)';
-    el('radioStatus').textContent = !radioOn ? 'Radio off' : radioMute ? 'Muted' : 'Stereo / 5 bars';
-    el('radioStatus').style.color = radioOn && !radioMute ? 'var(--green)' : 'var(--muted)';
+    el('radioStatus').textContent = radioSaveMode ? 'Tap 1-6 to save this station'
+      : !radioOn ? 'Radio off' : radioMute ? 'Muted' : 'Stereo / 5 bars';
+    el('radioStatus').style.color = radioSaveMode ? 'var(--accent)'
+      : radioOn && !radioMute ? 'var(--green)' : 'var(--muted)';
     el('radioPower').textContent = radioOn ? 'Power off' : 'Power on';
     el('radioMute').textContent = radioMute ? 'Unmute' : 'Mute';
+    el('radioSave').textContent = radioSaveMode ? 'Cancel save' : 'Save preset';
     document.querySelectorAll('#radioPresets [data-preset]').forEach(b => {
       const i = Number(b.dataset.preset);
-      b.classList.toggle('sel', radioOn && Math.abs(radioFreq - PRESETS[i]) < 0.05);
+      b.classList.toggle('sel', radioOn && Math.abs(radioFreq - presets[i]) < 0.05);
     });
   }
 
@@ -908,12 +1034,23 @@
     renderRadio();
   }));
   document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
-    radioOn = true;
-    radioFreq = PRESETS[Number(b.dataset.preset)];
+    const i = Number(b.dataset.preset);
+    if (radioSaveMode) {
+      presets[i] = radioFreq;
+      radioSaveMode = false;
+    } else {
+      radioOn = true;
+      radioFreq = presets[i];
+    }
     renderRadio();
   }));
-  el('radioPower').addEventListener('click', () => { radioOn = !radioOn; renderRadio(); });
+  el('radioPower').addEventListener('click', () => {
+    radioOn = !radioOn;
+    if (!radioOn) radioSaveMode = false;
+    renderRadio();
+  });
   el('radioMute').addEventListener('click', () => { radioMute = !radioMute; renderRadio(); });
+  el('radioSave').addEventListener('click', () => { radioSaveMode = !radioSaveMode; renderRadio(); });
 
   // ── virtual filesystem (browser demo) ─────────────────────
   const fsRoot = {
@@ -932,14 +1069,31 @@
     ]
   };
   let fileStack = [fsRoot];
+  let storageAvailable = true;
 
   function fileSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
 
   function renderFiles() {
+    if (!storageAvailable) {
+      el('filesStatus').textContent = 'NO STORAGE';
+      el('filesStatus').style.color = 'var(--accent)';
+      el('filesPath').textContent = 'No USB or SD card connected';
+      el('filesList').innerHTML = '<div class="files-empty"><b>No USB or SD card connected</b><span>Insert a USB drive or SD card, then press Refresh.</span></div>';
+      el('filesInfo').textContent = '0 items';
+      el('filePreview').classList.remove('show');
+      return;
+    }
+    el('filesStatus').textContent = 'USB / SD';
+    el('filesStatus').style.color = 'var(--accent)';
     const dir = fileStack[fileStack.length - 1];
     const path = 'media' + fileStack.slice(1).map(d => '/' + d.name).join('');
     el('filesPath').textContent = path;
     el('filesList').innerHTML = '';
+    if (dir.children.length === 0) {
+      el('filesList').innerHTML = '<div class="files-empty"><b>USB/SD is empty</b><span>Copy files to the drive and press Refresh.</span></div>';
+      el('filesInfo').textContent = '0 items';
+      return;
+    }
     dir.children.forEach(item => {
       const row = document.createElement('button');
       row.className = 'file-row';
@@ -960,7 +1114,10 @@
   }
 
   el('filesUp').addEventListener('click', () => { if (fileStack.length > 1) { fileStack.pop(); renderFiles(); } });
-  el('filesRefresh').addEventListener('click', renderFiles);
+  el('filesRefresh').addEventListener('click', () => {
+    if (!storageAvailable) toast('No USB or SD card connected');
+    renderFiles();
+  });
   document.querySelectorAll('[data-preview-close]').forEach(b => b.addEventListener('click', () => el('filePreview').classList.remove('show')));
 
   // ── settings ──────────────────────────────────────────────
@@ -982,17 +1139,84 @@
     volume = Number(e.target.value);
     el('volumeValue').textContent = volume + '%';
   });
+  function applyClockInputs() {
+    const [y, m, d] = el('setDate').value.split('-').map(Number);
+    const [hh, mm] = el('setTime').value.split(':').map(Number);
+    if (!y || !m || !d) return;
+    clockBase = new Date(y, m - 1, d, hh || 0, mm || 0, 0);
+    clockBaseAt = Date.now();
+    clockSet = true;
+    tickClock();
+  }
+  el('setDate').addEventListener('change', applyClockInputs);
+  el('setTime').addEventListener('change', applyClockInputs);
   el('settingsReset').addEventListener('click', () => {
     setAccent('#FE3211');
     setClock(true);
     volume = 70;
     el('volumeRange').value = 70;
     el('volumeValue').textContent = '70%';
+    clockSet = false;
+    clockBase = new Date();
+    clockBaseAt = Date.now();
+    syncClockInputs();
+    tickClock();
   });
   function renderSettings() {
     el('volumeRange').value = volume;
     el('volumeValue').textContent = volume + '%';
+    syncClockInputs();
   }
+
+  // ── now playing panel ─────────────────────────────────────
+  document.querySelectorAll('[data-player-close]').forEach(b => b.addEventListener('click', () => {
+    playerExpanded = false;
+    renderPlayer();
+  }));
+  el('playerPlay').addEventListener('click', () => go(state.mode === 'playing' ? 'connected' : 'playing'));
+  el('playerNext').addEventListener('click', () => el('btnNext').click());
+  el('playerPrev').addEventListener('click', () => el('btnPrev').click());
+  el('art').addEventListener('click', () => {
+    if (state.mode === 'playing') { playerExpanded = true; renderPlayer(); }
+  });
+
+  // ── call panel ────────────────────────────────────────────
+  const CONTACT_NUMBERS = {
+    Aleksa: '+381 60 123 4567',
+    Home: '+381 11 123 456',
+    Work: '+381 11 987 654',
+  };
+  let callNumber = '';
+
+  function renderCall() {
+    el('callNumber').textContent = callNumber || 'Enter number';
+    el('callNumber').style.color = callNumber ? 'var(--text)' : 'var(--muted)';
+  }
+
+  function openCallPanel() {
+    if (!deviceConnected()) { toast('Connect a phone first'); return; }
+    callNumber = '';
+    renderCall();
+    el('callPanel').classList.add('show');
+  }
+
+  document.querySelectorAll('[data-call-close]').forEach(b => b.addEventListener('click', () => el('callPanel').classList.remove('show')));
+  document.querySelectorAll('[data-contact]').forEach(b => b.addEventListener('click', () => {
+    callNumber = CONTACT_NUMBERS[b.dataset.contact] || b.dataset.contact;
+    renderCall();
+  }));
+  document.querySelectorAll('[data-dial]').forEach(b => b.addEventListener('click', () => {
+    if (callNumber.length < 24) callNumber += b.dataset.dial;
+    renderCall();
+  }));
+  el('callDel').addEventListener('click', () => { callNumber = callNumber.slice(0, -1); renderCall(); });
+  el('callClear').addEventListener('click', () => { callNumber = ''; renderCall(); });
+  el('callStart').addEventListener('click', () => {
+    if (!callNumber) return;
+    state.callTarget = callNumber;
+    el('callPanel').classList.remove('show');
+    go('active');
+  });
 
   document.querySelectorAll('.dock-item').forEach(d => {
     d.addEventListener('click', () => {
@@ -1004,9 +1228,23 @@
   });
 
   // ── clock ──────────────────────────────────────────────────
+  function currentClock() {
+    return clockSet ? new Date(clockBase.getTime() + (Date.now() - clockBaseAt)) : new Date();
+  }
+
+  function syncClockInputs() {
+    const d = currentClock();
+    const p = (n) => String(n).padStart(2, '0');
+    el('setDate').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    el('setTime').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
   function tickClock() {
-    const d = new Date();
+    const d = currentClock();
     el('clock').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: !clock24 });
+    el('date').textContent = d.toLocaleDateString('en-GB', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    }).replace(/^\w/, c => c.toUpperCase());
   }
   tickClock();
   setInterval(tickClock, 1000);
@@ -1048,6 +1286,12 @@
       else if (a === 'next') el('btnNext').click();
       else if (a === 'prev') el('btnPrev').click();
       else if (a === 'reset') go('connected');
+      else if (a === 'storage') {
+        storageAvailable = !storageAvailable;
+        b.textContent = 'Storage: ' + (storageAvailable ? 'on' : 'off');
+        if (screen === 'files') renderFiles();
+        toast(storageAvailable ? 'USB/SD connected' : 'USB/SD disconnected');
+      }
       else if (a === 'hide') { el('testbar').classList.add('hidden'); fit(); }
     });
   });
@@ -1083,6 +1327,7 @@
     if (modes.includes(requested)) go(requested);
   }
 
+  syncClockInputs();
   showScreen('home');
   render();
 })();

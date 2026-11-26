@@ -32,6 +32,10 @@ screenshot: build
 		$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/$$p.ppm --frames 30 --state connected --panel $$p; \
 		$(PYTHON) tools/ppm_to_png.py artifacts/$$p.ppm artifacts/$$p.png; \
 	done
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call.ppm --frames 30 --state connected --call
+	@$(PYTHON) tools/ppm_to_png.py artifacts/call.ppm artifacts/call.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-no-storage.ppm --frames 30 --state connected --panel files --files-root /nonexistent
+	@$(PYTHON) tools/ppm_to_png.py artifacts/files-no-storage.ppm artifacts/files-no-storage.png
 
 arm:
 	$(CMAKE) -S . -B build-arm \

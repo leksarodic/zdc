@@ -18,6 +18,8 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Incoming call | [incoming.png](docs/screenshots/incoming.png) |
 | Active call | [active.png](docs/screenshots/active.png) |
 | Error | [error.png](docs/screenshots/error.png) |
+| Call | [call.png](docs/screenshots/call.png) |
+| Files, no storage | [files-no-storage.png](docs/screenshots/files-no-storage.png) |
 
 ## Functional panels
 
@@ -29,6 +31,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 * FM frequency display, tune ±0.1 MHz and seek ±1 MHz
 * Six presets (87.5, 90.1, 94.3, 98.1, 101.7, 104.9)
+* **Save preset**: press Save, then 1–6 to store the current station
 * Power and mute states
 * Simulated tuner in the emulator; on hardware the same actions map to the MCU/BT UART protocol
 
@@ -40,7 +43,10 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Up and refresh buttons, scrollable list
 * Text/binary preview panel
 * Emulator root is `media/`; the framebuffer build defaults to `/media`
-* The browser test UI uses the matching virtual tree
+* If no USB/SD is available, the panel says **No USB or SD card connected** and asks you to insert one
+* The browser test UI uses the matching virtual tree; the Storage button simulates removal
+
+![Files with no storage](docs/screenshots/files-no-storage.png)
 
 ### Settings
 
@@ -48,9 +54,22 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 * Accent color swatches (red, orange, green, blue, purple) update the whole UI
 * 24 h / 12 h clock switch
+* **Date and time setting** — native +/- controls; browser date/time pickers
 * Volume slider with live percentage
 * About/build information and “Reset UI”
 * Settings apply immediately; the emulator does not persist them across restarts yet
+
+### Now Playing
+
+![Now Playing](docs/screenshots/playing.png)
+
+Pressing Play maximises the player automatically. It shows a large album art, track, artist, elapsed time, progress bar and prev/pause/next. Minimise with the top-right button; tap the album art on the home card to reopen it.
+
+### Call
+
+![Call](docs/screenshots/call.png)
+
+The phone card **Call** button now opens recent contacts and a dial pad instead of only simulating an incoming call. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer.
 
 ## Interactive testing
 
@@ -71,7 +90,7 @@ prototype/index.html?state=incoming
 prototype/index.html?clean=1&state=pairing
 ```
 
-Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')` are available for browser automation.
+Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')`, `window.strada.showScreen('files')` and `window.strada.action('storage')` are available for browser automation.
 
 ### Native SDL emulator
 

@@ -1,0 +1,4 @@
+Build: Strada 7010B
+Target: Allwinner F1C200s class, 800x480
+BT link: 55 AA LEN CMD DATA CHK
+BT name: STRADA

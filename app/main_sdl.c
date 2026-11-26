@@ -47,6 +47,19 @@ static void handle_keys(bt_model_t *m) {
     bool mm = k[SDL_SCANCODE_M] != 0;
     if (mm && !prev_m) { bt_sim_secondary(m); ui_update(); }
     prev_m = mm;
+    static bool prev_r = false, prev_f = false, prev_g = false, prev_h = false;
+    bool r = k[SDL_SCANCODE_R] != 0;
+    if (r && !prev_r) ui_show_panel(0);
+    prev_r = r;
+    bool f = k[SDL_SCANCODE_F] != 0;
+    if (f && !prev_f) ui_show_panel(1);
+    prev_f = f;
+    bool g = k[SDL_SCANCODE_G] != 0;
+    if (g && !prev_g) ui_show_panel(2);
+    prev_g = g;
+    bool h = k[SDL_SCANCODE_H] != 0;
+    if (h && !prev_h) ui_show_panel(-1);
+    prev_h = h;
 }
 
 static bt_state_t parse_state(const char *s) {
@@ -64,6 +77,7 @@ static bt_state_t parse_state(const char *s) {
 int main(int argc, char **argv) {
     const char *shot = NULL;
     const char *state = "connected";
+    const char *panel = NULL;
     int frames = 0;
     bool interactive = true;
 
@@ -75,8 +89,10 @@ int main(int argc, char **argv) {
             frames = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--state") && i + 1 < argc) {
             state = argv[++i];
+        } else if (!strcmp(argv[i], "--panel") && i + 1 < argc) {
+            panel = argv[++i];
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state off|ready|pairing|connected|playing|incoming|active|error]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state off|ready|pairing|connected|playing|incoming|active|error] [--panel radio|files|settings]\n", argv[0]);
             return 0;
         }
     }
@@ -92,7 +108,13 @@ int main(int argc, char **argv) {
     lv_sdl_keyboard_create();
     lv_display_set_default(disp);
 
+    ui_set_files_root("media");
     ui_init(&model);
+    if (panel) {
+        if (!strcmp(panel, "radio")) ui_show_panel(0);
+        else if (!strcmp(panel, "files")) ui_show_panel(1);
+        else if (!strcmp(panel, "settings")) ui_show_panel(2);
+    }
 
     if (shot) {
         if (frames <= 0) frames = 90;
@@ -108,7 +130,7 @@ int main(int argc, char **argv) {
 
     if (!interactive) return 0;
 
-    printf("Test keys: 1-8 set state, Space primary, N next, P prev, M secondary/mute\n");
+    printf("Test keys: 1-8 set state, Space primary, N next, P prev, M secondary/mute, R radio, F files, G settings, H home\n");
     for (;;) {
         handle_keys(&model);
         uint32_t wait = lv_timer_handler();

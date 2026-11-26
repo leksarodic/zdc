@@ -242,6 +242,67 @@
   .dock-label{font-size:10.5px;color:var(--soft);white-space:nowrap}
   .dock-item.active .dock-label{color:var(--text);font-weight:600}
 
+
+  /* ── app panels: Radio / Files / Settings ───────────────── */
+  .app-panel{
+    position:absolute;left:12.5px;top:50px;width:775px;height:297px;
+    border-radius:16px;background:var(--card);padding:14px 18px;
+    display:none;z-index:6;overflow:hidden;
+  }
+  .app-panel.show{display:block}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;height:18px}
+  .panel-close{
+    border:0;border-radius:8px;background:var(--inner);color:var(--text);
+    width:30px;height:30px;font-size:16px;line-height:1;cursor:pointer;
+  }
+  .panel-close:hover{background:var(--btn)}
+  .radio-freq{font-size:52px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:6px}
+  .radio-status{text-align:center;font-size:12px;color:var(--green);margin-top:-2px}
+  .radio-row{display:flex;gap:10px;margin-top:12px}
+  .radio-row .btn{flex:1;height:38px;font-size:12px}
+  .radio-presets{display:flex;gap:10px;margin-top:8px}
+  .radio-presets .btn{flex:1;height:32px;font-size:12px}
+  .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
+  .radio-bottom{display:flex;justify-content:space-between;margin-top:12px}
+  .radio-bottom .btn{width:170px;height:34px;font-size:12px}
+  .files-path{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .files-tools{display:flex;gap:8px;margin-top:6px}
+  .files-tools .btn{width:54px;height:30px;font-size:14px}
+  .files-list{height:158px;overflow:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px;padding-right:4px}
+  .file-row{
+    display:flex;align-items:center;gap:8px;min-height:27px;background:var(--inner);
+    border-radius:6px;padding:0 8px;font-size:12px;color:var(--soft);cursor:pointer;
+    border:0;text-align:left;width:100%;font-family:inherit;
+  }
+  .file-row:hover{background:var(--btn);color:var(--text)}
+  .file-row .size{margin-left:auto;color:var(--muted);font-size:10px}
+  .files-info{font-size:10px;color:var(--muted);margin-top:6px}
+  .file-preview{
+    position:absolute;left:30px;top:40px;width:715px;height:220px;
+    background:var(--inner);border-radius:12px;padding:14px 16px;display:none;z-index:8;
+  }
+  .file-preview.show{display:block}
+  .file-preview h3{font-size:14px;font-weight:600;color:var(--text);margin:0 0 8px}
+  .file-preview pre{
+    height:150px;overflow:auto;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:11px;line-height:1.45;color:var(--soft);margin:0;
+  }
+  .file-preview .panel-close{position:absolute;right:12px;top:10px}
+  .settings-row{display:flex;align-items:center;gap:14px;margin-top:14px;font-size:11px;color:var(--muted)}
+  .settings-row .value{color:var(--text);font-weight:600;font-size:12px;margin-left:8px}
+  .swatches{display:flex;gap:8px}
+  .swatch{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer}
+  .swatch.sel{box-shadow:0 0 0 3px var(--text)}
+  .settings-row input[type=range]{width:280px;accent-color:var(--accent)}
+  .clock-btn{
+    border:0;border-radius:8px;background:var(--inner);color:var(--soft);
+    font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;cursor:pointer;
+  }
+  .clock-btn.sel{background:var(--btn);color:var(--text)}
+  .about-grid{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:10px;color:var(--muted);margin-top:6px}
+  .about-grid b{color:var(--text);font-weight:500}
+  .settings-reset{position:absolute;right:24px;bottom:16px;width:140px;height:34px;font-size:12px}
+
   /* toast */
   .toast{
     position:absolute;left:50%;bottom:132px;transform:translate(-50%,8px);
@@ -436,6 +497,83 @@
     <div class="dock-item" data-dock="settings"><div class="dock-ic"><svg style="color:#fff"><use href="#i-gear"/></svg></div><div class="dock-label">Settings</div></div>
   </nav>
 
+
+  <!-- RADIO PANEL -->
+  <section class="app-panel" id="radioPanel">
+    <div class="panel-head"><span class="label">Radio</span><span class="source">FM / Stereo</span><button class="panel-close" data-close>×</button></div>
+    <div class="radio-freq" id="radioFreq">98.1 MHz</div>
+    <div class="radio-status" id="radioStatus">Stereo / 5 bars</div>
+    <div class="radio-row">
+      <button class="btn ghost" data-radio="-0.1">- 0.1</button>
+      <button class="btn ghost" data-radio="-1">Seek -</button>
+      <button class="btn ghost" data-radio="1">Seek +</button>
+      <button class="btn ghost" data-radio="0.1">+ 0.1</button>
+    </div>
+    <div class="sub-label" style="margin-top:10px">Presets</div>
+    <div class="radio-presets" id="radioPresets">
+      <button class="btn ghost" data-preset="0">1</button>
+      <button class="btn ghost" data-preset="1">2</button>
+      <button class="btn ghost" data-preset="2">3</button>
+      <button class="btn ghost sel" data-preset="3">4</button>
+      <button class="btn ghost" data-preset="4">5</button>
+      <button class="btn ghost" data-preset="5">6</button>
+    </div>
+    <div class="radio-bottom">
+      <button class="btn primary" id="radioPower">Power off</button>
+      <button class="btn ghost" id="radioMute">Mute</button>
+    </div>
+  </section>
+
+  <!-- FILES PANEL -->
+  <section class="app-panel" id="filesPanel">
+    <div class="panel-head"><span class="label">Files</span><span class="source">Local / USB</span><button class="panel-close" data-close>×</button></div>
+    <div class="files-path" id="filesPath">media</div>
+    <div class="files-tools">
+      <button class="btn ghost" id="filesUp" title="Up">↑</button>
+      <button class="btn ghost" id="filesRefresh" title="Refresh">⟳</button>
+    </div>
+    <div class="files-list" id="filesList"></div>
+    <div class="files-info" id="filesInfo"></div>
+    <div class="file-preview" id="filePreview">
+      <button class="panel-close" data-preview-close>×</button>
+      <h3 id="filePreviewTitle"></h3>
+      <pre id="filePreviewText"></pre>
+    </div>
+  </section>
+
+  <!-- SETTINGS PANEL -->
+  <section class="app-panel" id="settingsPanel">
+    <div class="panel-head"><span class="label">Settings</span><span class="source">STRADA 7010B</span><button class="panel-close" data-close>×</button></div>
+    <div class="settings-row">
+      <span>Accent</span>
+      <div class="swatches" id="swatches">
+        <button class="swatch sel" data-color="#FE3211" style="background:#FE3211"></button>
+        <button class="swatch" data-color="#FF7A1A" style="background:#FF7A1A"></button>
+        <button class="swatch" data-color="#2DBE6C" style="background:#2DBE6C"></button>
+        <button class="swatch" data-color="#2F7CF6" style="background:#2F7CF6"></button>
+        <button class="swatch" data-color="#8E5CF7" style="background:#8E5CF7"></button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span>Clock</span>
+      <button class="clock-btn sel" id="clock24">24 h</button>
+      <button class="clock-btn" id="clock12">12 h</button>
+    </div>
+    <div class="settings-row">
+      <span>Volume</span>
+      <input type="range" id="volumeRange" min="0" max="100" value="70">
+      <span class="value" id="volumeValue">70%</span>
+    </div>
+    <div class="sub-label" style="margin-top:16px">About</div>
+    <div class="about-grid">
+      <span>Bluetooth name</span><b>STRADA</b>
+      <span>UI</span><b>LVGL 9.3 / 800x480</b>
+      <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
+      <span>Hardware</span><b>7010B / F1C200s class</b>
+    </div>
+    <button class="btn ghost settings-reset" id="settingsReset">Reset UI</button>
+  </section>
+
   <div class="toast" id="toast"></div>
 </div>
 </div>
@@ -465,6 +603,9 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const el = (id) => document.getElementById(id);
+
+  let clock24 = true;
+  let volume = 70;
 
   const state = {
     mode: 'connected',           // off | ready | pairing | connected | playing | incoming | active | error
@@ -602,9 +743,6 @@
     setRing('artRing', connected ? state.pos / t.dur : 0);
     el('btnPrev').disabled = !connected;
     el('btnNext').disabled = !connected;
-
-    // dock active
-    document.querySelectorAll('.dock-item').forEach(d => d.classList.toggle('active', d.dataset.dock === 'bt'));
   }
 
   function go(next) {
@@ -724,19 +862,151 @@
   });
 
   // ── dock ───────────────────────────────────────────────────
+  // ── app panels: Radio / Files / Settings ───────────────────
+  let screen = 'home';
+  let radioFreq = 98.1;
+  let radioOn = true;
+  let radioMute = false;
+  const PRESETS = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  const PANELS = { radio: el('radioPanel'), files: el('filesPanel'), settings: el('settingsPanel') };
+
+  function setDockActive(name) {
+    const map = { home: 'bt', radio: 'radio', files: 'files', settings: 'settings' };
+    document.querySelectorAll('.dock-item').forEach(d => d.classList.toggle('active', d.dataset.dock === map[name]));
+  }
+
+  function showScreen(name) {
+    screen = name;
+    Object.entries(PANELS).forEach(([key, panel]) => panel.classList.toggle('show', key === name));
+    setDockActive(name);
+    if (name === 'radio') renderRadio();
+    if (name === 'files') renderFiles();
+    if (name === 'settings') renderSettings();
+  }
+  function showHome() { showScreen('home'); }
+
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', showHome));
+
+  function renderRadio() {
+    el('radioFreq').textContent = radioOn ? radioFreq.toFixed(1) + ' MHz' : 'OFF';
+    el('radioFreq').style.color = radioOn ? 'var(--text)' : 'var(--muted)';
+    el('radioStatus').textContent = !radioOn ? 'Radio off' : radioMute ? 'Muted' : 'Stereo / 5 bars';
+    el('radioStatus').style.color = radioOn && !radioMute ? 'var(--green)' : 'var(--muted)';
+    el('radioPower').textContent = radioOn ? 'Power off' : 'Power on';
+    el('radioMute').textContent = radioMute ? 'Unmute' : 'Mute';
+    document.querySelectorAll('#radioPresets [data-preset]').forEach(b => {
+      const i = Number(b.dataset.preset);
+      b.classList.toggle('sel', radioOn && Math.abs(radioFreq - PRESETS[i]) < 0.05);
+    });
+  }
+
+  document.querySelectorAll('[data-radio]').forEach(b => b.addEventListener('click', () => {
+    if (!radioOn) return;
+    radioFreq += Number(b.dataset.radio);
+    if (radioFreq > 108) radioFreq = 87.5;
+    if (radioFreq < 87.5) radioFreq = 108;
+    renderRadio();
+  }));
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    radioOn = true;
+    radioFreq = PRESETS[Number(b.dataset.preset)];
+    renderRadio();
+  }));
+  el('radioPower').addEventListener('click', () => { radioOn = !radioOn; renderRadio(); });
+  el('radioMute').addEventListener('click', () => { radioMute = !radioMute; renderRadio(); });
+
+  // ── virtual filesystem (browser demo) ─────────────────────
+  const fsRoot = {
+    name: 'media', type: 'dir', children: [
+      { name: 'Music', type: 'dir', children: [
+        { name: 'README.txt', type: 'file', content: 'Music folder.\n\nThe stock 7010B plays MP3, WAV, FLAC, APE, OGG, WMA, AAC and more.\nThe emulator only lists files; it does not decode audio.' }
+      ]},
+      { name: 'Photos', type: 'dir', children: [
+        { name: 'README.txt', type: 'file', content: 'Photos folder.\n\nThe stock firmware uses CedarX / BMP / JPEG / PNG decoders.\nThe emulator only lists files; it does not render images.' }
+      ]},
+      { name: 'System', type: 'dir', children: [
+        { name: 'info.txt', type: 'file', content: 'Build: Strada 7010B\nTarget: Allwinner F1C200s class, 800x480\nBT link: 55 AA LEN CMD DATA CHK\nBT name: STRADA' }
+      ]},
+      { name: 'notes.txt', type: 'file', content: 'Test notes for the 7010B file browser.\n\n- Radio and Files are real screens now, not placeholders.\n- This text is loaded by the preview panel.\n- Use the Up button to leave this folder.' },
+      { name: 'README.txt', type: 'file', content: 'Strada 7010B media folder\n=========================\n\nThis is the file-browser demo root used by the browser test UI.\nOn the real radio, replace it with /media, /mnt or the USB/SD mount.' },
+    ]
+  };
+  let fileStack = [fsRoot];
+
+  function fileSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+
+  function renderFiles() {
+    const dir = fileStack[fileStack.length - 1];
+    const path = 'media' + fileStack.slice(1).map(d => '/' + d.name).join('');
+    el('filesPath').textContent = path;
+    el('filesList').innerHTML = '';
+    dir.children.forEach(item => {
+      const row = document.createElement('button');
+      row.className = 'file-row';
+      row.textContent = (item.type === 'dir' ? '📁  ' : '📄  ') + item.name;
+      if (item.type === 'file') {
+        const size = document.createElement('span');
+        size.className = 'size';
+        size.textContent = fileSize(item.content.length);
+        row.appendChild(size);
+      }
+      row.addEventListener('click', () => {
+        if (item.type === 'dir') { fileStack.push(item); renderFiles(); }
+        else { el('filePreviewTitle').textContent = item.name; el('filePreviewText').textContent = item.content; el('filePreview').classList.add('show'); }
+      });
+      el('filesList').appendChild(row);
+    });
+    el('filesInfo').textContent = `${dir.children.length} items / ${path}`;
+  }
+
+  el('filesUp').addEventListener('click', () => { if (fileStack.length > 1) { fileStack.pop(); renderFiles(); } });
+  el('filesRefresh').addEventListener('click', renderFiles);
+  document.querySelectorAll('[data-preview-close]').forEach(b => b.addEventListener('click', () => el('filePreview').classList.remove('show')));
+
+  // ── settings ──────────────────────────────────────────────
+  function setAccent(hex) {
+    document.documentElement.style.setProperty('--accent', hex);
+    document.querySelectorAll('#swatches .swatch').forEach(s => s.classList.toggle('sel', s.dataset.color.toUpperCase() === hex.toUpperCase()));
+  }
+  document.querySelectorAll('#swatches .swatch').forEach(s => s.addEventListener('click', () => setAccent(s.dataset.color)));
+
+  function setClock(is24) {
+    clock24 = is24;
+    el('clock24').classList.toggle('sel', is24);
+    el('clock12').classList.toggle('sel', !is24);
+    tickClock();
+  }
+  el('clock24').addEventListener('click', () => setClock(true));
+  el('clock12').addEventListener('click', () => setClock(false));
+  el('volumeRange').addEventListener('input', e => {
+    volume = Number(e.target.value);
+    el('volumeValue').textContent = volume + '%';
+  });
+  el('settingsReset').addEventListener('click', () => {
+    setAccent('#FE3211');
+    setClock(true);
+    volume = 70;
+    el('volumeRange').value = 70;
+    el('volumeValue').textContent = '70%';
+  });
+  function renderSettings() {
+    el('volumeRange').value = volume;
+    el('volumeValue').textContent = volume + '%';
+  }
+
   document.querySelectorAll('.dock-item').forEach(d => {
     d.addEventListener('click', () => {
-      document.querySelectorAll('.dock-item').forEach(x => x.classList.remove('active'));
-      d.classList.add('active');
-      const name = d.querySelector('.dock-label').textContent;
-      if (d.dataset.dock !== 'bt') toast(name + ' / placeholder');
+      if (d.dataset.dock === 'radio') showScreen('radio');
+      else if (d.dataset.dock === 'bt') showHome();
+      else if (d.dataset.dock === 'files') showScreen('files');
+      else if (d.dataset.dock === 'settings') showScreen('settings');
     });
   });
 
   // ── clock ──────────────────────────────────────────────────
   function tickClock() {
     const d = new Date();
-    el('clock').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    el('clock').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: !clock24 });
   }
   tickClock();
   setInterval(tickClock, 1000);
@@ -790,6 +1060,7 @@
   window.strada = {
     setState: (s) => go(s),
     getState: () => state.mode,
+    showScreen: (s) => showScreen(s),
     action: (a) => {
       if (a === 'incoming') go('incoming');
       else if (a === 'next') el('btnNext').click();
@@ -812,6 +1083,7 @@
     if (modes.includes(requested)) go(requested);
   }
 
+  showScreen('home');
   render();
 })();
 </script>

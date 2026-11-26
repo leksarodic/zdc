@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "lvgl.h"
+#include "panels.h"
 
 #define C_BG      0x15171C
 #define C_CARD    0x1E2128
@@ -21,6 +22,15 @@
 #define C_RED     0xE3262F
 
 static bt_model_t *M;
+
+static uint32_t accent = C_ACCENT;
+static bool clock_24h = true;
+static int screen_idx = -1;
+
+static lv_obj_t *home;
+static lv_obj_t *dock_circles[4];
+static lv_obj_t *dock_labels[4];
+static lv_obj_t *audio_source;
 
 static lv_obj_t *time_label;
 static lv_obj_t *date_label;
@@ -166,7 +176,12 @@ static void clock_update(void) {
     localtime_r(&now, &tm);
     char buf[64];
 
-    strftime(buf, sizeof(buf), "%H:%M", &tm);
+    if (clock_24h) {
+        strftime(buf, sizeof(buf), "%H:%M", &tm);
+    } else {
+        strftime(buf, sizeof(buf), "%I:%M %p", &tm);
+        if (buf[0] == '0') memmove(buf, buf + 1, strlen(buf));
+    }
     lv_label_set_text(time_label, buf);
 
     strftime(buf, sizeof(buf), "%A, %d %B", &tm);
@@ -187,6 +202,50 @@ static const char *fmt_time(int sec, char *buf, size_t n) {
     if (sec < 0) sec = 0;
     snprintf(buf, n, "%d:%02d", sec / 60, sec % 60);
     return buf;
+}
+
+static void update_dock(int screen) {
+    int active = screen < 0 ? 1 : screen == 0 ? 0 : screen == 1 ? 2 : 3;
+    for (int i = 0; i < 4; i++) {
+        lv_obj_set_style_border_width(dock_circles[i], i == active ? 2 : 0, 0);
+        lv_obj_set_style_border_color(dock_circles[i], col(accent), 0);
+        lv_obj_set_style_text_color(dock_labels[i], col(i == active ? C_TEXT : C_SOFT), 0);
+    }
+}
+
+static void show_screen(int idx) {
+    screen_idx = idx;
+    if (idx < 0) {
+        if (home) lv_obj_remove_flag(home, LV_OBJ_FLAG_HIDDEN);
+        panels_hide();
+    } else {
+        if (home) lv_obj_add_flag(home, LV_OBJ_FLAG_HIDDEN);
+        panels_show(idx);
+    }
+    update_dock(idx);
+}
+
+static void on_home(void) { show_screen(-1); }
+
+static void apply_accent(uint32_t c) {
+    accent = c;
+    if (phone_source) lv_obj_set_style_text_color(phone_source, col(accent), 0);
+    if (bt_name_lbl) lv_obj_set_style_text_color(bt_name_lbl, col(accent), 0);
+    if (audio_source) lv_obj_set_style_text_color(audio_source, col(accent), 0);
+    if (play_btn) lv_obj_set_style_bg_color(play_btn, col(accent), 0);
+    if (dock_circles[0]) update_dock(screen_idx);
+    ui_update();
+}
+
+static void on_accent(uint32_t c) { apply_accent(c); }
+static void on_clock(bool is24) { clock_24h = is24; clock_update(); }
+
+static void dock_cb(lv_event_t *e) {
+    int idx = (int)(intptr_t)lv_event_get_user_data(e);
+    if (idx == 0) show_screen(0);
+    else if (idx == 1) show_screen(-1);
+    else if (idx == 2) show_screen(1);
+    else show_screen(2);
 }
 
 static void update_phone(void) {
@@ -221,13 +280,13 @@ static void update_phone(void) {
 static void update_bt(void) {
     bool connected = bt_sim_connected(M->state);
     int value = 0;
-    uint32_t accent = C_ACCENT;
-    uint32_t core = C_ACCENT;
+    uint32_t arc_color = accent;
+    uint32_t core = accent;
     const char *title = "";
     const char *sub = "";
     const char *primary = "";
     const char *secondary = "";
-    uint32_t primary_bg = C_ACCENT;
+    uint32_t primary_bg = accent;
     char callbuf[32];
 
     switch (M->state) {
@@ -267,7 +326,7 @@ static void update_bt(void) {
         secondary = "Disconnect";
         break;
     case BT_INCOMING:
-        value = 90; accent = C_GREEN; core = C_GREEN;
+        value = 90; arc_color = C_GREEN; core = C_GREEN;
         title = "Incoming call";
         sub = BT_DEVICE_NAME " / +381 60 123 4567";
         primary = "Answer";
@@ -275,7 +334,7 @@ static void update_bt(void) {
         primary_bg = C_GREEN;
         break;
     case BT_ACTIVE:
-        value = 78; accent = C_GREEN; core = C_GREEN;
+        value = 78; arc_color = C_GREEN; core = C_GREEN;
         title = "In call";
         fmt_time(M->call_seconds, callbuf, sizeof(callbuf));
         sub = callbuf;
@@ -295,7 +354,7 @@ static void update_bt(void) {
     }
 
     lv_arc_set_value(bt_arc, value);
-    lv_obj_set_style_arc_color(bt_arc, col(accent), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(bt_arc, col(arc_color), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(bt_circle, col(core), 0);
 
     set_text_if(bt_name_lbl, BT_LOCAL_NAME);
@@ -313,10 +372,10 @@ static void update_bt(void) {
 
     uint32_t dot = C_MUTED;
     if (connected) dot = C_GREEN;
-    else if (M->state == BT_PAIRING || M->state == BT_ERROR) dot = C_ACCENT;
+    else if (M->state == BT_PAIRING || M->state == BT_ERROR) dot = accent;
     lv_obj_set_style_bg_color(top_bt_dot, col(dot), 0);
 
-    lv_obj_set_style_bg_color(art_circle, col(connected ? C_ACCENT : 0x3A3E48), 0);
+    lv_obj_set_style_bg_color(art_circle, col(connected ? accent : 0x3A3E48), 0);
 }
 
 static void update_audio(void) {
@@ -360,6 +419,13 @@ void ui_init(bt_model_t *model) {
     lv_obj_set_style_bg_color(scr, col(C_BG), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
 
+    home = lv_obj_create(scr);
+    strip(home);
+    lv_obj_set_pos(home, 0, 0);
+    lv_obj_set_size(home, 800, 480);
+    lv_obj_set_style_bg_opa(home, LV_OPA_TRANSP, 0);
+    lv_obj_remove_flag(home, LV_OBJ_FLAG_CLICKABLE);
+
     /* ── top bar (no weather) ───────────────────────────────── */
     time_label = label(scr, "00:00", 16, 4, 92, 34, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
     date_label = label(scr, "", 112, 12, 260, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
@@ -371,9 +437,9 @@ void ui_init(bt_model_t *model) {
     icon_center(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT);
 
     /* ── phone card ─────────────────────────────────────────── */
-    lv_obj_t *phone = card(scr, 12, 50, 234, 297);
+    lv_obj_t *phone = card(home, 12, 50, 234, 297);
     label(phone, "PHONE", 14, 12, 100, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, C_ACCENT, LV_TEXT_ALIGN_RIGHT);
+    phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
     lv_obj_t *dev_ic = circle(phone, 14, 34, 46, C_CIRCLE);
     icon_center(dev_ic, LV_SYMBOL_CALL, &lv_font_montserrat_24, C_SOFT);
@@ -402,9 +468,9 @@ void ui_init(bt_model_t *model) {
                       &lv_font_montserrat_12, incoming_cb, NULL);
 
     /* ── bluetooth card ─────────────────────────────────────── */
-    lv_obj_t *bt = card(scr, 256, 50, 328, 297);
+    lv_obj_t *bt = card(home, 256, 50, 328, 297);
     label(bt, "BLUETOOTH", 14, 12, 120, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    bt_name_lbl = label(bt, BT_LOCAL_NAME, 220, 12, 94, 14, &lv_font_montserrat_10, C_ACCENT, LV_TEXT_ALIGN_RIGHT);
+    bt_name_lbl = label(bt, BT_LOCAL_NAME, 220, 12, 94, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
     bt_arc = lv_arc_create(bt);
     strip(bt_arc);
@@ -414,7 +480,7 @@ void ui_init(bt_model_t *model) {
     lv_obj_set_style_arc_width(bt_arc, 5, LV_PART_MAIN);
     lv_obj_set_style_arc_width(bt_arc, 5, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(bt_arc, col(C_BTN), LV_PART_MAIN);
-    lv_obj_set_style_arc_color(bt_arc, col(C_ACCENT), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(bt_arc, col(accent), LV_PART_INDICATOR);
     lv_obj_set_style_arc_rounded(bt_arc, true, LV_PART_MAIN);
     lv_obj_set_style_arc_rounded(bt_arc, true, LV_PART_INDICATOR);
     lv_arc_set_rotation(bt_arc, 270);
@@ -426,13 +492,13 @@ void ui_init(bt_model_t *model) {
     lv_obj_set_style_border_width(bt_arc, 0, LV_PART_KNOB);
     lv_obj_set_style_pad_all(bt_arc, 0, LV_PART_KNOB);
 
-    bt_circle = circle(bt, 99, 42, 130, C_ACCENT);
+    bt_circle = circle(bt, 99, 42, 130, accent);
     icon_center(bt_circle, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_40, 0xFFFFFF);
 
     bt_title = label(bt, "Connected", 14, 186, 300, 28, &lv_font_montserrat_22, C_TEXT, LV_TEXT_ALIGN_CENTER);
     bt_sub = label(bt, "", 14, 212, 300, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    primary_btn = button(bt, "Play", 54, 238, 130, 36, C_ACCENT, 0xFFFFFF,
+    primary_btn = button(bt, "Play", 54, 238, 130, 36, accent, 0xFFFFFF,
                          &lv_font_montserrat_12, pc_cb, &primary_lbl);
     secondary_btn = button(bt, "Disconnect", 190, 238, 110, 36, C_INNER, C_TEXT,
                            &lv_font_montserrat_12, sc_cb, &secondary_lbl);
@@ -440,11 +506,11 @@ void ui_init(bt_model_t *model) {
     label(bt, "Calls  /  Music  /  Contacts", 14, 280, 300, 12, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
     /* ── audio card ─────────────────────────────────────────── */
-    lv_obj_t *audio = card(scr, 594, 50, 194, 297);
+    lv_obj_t *audio = card(home, 594, 50, 194, 297);
     label(audio, "AUDIO", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, C_ACCENT, LV_TEXT_ALIGN_RIGHT);
+    audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
-    art_circle = circle(audio, 33, 32, 128, C_ACCENT);
+    art_circle = circle(audio, 33, 32, 128, accent);
     icon_center(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
 
     track_lbl = label(audio, "Test Song", 8, 170, 178, 20, &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_CENTER);
@@ -454,7 +520,7 @@ void ui_init(bt_model_t *model) {
     prev_btn = button(audio, LV_SYMBOL_PREV, 30, 230, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, prev_cb, NULL);
     lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
-    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 224, 54, 54, C_ACCENT, 0xFFFFFF,
+    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 224, 54, 54, accent, 0xFFFFFF,
                       &lv_font_montserrat_24, pc_cb, &play_lbl);
     lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
     next_btn = button(audio, LV_SYMBOL_NEXT, 130, 230, 42, 42, C_BTN, 0xFFFFFF,
@@ -468,14 +534,15 @@ void ui_init(bt_model_t *model) {
     for (int i = 0; i < 4; i++) {
         int slot = 180 + i * 110;
         lv_obj_t *c = circle(dock, slot + 30, 14, 50, C_CIRCLE);
-        if (i == 1) {
-            lv_obj_set_style_border_width(c, 2, 0);
-            lv_obj_set_style_border_color(c, col(C_ACCENT), 0);
-        }
+        dock_circles[i] = c;
         icon_center(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF);
-        label(dock, dock_names[i], slot + 5, 70, 100, 16, &lv_font_montserrat_12,
-              i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
+        dock_labels[i] = label(dock, dock_names[i], slot + 5, 70, 100, 16, &lv_font_montserrat_12,
+                               i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
+        lv_obj_add_event_cb(c, dock_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
+
+    panels_init(scr, on_home, on_accent, on_clock);
+    show_screen(-1);
 
     ui_update();
     clock_update();
@@ -484,6 +551,14 @@ void ui_init(bt_model_t *model) {
     clock_timer = lv_timer_create(clock_cb, 1000, NULL);
     (void)tick_timer;
     (void)clock_timer;
+}
+
+void ui_set_files_root(const char *root) {
+    panels_set_files_root(root);
+}
+
+void ui_show_panel(int idx) {
+    show_screen(idx);
 }
 
 void ui_screenshot(const char *path) {

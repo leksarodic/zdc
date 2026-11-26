@@ -35,6 +35,14 @@ Test keys in the native emulator:
 | `Space` | Primary action |
 | `N` / `P` | Next / previous track |
 | `M` | Secondary action (mute in a call) |
+| `R` / `F` / `G` | Open Radio / Files / Settings |
+| `H` | Back to the home screen |
+
+### Functional panels
+
+* **Radio** — tune, seek, presets, power, mute
+* **Files** — real directory list for the native build (root `media/`), up/refresh, text/binary preview
+* **Settings** — accent color, 12/24 h clock, volume, About, reset
 
 ### Browser test UI
 

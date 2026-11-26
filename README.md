@@ -19,6 +19,39 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Active call | [active.png](docs/screenshots/active.png) |
 | Error | [error.png](docs/screenshots/error.png) |
 
+## Functional panels
+
+The dock is no longer placeholder-only. The three app screens are real LVGL screens in the native build and real interactive panels in the browser test UI.
+
+### Radio
+
+![Radio](docs/screenshots/radio.png)
+
+* FM frequency display, tune ±0.1 MHz and seek ±1 MHz
+* Six presets (87.5, 90.1, 94.3, 98.1, 101.7, 104.9)
+* Power and mute states
+* Simulated tuner in the emulator; on hardware the same actions map to the MCU/BT UART protocol
+
+### Files
+
+![Files](docs/screenshots/files.png)
+
+* Real directory browser in the native build (`opendir`/`stat`): folders first, files with sizes
+* Up and refresh buttons, scrollable list
+* Text/binary preview panel
+* Emulator root is `media/`; the framebuffer build defaults to `/media`
+* The browser test UI uses the matching virtual tree
+
+### Settings
+
+![Settings](docs/screenshots/settings.png)
+
+* Accent color swatches (red, orange, green, blue, purple) update the whole UI
+* 24 h / 12 h clock switch
+* Volume slider with live percentage
+* About/build information and “Reset UI”
+* Settings apply immediately; the emulator does not persist them across restarts yet
+
 ## Interactive testing
 
 ### Browser emulator (easiest)

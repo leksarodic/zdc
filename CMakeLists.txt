@@ -38,6 +38,7 @@ add_library(strada_core STATIC
     app/bt_sim.c
     app/bt_uart.c
     app/ui.c
+    app/panels.c
 )
 target_include_directories(strada_core PUBLIC app)
 target_link_libraries(strada_core PUBLIC lvgl m)

@@ -28,6 +28,10 @@ screenshot: build
 		$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/$$st.ppm --frames 30 --state $$st; \
 		$(PYTHON) tools/ppm_to_png.py artifacts/$$st.ppm artifacts/$$st.png; \
 	done
+	@for p in radio files settings; do \
+		$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/$$p.ppm --frames 30 --state connected --panel $$p; \
+		$(PYTHON) tools/ppm_to_png.py artifacts/$$p.ppm artifacts/$$p.png; \
+	done
 
 arm:
 	$(CMAKE) -S . -B build-arm \

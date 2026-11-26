@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
         if (!indev) fprintf(stderr, "evdev: cannot open %s (UI still runs)\n", touch);
     }
 
+    ui_set_files_root("/media");
     ui_init(&model);
     printf("Strada 7010B UI on %s (touch %s)\n", fb, touch);
 

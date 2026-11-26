@@ -1,0 +1,5 @@
+Test notes for the 7010B file browser.
+
+- Radio and Files are real screens now, not placeholders.
+- This text is loaded by the preview panel.
+- Use the Up button to leave this folder.

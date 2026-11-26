@@ -986,6 +986,10 @@
   let radioMute = false;
   let radioSaveMode = false;
   let presets = [87.5, 90.1, 94.3, 98.1, 101.7, 104.9];
+  try {
+    const saved = JSON.parse(localStorage.getItem('strada.presets') || 'null');
+    if (Array.isArray(saved) && saved.length === 6) presets = saved;
+  } catch (e) {}
   let playerExpanded = false;
   const PANELS = { radio: el('radioPanel'), files: el('filesPanel'), settings: el('settingsPanel') };
 
@@ -1037,6 +1041,7 @@
     const i = Number(b.dataset.preset);
     if (radioSaveMode) {
       presets[i] = radioFreq;
+      try { localStorage.setItem('strada.presets', JSON.stringify(presets)); } catch (e) {}
       radioSaveMode = false;
     } else {
       radioOn = true;

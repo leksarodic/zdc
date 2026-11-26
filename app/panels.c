@@ -119,6 +119,24 @@ static bool radio_mute = false;
 static double presets[6] = {87.5, 90.1, 94.3, 98.1, 101.7, 104.9};
 static bool radio_save_mode = false;
 
+static void presets_load(void) {
+    FILE *f = fopen("strada.conf", "r");
+    if (!f) return;
+    for (int i = 0; i < 6; i++) {
+        double v;
+        if (fscanf(f, "%lf", &v) != 1) break;
+        if (v >= 87.5 && v <= 108.0) presets[i] = v;
+    }
+    fclose(f);
+}
+
+static void presets_save(void) {
+    FILE *f = fopen("strada.conf", "w");
+    if (!f) return;
+    for (int i = 0; i < 6; i++) fprintf(f, "%.1f\n", presets[i]);
+    fclose(f);
+}
+
 static void radio_update(void) {
     char buf[48];
     if (radio_on) snprintf(buf, sizeof(buf), "%.1f MHz", radio_freq);
@@ -174,6 +192,7 @@ static void radio_preset_cb(lv_event_t *e) {
     if (idx < 0 || idx >= 6) return;
     if (radio_save_mode) {
         presets[idx] = radio_freq;
+        presets_save();
         radio_save_mode = false;
     } else {
         radio_on = true;
@@ -215,6 +234,7 @@ static void build_radio(lv_obj_t *parent) {
     button(radio_panel, "Save preset", 310, 248, 160, 34, C_INNER, &lv_font_montserrat_12, radio_save_cb, &radio_save_lbl);
     button(radio_panel, "Mute", 586, 248, 150, 34, C_INNER, &lv_font_montserrat_12, radio_mute_cb, &radio_mute_lbl);
 
+    presets_load();
     radio_update();
 }
 

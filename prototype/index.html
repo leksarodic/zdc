@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StradaOS-like 800x480 — Bluetooth UI prototype</title>
+<style>
+  :root{
+    --bg:#15171C;
+    --card:#1E2128;
+    --inner:#262A33;
+    --btn:#2A2E37;
+    --dock:#0D0E11;
+    --text:#F2F3F5;
+    --muted:#8B9099;
+    --soft:#C5C8CE;
+    --circle:#23262E;
+    --accent:#FE3211;
+    --accent-dark:#2A1416;
+    --green:#2DBE6C;
+    --ring:#2A2E37;
+    --sans:Inter,Roboto,"Helvetica Neue",Arial,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:#050608;
+    display:grid;
+    place-items:center;
+    font-family:var(--sans);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  #frame{
+    position:relative;
+    width:min(100vw, calc(100vh * 5 / 3));
+    height:min(100vh, calc(100vw * 3 / 5));
+  }
+  #stage{
+    width:800px;height:480px;
+    position:absolute;left:0;top:0;
+    transform-origin:top left;
+    overflow:hidden;
+    background:var(--bg);
+    border-radius:12px;
+    box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+    user-select:none;
+  }
+
+  /* ── top bar ─────────────────────────────────────────────── */
+  .topbar{position:absolute;left:18px;right:14px;top:8px;height:36px;display:flex;align-items:center}
+  .clock{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .date{font-size:12px;color:var(--muted);margin-left:10px;white-space:nowrap}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:8px;height:100%}
+  .status-bt{width:18px;height:18px;position:relative;display:grid;place-items:center;opacity:.9}
+  .status-bt .dot{position:absolute;right:-1px;bottom:-1px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--bg)}
+  .weather{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500}
+  .weather svg{width:16px;height:16px}
+  .weather .city{color:var(--muted);font-weight:400}
+  .sep{width:1px;height:16px;background:rgba(255,255,255,.10);margin:0 3px}
+  .greet{font-size:12px;color:var(--soft);white-space:nowrap}
+  .gear{
+    width:36px;height:36px;border-radius:50%;background:var(--circle);
+    display:grid;place-items:center;margin-left:6px;cursor:pointer;
+    transition:background .15s ease;
+  }
+  .gear:hover{background:#2E323C}
+  .gear svg{width:19px;height:19px}
+
+  /* ── cards ──────────────────────────────────────────────── */
+  .card{
+    position:absolute;top:50px;height:297px;border-radius:16px;
+    background:var(--card);
+    padding:14px 14px;
+    overflow:hidden;
+  }
+  .card .label{font-size:10px;font-weight:600;letter-spacing:.10em;color:var(--muted);text-transform:uppercase}
+  .card .source{font-size:10px;font-weight:600;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
+  .card-head{display:flex;align-items:center;justify-content:space-between;height:14px}
+  .phone-card{left:12.5px;width:234.375px}
+  .bt-card{left:256.25px;width:328.125px}
+  .audio-card{left:593.75px;width:193.75px}
+
+  /* ── phone card ─────────────────────────────────────────── */
+  .device{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .device-ic{
+    width:52px;height:52px;border-radius:50%;background:var(--circle);
+    display:grid;place-items:center;flex:none;
+  }
+  .device-ic svg{width:25px;height:25px}
+  .device-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .device-state{font-size:11px;color:var(--green);margin-top:2px;display:flex;align-items:center;gap:4px}
+  .device-state.off{color:var(--muted)}
+  .device-state.err{color:var(--accent)}
+  .device-state .mini-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+  .device-mac{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.03em}
+  .metrics{display:flex;align-items:center;gap:10px;margin-top:12px;color:var(--muted);font-size:10px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:12px}
+  .bars i{width:3px;background:var(--soft);border-radius:1px;display:block}
+  .bars i:nth-child(1){height:4px}.bars i:nth-child(2){height:6px}.bars i:nth-child(3){height:8px}
+  .bars i:nth-child(4){height:10px}.bars i:nth-child(5){height:12px}
+  .bars i.dim{background:rgba(255,255,255,.18)}
+  .battery{display:flex;align-items:center;gap:4px}
+  .battery .cell{width:22px;height:10px;border:1px solid rgba(255,255,255,.35);border-radius:2px;padding:1px}
+  .battery .cell i{display:block;height:100%;width:82%;background:var(--green);border-radius:1px}
+  .battery .nub{width:2px;height:4px;background:rgba(255,255,255,.35);border-radius:0 1px 1px 0}
+  .divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0 10px}
+  .sub-label{font-size:9px;font-weight:600;letter-spacing:.09em;color:var(--muted);text-transform:uppercase}
+  .paired{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+  .pair-row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--soft)}
+  .pair-row svg{width:14px;height:14px;opacity:.8}
+  .pair-row .ok{margin-left:auto;color:var(--green);font-size:12px}
+  .pair-row .add{margin-left:auto;color:var(--muted);font-size:12px}
+  .phone-actions{position:absolute;left:14px;right:14px;bottom:14px;display:flex;gap:8px}
+  .btn{
+    border:0;border-radius:11px;font-family:inherit;font-size:12px;font-weight:600;
+    color:var(--text);background:var(--btn);height:36px;padding:0 14px;cursor:pointer;
+    transition:transform .08s ease, background .15s ease, filter .15s ease;
+    display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:var(--inner)}
+  .btn.small{font-size:11px;height:30px;border-radius:9px;padding:0 10px}
+  .btn.full{flex:1}
+  .btn svg{width:15px;height:15px}
+
+  /* ── center BT card ─────────────────────────────────────── */
+  .bt-wrap{position:absolute;left:0;right:0;top:24px;display:flex;flex-direction:column;align-items:center}
+  .bt-circle{position:relative;width:140px;height:140px;flex:none}
+  .bt-circle svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .bt-circle .core{
+    position:absolute;inset:11px;border-radius:50%;
+    background:radial-gradient(circle at 35% 28%, #FF6A45 0%, var(--accent) 45%, #B81F0A 100%);
+    display:grid;place-items:center;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    transition:background .25s ease, filter .25s ease;
+  }
+  .bt-circle .core svg{width:62px;height:62px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.18))}
+  .bt-circle.off .core{background:radial-gradient(circle at 35% 28%, #3A3E48, #23262E 70%);filter:saturate(.3)}
+  .bt-circle.pair .core{background:radial-gradient(circle at 35% 28%, #4A4F5A, #23262E 70%)}
+  .bt-circle.call .core{background:radial-gradient(circle at 35% 28%, #35D37C, #1D9E55 70%)}
+  .bt-circle .pulse{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0}
+  .bt-circle.call .pulse{animation:pulse 1.4s ease-out infinite;border-color:var(--green)}
+  @keyframes pulse{0%{transform:scale(.92);opacity:.55}100%{transform:scale(1.12);opacity:0}}
+  .bt-circle .spinner{display:none;position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:var(--accent);animation:spin 1s linear infinite}
+  .bt-circle.pair .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bt-title{font-size:20px;font-weight:600;margin-top:8px;letter-spacing:-.01em}
+  .bt-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis}
+  .bt-actions{display:flex;gap:8px;margin-top:10px}
+  .bt-actions .btn{height:34px;border-radius:11px;font-size:12px;padding:0 16px}
+  .bt-actions .btn.primary{min-width:124px}
+  .bt-features{display:flex;gap:6px;margin-top:8px;color:var(--muted);font-size:9px}
+  .chip{display:flex;align-items:center;gap:4px;background:var(--inner);border-radius:999px;padding:4px 8px}
+  .chip svg{width:11px;height:11px}
+  .chip.on{color:var(--soft)}
+
+  /* dial pad overlay */
+  .dial{position:absolute;inset:14px;background:var(--card);display:none;flex-direction:column;z-index:4}
+  .dial.show{display:flex}
+  .dial-head{display:flex;align-items:center;justify-content:space-between;height:14px}
+  .dial-num{text-align:center;font-size:22px;font-weight:600;letter-spacing:.08em;height:34px;line-height:34px;margin-top:10px}
+  .dial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:6px}
+  .dial-grid button{
+    height:37px;border:0;border-radius:10px;background:var(--inner);color:var(--text);
+    font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;
+  }
+  .dial-grid button span{display:block;font-size:7px;font-weight:500;color:var(--muted);letter-spacing:.08em;margin-top:-2px}
+  .dial-grid button:active{background:var(--btn)}
+  .dial-actions{display:flex;gap:8px;margin-top:8px}
+  .dial-actions .btn{flex:1;height:34px;font-size:11px}
+
+  /* ── audio card ─────────────────────────────────────────── */
+  .art-wrap{position:relative;width:128px;height:128px;margin:14px auto 0}
+  .art-wrap svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .art{
+    position:absolute;inset:7px;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #FF7048 0%, var(--accent) 48%, #B51E09 100%);
+    display:grid;place-items:center;
+    transition:background .25s ease, filter .25s ease;
+  }
+  .art svg{width:50px;height:50px}
+  .art.off{background:radial-gradient(circle at 34% 28%, #3A3E48, #23262E 70%);filter:saturate(.2)}
+  .track{font-size:14px;font-weight:600;text-align:center;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+  .artist{font-size:11px;color:var(--muted);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+  .time{font-size:10px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.02em}
+  .media-actions{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:7px}
+  .circle-btn{
+    border:0;border-radius:50%;background:var(--btn);color:#fff;display:grid;place-items:center;
+    cursor:pointer;flex:none;transition:transform .08s ease, filter .15s ease, background .15s ease;
+  }
+  .circle-btn:active{transform:scale(.94)}
+  .circle-btn:hover{filter:brightness(1.08)}
+  .circle-btn.sm{width:42px;height:42px}
+  .circle-btn.lg{width:54px;height:54px;background:var(--accent)}
+  .circle-btn.sm svg{width:18px;height:18px}
+  .circle-btn.lg svg{width:24px;height:24px}
+  .circle-btn.off{background:var(--inner);opacity:.55}
+
+  /* ── dock ───────────────────────────────────────────────── */
+  .dock{
+    position:absolute;left:0;right:0;bottom:0;height:123.75px;background:var(--dock);
+    border-top:1px solid rgba(255,255,255,.035);
+    display:flex;align-items:flex-start;justify-content:space-around;padding:10px 18px 0;
+  }
+  .dock-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;cursor:pointer}
+  .dock-ic{
+    width:50px;height:50px;border-radius:50%;background:var(--circle);
+    display:grid;place-items:center;transition:background .15s ease, box-shadow .15s ease;
+  }
+  .dock-item:hover .dock-ic{background:#2B2F38}
+  .dock-item.active .dock-ic{background:#2C3039;box-shadow:0 0 0 2px var(--accent)}
+  .dock-ic svg{width:24px;height:24px}
+  .dock-label{font-size:10.5px;color:var(--soft);white-space:nowrap}
+  .dock-item.active .dock-label{color:var(--text);font-weight:600}
+
+  /* toast */
+  .toast{
+    position:absolute;left:50%;bottom:132px;transform:translate(-50%,8px);
+    background:#000;color:#fff;font-size:11px;padding:8px 12px;border-radius:9px;
+    opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;white-space:nowrap;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:20;
+  }
+  .toast.show{opacity:.92;transform:translate(-50%,0)}
+
+  /* helper */
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div id="frame">
+<div id="stage" aria-label="Prototipo de interfaz StradaOS 800x480">
+
+  <!-- ICONS -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-bt" viewBox="0 0 24 24">
+      <path d="M17.71 7.71 12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29ZM13 5.83l1.88 1.88L13 9.59V5.83Zm1.88 10.46L13 18.17v-3.76l1.88 1.88Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24">
+      <path d="M6.6 3.2c.8 0 1.6.5 1.9 1.3l1.1 2.6c.3.7.1 1.5-.5 2l-1.4 1.2c1 2 2.6 3.6 4.6 4.6l1.2-1.4c.5-.6 1.3-.8 2-.5l2.6 1.1c.8.3 1.3 1.1 1.3 1.9V19c0 1.1-.9 2-2 2C9.2 21 3 14.8 3 5.2c0-1.1.9-2 2-2h1.6Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24">
+      <rect x="3" y="7" width="18" height="12" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="7.2" cy="13" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M11.5 11h5.2M11.5 14.5h5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M6.5 7 17 3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="15.8" cy="16.2" r=".9" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24">
+      <path d="M4.2 7.8h3.2l1.2-2h6.8l1.2 2h3.2c1 0 1.8.8 1.8 1.8v8.2c0 1-.8 1.8-1.8 1.8H4.2c-1 0-1.8-.8-1.8-1.8V9.6c0-1 .8-1.8 1.8-1.8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <circle cx="12" cy="13.4" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    </symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M3.4 12h17.2M12 3c3.2 3.4 3.2 14.6 0 18M12 3c-3.2 3.4-3.2 14.6 0 18" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    </symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3.4 7.4c0-1 .8-1.8 1.8-1.8h4.1l2 2.2h7.5c1 0 1.8.8 1.8 1.8v8.4c0 1-.8 1.8-1.8 1.8H5.2c-1 0-1.8-.8-1.8-1.8V7.4Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.33-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-apps" viewBox="0 0 24 24">
+      <circle cx="6" cy="6" r="2.1" fill="currentColor"/><circle cx="12" cy="6" r="2.1" fill="currentColor"/><circle cx="18" cy="6" r="2.1" fill="currentColor"/>
+      <circle cx="6" cy="12" r="2.1" fill="currentColor"/><circle cx="12" cy="12" r="2.1" fill="currentColor"/><circle cx="18" cy="12" r="2.1" fill="currentColor"/>
+      <circle cx="6" cy="18" r="2.1" fill="currentColor"/><circle cx="12" cy="18" r="2.1" fill="currentColor"/><circle cx="18" cy="18" r="2.1" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24">
+      <path d="M7.2 18.2h10.1a3.7 3.7 0 0 0 .4-7.4 5.4 5.4 0 0 0-10.3-1.6 4.2 4.2 0 0 0-.2 9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.4c0-.9 1-1.4 1.7-.9l10 6.6c.7.5.7 1.4 0 1.8l-10 6.6c-.7.5-1.7 0-1.7-.9V5.4Z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 6.2c0-.8-.9-1.3-1.6-.9l-7.2 5.2c-.6.4-.6 1.3 0 1.7l7.2 5.2c.7.5 1.6 0 1.6-.9V6.2Z" fill="currentColor"/><rect x="5" y="5.2" width="2.6" height="13.6" rx="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 6.2c0-.8.9-1.3 1.6-.9l7.2 5.2c.6.4.6 1.3 0 1.7l-7.2 5.2c-.7.5-1.6 0-1.6-.9V6.2Z" fill="currentColor"/><rect x="16.4" y="5.2" width="2.6" height="13.6" rx="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 18.2a2.7 2.7 0 1 1-1.6-2.5V7.3l9.4-2.1v9.4a2.7 2.7 0 1 1-1.6-2.5V7.6L9 9.1v9.1Z" fill="currentColor"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M10.5 5 4 12l6.5 7M4.5 12H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 6.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 19h3v-4H4v4Zm5 0h3v-8H9v8Zm5 0h3V7h-3v12Zm5 0h3V3h-3v16Z" fill="currentColor"/></symbol>
+  </svg>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="clock" id="clock">17:37</div>
+    <div class="date" id="date">Thursday, 26 November</div>
+    <div class="top-right">
+      <div class="status-bt" title="Estado Bluetooth">
+        <svg width="17" height="17" style="color:var(--soft)"><use href="#i-bt"/></svg>
+        <span class="dot" id="topDot"></span>
+      </div>
+      <div class="gear" title="Settings">
+        <svg style="color:var(--icon,#fff)"><use href="#i-gear"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- LEFT: PHONE -->
+  <section class="card phone-card">
+    <div class="card-head"><span class="label">Phone</span><span class="source" id="phoneSource">A2DP</span></div>
+    <div class="device">
+      <div class="device-ic"><svg style="color:var(--soft)"><use href="#i-phone"/></svg></div>
+      <div style="min-width:0">
+        <div class="device-name" id="deviceName">Aleksa's iPhone</div>
+        <div class="device-state" id="deviceState"><span class="mini-dot"></span>Connected</div>
+        <div class="device-mac" id="deviceMac">AA:BB:CC:DD:EE:FF</div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i></div>
+      <span id="signalText">5/5</span>
+      <div class="battery"><div class="cell"><i id="battFill"></i></div><div class="nub"></div><span id="battText">82%</span></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sub-label">Paired devices</div>
+    <div class="paired">
+      <div class="pair-row"><svg><use href="#i-bt"/></svg>STRADA<span class="ok">✓</span></div>
+      <div class="pair-row"><svg><use href="#i-phone"/></svg>Galaxy S23<span class="add">+</span></div>
+    </div>
+    <div class="phone-actions">
+      <button class="btn ghost full" id="btnDisconnect">Disconnect</button>
+      <button class="btn ghost" id="btnCallSim" title="Simulate incoming call">Call</button>
+    </div>
+  </section>
+
+  <!-- CENTER: BLUETOOTH -->
+  <section class="card bt-card">
+    <div class="card-head"><span class="label">Bluetooth</span><span class="source" id="btLocalName">STRADA</span></div>
+
+    <div class="bt-wrap">
+      <div class="bt-circle" id="btCircle">
+        <svg class="ring" viewBox="0 0 168 168">
+          <circle cx="84" cy="84" r="78" fill="none" stroke="var(--ring)" stroke-width="4"/>
+          <circle id="btRing" cx="84" cy="84" r="78" fill="none" stroke="var(--accent)" stroke-width="4"
+                  stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="120"/>
+        </svg>
+        <div class="pulse"></div><div class="spinner"></div>
+        <div class="core"><svg style="color:#fff"><use href="#i-bt"/></svg></div>
+      </div>
+      <div class="bt-title" id="btTitle">Connected</div>
+      <div class="bt-sub" id="btSub">Aleksa's iPhone / A2DP / AVRCP</div>
+      <div class="bt-actions">
+        <button class="btn primary" id="btnPrimary">Play</button>
+        <button class="btn ghost" id="btnSecondary">Disconnect</button>
+      </div>
+      <div class="bt-features">
+        <span class="chip on"><svg><use href="#i-phone"/></svg>Calls</span>
+        <span class="chip on"><svg><use href="#i-note"/></svg>Music</span>
+        <span class="chip on"><svg><use href="#i-folder"/></svg>Contacts</span>
+      </div>
+    </div>
+
+    <!-- dial pad overlay -->
+    <div class="dial" id="dial">
+      <div class="dial-head">
+        <span class="label">Keypad</span>
+        <button class="btn small ghost" id="btnDialClose"><svg><use href="#i-close"/></svg></button>
+      </div>
+      <div class="dial-num" id="dialNum">—</div>
+      <div class="dial-grid" id="dialGrid">
+        <button data-d="1">1<span></span></button>
+        <button data-d="2">2<span>ABC</span></button>
+        <button data-d="3">3<span>DEF</span></button>
+        <button data-d="4">4<span>GHI</span></button>
+        <button data-d="5">5<span>JKL</span></button>
+        <button data-d="6">6<span>MNO</span></button>
+        <button data-d="7">7<span>PQRS</span></button>
+        <button data-d="8">8<span>TUV</span></button>
+        <button data-d="9">9<span>WXYZ</span></button>
+        <button data-d="*">*<span></span></button>
+        <button data-d="0">0<span>+</span></button>
+        <button data-d="#">#<span></span></button>
+      </div>
+      <div class="dial-actions">
+        <button class="btn ghost" id="btnDialBack"><svg><use href="#i-back"/></svg></button>
+        <button class="btn primary" id="btnDialCall"><svg><use href="#i-phone"/></svg>Call</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: AUDIO -->
+  <section class="card audio-card">
+    <div class="card-head"><span class="label">Audio</span><span class="source" id="audioSource">Bluetooth</span></div>
+    <div class="art-wrap">
+      <svg class="ring" viewBox="0 0 136 136">
+        <circle cx="68" cy="68" r="63" fill="none" stroke="var(--ring)" stroke-width="3"/>
+        <circle id="artRing" cx="68" cy="68" r="63" fill="none" stroke="var(--accent)" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="150"/>
+      </svg>
+      <div class="art" id="art"><svg style="color:#fff"><use href="#i-note"/></svg></div>
+    </div>
+    <div class="track" id="track">Test Song</div>
+    <div class="artist" id="artist">StradaOS</div>
+    <div class="time" id="time">1:08 / 3:35</div>
+    <div class="media-actions">
+      <button class="circle-btn sm" id="btnPrev" title="Anterior"><svg><use href="#i-prev"/></svg></button>
+      <button class="circle-btn lg" id="btnPlay" title="Play"><svg><use href="#i-play"/></svg></button>
+      <button class="circle-btn sm" id="btnNext" title="Siguiente"><svg><use href="#i-next"/></svg></button>
+    </div>
+  </section>
+
+  <!-- DOCK -->
+  <nav class="dock">
+    <div class="dock-item" data-dock="radio"><div class="dock-ic"><svg style="color:#fff"><use href="#i-radio"/></svg></div><div class="dock-label">Radio</div></div>
+    <div class="dock-item active" data-dock="bt"><div class="dock-ic"><svg style="color:#fff"><use href="#i-bt"/></svg></div><div class="dock-label">Bluetooth</div></div>
+    <div class="dock-item" data-dock="files"><div class="dock-ic"><svg style="color:#fff"><use href="#i-folder"/></svg></div><div class="dock-label">Files</div></div>
+    <div class="dock-item" data-dock="settings"><div class="dock-ic"><svg style="color:#fff"><use href="#i-gear"/></svg></div><div class="dock-label">Settings</div></div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const el = (id) => document.getElementById(id);
+
+  const state = {
+    mode: 'connected',           // off | ready | pairing | connected | playing | incoming | active | error
+    track: 0,
+    playing: true,
+    pos: 68,
+    dur: 215,
+    dial: '',
+    callTimer: null,
+  };
+
+  const tracks = [
+    { title: 'Test Song', artist: 'StradaOS', dur: 215 },
+    { title: 'Blinding Lights', artist: 'The Weeknd', dur: 200 },
+    { title: 'Midnight City', artist: 'M83', dur: 243 },
+    { title: 'Nocturne No. 2', artist: 'Chopin', dur: 275 },
+  ];
+
+  const toastEl = el('toast');
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  }
+
+  function setRing(circleId, frac) {
+    const c = el(circleId);
+    const len = c.getTotalLength ? c.getTotalLength() : 490;
+    c.style.strokeDasharray = String(len);
+    c.style.strokeDashoffset = String(len * (1 - Math.max(0, Math.min(1, frac))));
+  }
+
+  function effectivePlaying() {
+    return state.mode === 'playing';
+  }
+
+  function deviceConnected() {
+    return ['connected', 'playing', 'incoming', 'active'].includes(state.mode);
+  }
+
+  function render() {
+    const m = state.mode;
+    const connected = deviceConnected();
+    const playing = m === 'playing';
+
+    // top dot
+    el('topDot').style.background = connected ? 'var(--green)' : (m === 'off' ? '#555' : 'var(--accent)');
+    el('topDot').style.opacity = connected ? '1' : '.7';
+
+    // phone card
+    el('phoneSource').textContent = connected ? 'A2DP' : '—';
+    el('deviceName').textContent = connected ? "Aleksa's iPhone" : 'No device';
+    const ds = el('deviceState');
+    ds.className = 'device-state';
+    if (m === 'off') { ds.classList.add('off'); ds.innerHTML = '<span class="mini-dot"></span>Bluetooth apagado'; }
+    else if (m === 'ready') { ds.classList.add('off'); ds.innerHTML = '<span class="mini-dot"></span>Ready to pair'; }
+    else if (m === 'pairing') { ds.classList.add('off'); ds.innerHTML = '<span class="mini-dot"></span>Pairing...'; }
+    else if (m === 'error') { ds.classList.add('err'); ds.innerHTML = '<span class="mini-dot"></span>Error de conexión'; }
+    else if (m === 'incoming') { ds.innerHTML = '<span class="mini-dot"></span>Incoming call'; }
+    else if (m === 'active') { ds.innerHTML = '<span class="mini-dot"></span>In call'; }
+    else { ds.innerHTML = '<span class="mini-dot"></span>Connected'; }
+    el('deviceMac').textContent = connected ? 'AA:BB:CC:DD:EE:FF' : '—';
+    el('btnDisconnect').textContent = connected ? 'Disconnect' : 'Connect';
+    el('btnDisconnect').classList.toggle('primary', !connected && m !== 'off');
+
+    // center
+    const circle = el('btCircle');
+    circle.className = 'bt-circle' + (
+      m === 'off' ? ' off' :
+      m === 'pairing' ? ' pair' :
+      (m === 'incoming' || m === 'active') ? ' call' : ''
+    );
+    const titles = {
+      off: ['Bluetooth apagado', 'Toca para encender el módulo'],
+      ready: ['Ready to pair', 'STRADA / PIN 0000 / 800x480'],
+      pairing: ['Pairing...', 'Searching for phones nearby'],
+      connected: ['Connected', "Aleksa's iPhone / A2DP / AVRCP"],
+      playing: ['Playing', "Aleksa's iPhone / A2DP / AVRCP"],
+      incoming: ['Incoming call', "Aleksa's iPhone / +381 60 123 4567"],
+      active: ['In call', '00:12 / car audio'],
+      error: ['Connection failed', 'Check your phone and try again'],
+    };
+    el('btTitle').textContent = titles[m][0];
+    el('btSub').textContent = titles[m][1];
+
+    const primary = el('btnPrimary');
+    const secondary = el('btnSecondary');
+    const map = {
+      off: ['Power on', 'Settings'],
+      ready: ['Pair', 'Scan'],
+      pairing: ['Cancel', '—'],
+      connected: ['Play', 'Disconnect'],
+      playing: ['Pause', 'Disconnect'],
+      incoming: ['Answer', 'Reject'],
+      active: ['Hang up', 'Keypad'],
+      error: ['Retry', 'Settings'],
+    };
+    primary.textContent = map[m][0];
+    secondary.textContent = map[m][1];
+    secondary.style.display = map[m][1] === '—' ? 'none' : '';
+    primary.style.background = (m === 'incoming' || m === 'active') ? 'var(--green)' : 'var(--accent)';
+
+    // ring: connection progress / pairing / call pulse
+    if (m === 'off') setRing('btRing', 0);
+    else if (m === 'ready') setRing('btRing', .18);
+    else if (m === 'pairing') setRing('btRing', .55);
+    else if (m === 'error') setRing('btRing', .25);
+    else setRing('btRing', m === 'incoming' ? .9 : .78);
+
+    // features dim
+    document.querySelectorAll('.bt-features .chip').forEach((c, i) => {
+      c.classList.toggle('on', connected);
+      c.style.opacity = connected ? '1' : '.45';
+    });
+
+    // audio card
+    const t = tracks[state.track];
+    el('track').textContent = (connected && m !== 'off') ? t.title : 'Nothing playing';
+    el('artist').textContent = (connected && m !== 'off') ? t.artist : 'Radio, Bluetooth o USB';
+    el('time').textContent = (connected && m !== 'off') ? `${fmt(state.pos)} / ${fmt(t.dur)}` : '—';
+    el('btnPlay').innerHTML = `<svg><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`;
+    el('btnPlay').disabled = !connected;
+    el('btnPlay').classList.toggle('off', !connected);
+    el('audioSource').textContent = connected ? 'Bluetooth' : '—';
+    el('art').classList.toggle('off', !connected);
+    el('artRing').style.opacity = connected ? '1' : '.25';
+    setRing('artRing', connected ? state.pos / t.dur : 0);
+    el('btnPrev').disabled = !connected;
+    el('btnNext').disabled = !connected;
+
+    // dock active
+    document.querySelectorAll('.dock-item').forEach(d => d.classList.toggle('active', d.dataset.dock === 'bt'));
+  }
+
+  function go(next) {
+    state.mode = next;
+    if (next === 'pairing') {
+      clearTimeout(state.pairTimer);
+      state.pairTimer = setTimeout(() => {
+        if (state.mode === 'pairing') {
+          state.mode = 'connected';
+          toast("Paired with Aleksa's iPhone");
+          render();
+        }
+      }, 1600);
+    }
+    if (next === 'incoming') {
+      clearInterval(state.callTimer);
+      state.callTimer = setInterval(() => {
+        if (state.mode === 'active') {
+          state.callSec = (state.callSec || 0) + 1;
+          el('btSub').textContent = `${fmt(state.callSec)} / car audio`;
+        }
+      }, 1000);
+    }
+    if (next !== 'active') {
+      clearInterval(state.callTimer);
+      state.callSec = 0;
+    }
+    if (next === 'off' || next === 'ready' || next === 'error') {
+      state.playing = false;
+    }
+    render();
+  }
+
+  el('btnPrimary').addEventListener('click', () => {
+    switch (state.mode) {
+      case 'off': go('ready'); toast('Bluetooth encendido'); break;
+      case 'ready': go('pairing'); break;
+      case 'pairing': go('ready'); break;
+      case 'connected': state.playing = true; go('playing'); break;
+      case 'playing': state.playing = false; go('connected'); break;
+      case 'incoming': go('active'); toast('Call contestada'); break;
+      case 'active': go('connected'); toast('Call finalizada'); break;
+      case 'error': go('pairing'); break;
+    }
+  });
+
+  el('btnSecondary').addEventListener('click', () => {
+    switch (state.mode) {
+      case 'ready': go('pairing'); break;
+      case 'connected':
+      case 'playing': go('ready'); toast('Disconnected'); break;
+      case 'incoming': go('connected'); toast('Call rechazada'); break;
+      case 'active': showDial(true); break;
+      case 'off':
+      case 'error': toast('Settings no implementados en el prototipo'); break;
+    }
+  });
+
+  el('btnDisconnect').addEventListener('click', () => {
+    if (deviceConnected()) { go('ready'); toast('Disconnected'); }
+    else if (state.mode === 'off') { go('ready'); toast('Bluetooth encendido'); }
+    else { go('pairing'); }
+  });
+
+  el('btnCallSim').addEventListener('click', () => {
+    if (!deviceConnected()) { toast('Connect a phone first'); return; }
+    go('incoming');
+  });
+
+  el('btnPlay').addEventListener('click', () => {
+    if (state.mode === 'playing') go('connected');
+    else if (state.mode === 'connected') { state.playing = true; go('playing'); }
+  });
+
+  el('btnNext').addEventListener('click', () => {
+    if (!deviceConnected()) return;
+    state.track = (state.track + 1) % tracks.length;
+    state.pos = 0;
+    state.dur = tracks[state.track].dur;
+    if (state.mode === 'connected') go('playing');
+    else render();
+  });
+
+  el('btnPrev').addEventListener('click', () => {
+    if (!deviceConnected()) return;
+    state.track = (state.track - 1 + tracks.length) % tracks.length;
+    state.pos = 0;
+    state.dur = tracks[state.track].dur;
+    if (state.mode === 'connected') go('playing');
+    else render();
+  });
+
+  // ── dial pad ───────────────────────────────────────────────
+  const dial = el('dial');
+  function showDial(v) {
+    dial.classList.toggle('show', v);
+    if (v) { state.dial = ''; updateDial(); }
+  }
+  function updateDial() {
+    el('dialNum').textContent = state.dial || '—';
+  }
+  document.querySelectorAll('#dialGrid button').forEach(b => {
+    b.addEventListener('click', () => {
+      state.dial += b.dataset.d;
+      updateDial();
+    });
+  });
+  el('btnDialClose').addEventListener('click', () => showDial(false));
+  el('btnDialBack').addEventListener('click', () => { state.dial = state.dial.slice(0, -1); updateDial(); });
+  el('btnDialCall').addEventListener('click', () => {
+    if (!state.dial) { toast('Marca un número'); return; }
+    showDial(false);
+    go('active');
+    state.callSec = 0;
+    el('btSub').textContent = `${state.dial} / marcando…`;
+    toast('Llamando a ' + state.dial);
+  });
+
+  // ── dock ───────────────────────────────────────────────────
+  document.querySelectorAll('.dock-item').forEach(d => {
+    d.addEventListener('click', () => {
+      document.querySelectorAll('.dock-item').forEach(x => x.classList.remove('active'));
+      d.classList.add('active');
+      const name = d.querySelector('.dock-label').textContent;
+      if (d.dataset.dock !== 'bt') toast(name + ' / placeholder');
+    });
+  });
+
+  // ── clock ──────────────────────────────────────────────────
+  function tickClock() {
+    const d = new Date();
+    el('clock').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+  el('date').textContent = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  }).replace(/^\w/, c => c.toUpperCase());
+
+  // ── media progress ─────────────────────────────────────────
+  setInterval(() => {
+    if (state.mode !== 'playing') return;
+    state.pos += 1;
+    if (state.pos >= tracks[state.track].dur) {
+      state.pos = 0;
+      state.track = (state.track + 1) % tracks.length;
+    }
+    render();
+  }, 1000);
+
+  // ── fit the fixed 800x480 board into the available window ──
+  const frame = el('frame');
+  function fit() {
+    const s = Math.min(frame.clientWidth / 800, frame.clientHeight / 480, 1);
+    const stage = el('stage');
+    stage.style.transform = `scale(${s})`;
+    stage.style.left = `${(frame.clientWidth - 800 * s) / 2}px`;
+    stage.style.top = `${(frame.clientHeight - 480 * s) / 2}px`;
+  }
+  new ResizeObserver(fit).observe(frame);
+  fit();
+
+  render();
+})();
+</script>
+</body>
+</html>

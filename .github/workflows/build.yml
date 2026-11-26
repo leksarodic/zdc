@@ -1,0 +1,114 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  emulator:
+    name: SDL emulator + screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libsdl2-dev xvfb python3
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Render states
+        run: make screenshot
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: strada-7010b-screenshots
+          path: artifacts/*.png
+          if-no-files-found: error
+
+  arm:
+    name: ARMv5 framebuffer binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ca-certificates cmake git gcc-arm-linux-gnueabi g++-arm-linux-gnueabi \
+            libc6-dev-armel-cross linux-libc-dev-armel-cross
+      - name: Configure
+        run: |
+          cmake -S . -B build-arm \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-linux-gnueabi.cmake \
+            -DSTRADA_BUILD_SDL=OFF -DSTRADA_BUILD_FBDEV=ON \
+            -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build-arm -j"$(nproc)"
+      - name: Check architecture
+        run: |
+          file build-arm/strada-ui-fb
+          file build-arm/strada-ui-fb | grep -q "ARM"
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: strada-7010b-armv5
+          path: build-arm/strada-ui-fb
+          if-no-files-found: error
+
+  image:
+    name: Patched 7010B SPI image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Bluetooth name
+        run: |
+          mkdir -p artifacts
+          python3 tools/patch_bt_name.py firmware/7010b-original.bin \
+            -o artifacts/7010b-STRADA.img --name STRADA
+      - name: Verify patch scope
+        run: |
+          python3 tools/patch_bt_name.py artifacts/7010b-STRADA.img \
+            --verify-against firmware/7010b-original.bin
+      - name: Hashes
+        run: |
+          sha256sum firmware/7010b-original.bin artifacts/7010b-STRADA.img
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: strada-7010b-image
+          path: artifacts/7010b-STRADA.img
+          if-no-files-found: error
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [emulator, arm, image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: strada-7010b-*
+          merge-multiple: true
+      - name: Publish with gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh artifacts
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+          fi

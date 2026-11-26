@@ -1,0 +1,11 @@
+build/
+build-arm/
+artifacts/
+extracted/
+source/
+*.ppm
+.DS_Store
+rea-snapshot.json
+compile_commands.json
+__pycache__/
+*.pyc

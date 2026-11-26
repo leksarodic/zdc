@@ -1,0 +1,5 @@
+build/
+extracted/
+artifacts/
+.git/
+.DS_Store

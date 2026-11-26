@@ -681,6 +681,7 @@ static void build_files(lv_obj_t *parent) {
 
     files_path_lbl = label(files_panel, file_root, 18, 38, 700, 16,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    lv_label_set_long_mode(files_path_lbl, LV_LABEL_LONG_MODE_CLIP);
 
     static const char *FILTERS[] = {"All", "Music", "Photos"};
     static const int FILTER_X[] = {18, 86, 166};
@@ -700,8 +701,9 @@ static void build_files(lv_obj_t *parent) {
     lv_obj_set_style_pad_all(files_list, 2, 0);
     lv_obj_set_scroll_dir(files_list, LV_DIR_VER);
 
-    files_info_lbl = label(files_panel, "", 18, 232, 740, 14,
+    files_info_lbl = label(files_panel, "", 18, 230, 740, 18,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    lv_label_set_long_mode(files_info_lbl, LV_LABEL_LONG_MODE_CLIP);
 
     music_box = box(files_panel, 18, 250, 740, 38, C_INNER, 8);
     lv_obj_add_flag(music_box, LV_OBJ_FLAG_HIDDEN);

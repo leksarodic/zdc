@@ -8,6 +8,8 @@ zcd/source/bin7010-2019-02-20-17-10-20.bin
 SHA-256 90fda1101bf72c70f1d0a5edb60a75c33275de34ecb2190e0385c5e153d68075
 ```
 
+> For the build, emulator, CI and flashing steps, see `README.md` and `docs/`. This document is the firmware/hardware/design analysis.
+
 REA artifact evidence: `ev_0304ddfef0fee34c7f37e741ddc4b7ffdae6ead1fbdb58c2196792118c099b32`
 (parent `ev_983904f45a2253177432b465cb4cca457c7253ff02573db5470913ddd7797b73`).
 

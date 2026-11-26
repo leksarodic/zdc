@@ -32,7 +32,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * FM frequency display, tune ±0.1 MHz and seek ±1 MHz
 * Six presets (87.5, 90.1, 94.3, 98.1, 101.7, 104.9)
 * **Save preset**: press Save, then 1–6 to store the current station
-* Presets persist in `strada.conf` (native) and `localStorage` (browser)
+* Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
 * Power and mute states
 * Simulated tuner in the emulator; on hardware the same actions map to the MCU/BT UART protocol
 

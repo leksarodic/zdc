@@ -20,18 +20,39 @@ The last option is possible in principle (`versatilepb` or `vexpress-a9` plus a 
 
 ## 2. Testing the ARMv5 core under QEMU user mode
 
-This is implemented and runs in CI:
+### Linux / WSL
 
 ```bash
+sudo apt-get install -y gcc-arm-linux-gnueabi libc6-dev-armel-cross qemu-user
 make qemu-test
+```
+
+Expected:
+
+```
+ELF 32-bit LSB executable, ARM, EABI5 ... statically linked
+bt tests: OK
 ```
 
 It cross-compiles `tests/test_bt.c` with `bt_sim.c` and `bt_uart.c` as a **static ARMv5TE** binary and runs it with `qemu-arm`. This validates the Bluetooth state machine, call/music interruption logic and UART framing on the target instruction set.
 
-Requirements:
+### macOS / any host with Docker
 
-- `arm-linux-gnueabi-gcc`
-- `qemu-arm` (`qemu-user` on Debian/Ubuntu)
+```bash
+make qemu-docker
+```
+
+This uses an amd64 Debian container with the ARM cross toolchain and `qemu-arm`. It installs nothing on the host beyond Docker. The script is `tools/qemu_test_docker.sh`.
+
+### Manual command
+
+```bash
+arm-linux-gnueabi-gcc -static -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft \
+  -O2 -Iapp tests/test_bt.c app/bt_sim.c app/bt_uart.c -o build/test_bt_arm
+qemu-arm ./build/test_bt_arm
+```
+
+`qemu-arm ./build-arm/strada-ui-fb --help` also checks that the ARM framebuffer binary can start, but there is no framebuffer inside qemu-user for the actual UI.
 
 ## 3. Booting the stock firmware
 

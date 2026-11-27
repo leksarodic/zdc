@@ -10,7 +10,7 @@ ifeq ($(UNAME_S),Linux)
 XVFB ?= xvfb-run -a
 endif
 
-.PHONY: all build test emulator screenshot arm qemu-test image verify-image clean
+.PHONY: all build test emulator screenshot arm qemu-test qemu-docker image verify-image clean
 
 all: build
 
@@ -78,7 +78,12 @@ arm:
 		-DCMAKE_BUILD_TYPE=Release
 	$(CMAKE) --build build-arm -j
 
+qemu-docker:
+	./tools/qemu_test_docker.sh
+
 qemu-test:
+	@command -v $(ARM_CC) >/dev/null 2>&1 || (echo "missing $(ARM_CC); install gcc-arm-linux-gnueabi or use 'make qemu-docker'" >&2; exit 1)
+	@command -v $(QEMU) >/dev/null 2>&1 || (echo "missing $(QEMU); install qemu-user or use 'make qemu-docker'" >&2; exit 1)
 	mkdir -p $(BUILD)
 	$(ARM_CC) -static -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -O2 -Iapp \
 		tests/test_bt.c app/bt_sim.c app/bt_uart.c -o $(BUILD)/test_bt_arm

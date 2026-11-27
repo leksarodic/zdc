@@ -49,7 +49,6 @@ static lv_obj_t *vol_osd;
 static lv_obj_t *vol_bar;
 static lv_obj_t *vol_pct;
 static lv_obj_t *vol_icon;
-static lv_obj_t *vol_src_lbl;
 static lv_timer_t *osd_timer;
 
 static lv_obj_t *call_banner;
@@ -392,7 +391,6 @@ static void volume_render(void) {
                  (active_src == SRC_BT && bt_muted);
     int v = *active_volume();
     if (vol_icon) lv_label_set_text(vol_icon, muted ? LV_SYMBOL_MUTE : LV_SYMBOL_VOLUME_MAX);
-    if (vol_src_lbl) lv_label_set_text(vol_src_lbl, active_src == SRC_RADIO ? "RADIO" : "BLUETOOTH");
     if (vol_bar) lv_bar_set_value(vol_bar, muted ? 0 : v, LV_ANIM_OFF);
     if (vol_pct) {
         if (muted) lv_label_set_text(vol_pct, "MUTED");
@@ -1119,8 +1117,6 @@ static void build_volume_osd(lv_obj_t *scr) {
     button(vol_osd, "-", 14, 18, 40, 34, C_INNER, C_TEXT, &lv_font_montserrat_18,
            volume_down_cb, NULL);
     vol_icon = symbol(vol_osd, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_18, C_SOFT, 62, 22, 32, 26);
-    vol_src_lbl = label(vol_osd, "BLUETOOTH", 104, 7, 166, 12,
-                        &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_LEFT);
 
     vol_bar = lv_bar_create(vol_osd);
     lv_obj_set_pos(vol_bar, 104, 30);

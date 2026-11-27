@@ -441,7 +441,6 @@
   }
   .vol-step:hover{background:var(--btn)}
   .vol-ic{width:24px;height:24px;color:var(--soft);flex:none}
-  .vol-src{position:absolute;left:104px;top:5px;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
   .vol-track{flex:1;height:10px;border-radius:5px;background:var(--btn);overflow:hidden}
   .vol-track i{display:block;height:100%;background:var(--accent);border-radius:5px}
   .vol-pct{width:40px;text-align:right;font-size:12px;font-weight:600;color:var(--text);flex:none}
@@ -793,7 +792,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.9.0</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.1</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -889,7 +888,6 @@
   <div class="vol-osd" id="volOsd">
     <button class="vol-step" id="volDown">-</button>
     <svg class="vol-ic"><use id="volIcon" href="#i-volume"/></svg>
-    <span class="vol-src" id="volSrc">BLUETOOTH</span>
     <div class="vol-track"><i id="volFill"></i></div>
     <span class="vol-pct" id="volPct">70%</span>
     <button class="vol-step" id="volUp">+</button>
@@ -913,7 +911,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.9.0</span>
+  <span class="tb-ver">web v0.9.1</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -1005,7 +1003,6 @@
     const v = currentVolume();
     el('volFill').style.width = (muted ? 0 : v) + '%';
     el('volPct').textContent = muted ? 'MUTED' : v + '%';
-    el('volSrc').textContent = activeSource === 'radio' ? 'RADIO' : 'BLUETOOTH';
     el('volIcon').setAttribute('href', muted ? '#i-mute' : '#i-volume');
   }
   function renderBootVolume() {

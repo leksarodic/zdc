@@ -355,7 +355,12 @@ typedef struct {
 
 typedef enum { FILTER_ALL = 0, FILTER_MUSIC = 1, FILTER_PHOTOS = 2 } file_filter_t;
 
+#define FILE_ROOTS_MAX 4
 static char file_root[STRADA_PATH_MAX] = "media";
+static char file_roots[FILE_ROOTS_MAX][STRADA_PATH_MAX];
+static char file_root_labels[FILE_ROOTS_MAX][16];
+static int file_root_count = 1;
+static int file_root_index = 0;
 static char file_cwd[STRADA_PATH_MAX] = "";
 static file_entry_t file_entries[FILE_MAX];
 static int file_entry_count = 0;
@@ -366,6 +371,7 @@ static lv_obj_t *files_status_lbl;
 static lv_obj_t *files_info_lbl;
 static lv_obj_t *files_list;
 static lv_obj_t *file_filter_btns[3];
+static lv_obj_t *files_source_btns[FILE_ROOTS_MAX];
 static lv_obj_t *file_preview;
 static lv_obj_t *file_preview_title;
 static lv_obj_t *file_preview_text;
@@ -612,7 +618,7 @@ static void load_dir(const char *path) {
     qsort(file_entries, (size_t)file_entry_count, sizeof(file_entry_t), file_cmp);
     snprintf(file_cwd, sizeof(file_cwd), "%s", path);
     lv_label_set_text(files_path_lbl, file_cwd);
-    lv_label_set_text(files_status_lbl, "USB / SD");
+    lv_label_set_text(files_status_lbl, file_root_count > 1 ? "USB + SD" : "USB / SD");
 
     lv_obj_clean(files_list);
     if (file_entry_count == 0) {
@@ -681,11 +687,44 @@ static void files_refresh_cb(lv_event_t *e) {
     load_dir(file_cwd[0] ? file_cwd : file_root);
 }
 
+static void files_source_refresh(void) {
+    for (int i = 0; i < file_root_count && i < FILE_ROOTS_MAX; i++) {
+        if (!files_source_btns[i]) continue;
+        bool sel = i == file_root_index;
+        lv_obj_set_style_bg_color(files_source_btns[i], col(sel ? 0xFE3211 : C_INNER), 0);
+        lv_obj_set_style_text_color(lv_obj_get_child(files_source_btns[i], 0),
+                                    col(sel ? 0xFFFFFF : C_SOFT), 0);
+    }
+}
+
+static void files_select_root(int idx) {
+    if (idx < 0 || idx >= file_root_count || idx == file_root_index) return;
+    file_root_index = idx;
+    snprintf(file_root, sizeof(file_root), "%s", file_roots[idx]);
+    file_cwd[0] = '\0';
+    file_filter = FILTER_ALL;
+    files_filter_refresh();
+    files_source_refresh();
+    load_dir(file_root);
+}
+
+static void files_source_cb(lv_event_t *e) {
+    files_select_root((int)(intptr_t)lv_event_get_user_data(e));
+}
+
 static void build_files(lv_obj_t *parent) {
     files_panel = make_panel(parent);
-    files_status_lbl = panel_header(files_panel, "FILES", "USB / SD", true);
+    files_status_lbl = panel_header(files_panel, "FILES",
+                                    file_root_count > 1 ? "USB + SD" : "USB / SD", true);
 
-    files_path_lbl = label(files_panel, file_root, 18, 38, 700, 16,
+    label(files_panel, "SOURCE", 18, 40, 52, 12, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    for (int i = 0; i < file_root_count && i < FILE_ROOTS_MAX; i++) {
+        files_source_btns[i] = button(files_panel, file_root_labels[i], 76 + i * 82, 34, 74, 24,
+                                      C_INNER, &lv_font_montserrat_10, NULL, NULL);
+        lv_obj_add_event_cb(files_source_btns[i], files_source_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+    }
+
+    files_path_lbl = label(files_panel, file_root, 18, 62, 700, 16,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     lv_label_set_long_mode(files_path_lbl, LV_LABEL_LONG_MODE_CLIP);
 
@@ -693,14 +732,14 @@ static void build_files(lv_obj_t *parent) {
     static const int FILTER_X[] = {18, 86, 166};
     static const int FILTER_W[] = {62, 74, 80};
     for (int i = 0; i < 3; i++) {
-        file_filter_btns[i] = button(files_panel, FILTERS[i], FILTER_X[i], 58, FILTER_W[i], 30,
+        file_filter_btns[i] = button(files_panel, FILTERS[i], FILTER_X[i], 82, FILTER_W[i], 30,
                                      C_INNER, &lv_font_montserrat_10, NULL, NULL);
         lv_obj_add_event_cb(file_filter_btns[i], files_filter_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
-    button(files_panel, LV_SYMBOL_UP, 610, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_up_cb, NULL);
-    button(files_panel, LV_SYMBOL_REFRESH, 672, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_refresh_cb, NULL);
+    button(files_panel, LV_SYMBOL_UP, 610, 82, 54, 30, C_INNER, &lv_font_montserrat_12, files_up_cb, NULL);
+    button(files_panel, LV_SYMBOL_REFRESH, 672, 82, 54, 30, C_INNER, &lv_font_montserrat_12, files_refresh_cb, NULL);
 
-    files_list = box(files_panel, 18, 94, 740, 150, C_CARD, 8);
+    files_list = box(files_panel, 18, 116, 740, 128, C_CARD, 8);
     lv_obj_set_style_bg_opa(files_list, LV_OPA_TRANSP, 0);
     lv_obj_set_flex_flow(files_list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(files_list, 4, 0);
@@ -733,6 +772,7 @@ static void build_files(lv_obj_t *parent) {
     (void)music_timer;
 
     files_filter_refresh();
+    files_source_refresh();
     load_dir(file_root);
 }
 
@@ -1007,7 +1047,7 @@ static void build_settings(lv_obj_t *parent) {
     }
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / v0.5.3 / LVGL", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.6.0 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
@@ -1112,8 +1152,32 @@ void panels_set_now(long epoch) {
     cal_show();
 }
 
+void panels_select_storage(int index) {
+    if (files_panel) files_select_root(index);
+}
+
 void panels_set_files_root(const char *root) {
     if (!root || !root[0]) return;
-    snprintf(file_root, sizeof(file_root), "%s", root);
-    if (files_panel) load_dir(file_root);
+    const char *roots[1] = {root};
+    const char *labels[1] = {"STORAGE"};
+    panels_set_storage_roots(roots, labels, 1);
+}
+
+void panels_set_storage_roots(const char *const *roots, const char *const *labels, int count) {
+    if (!roots || count <= 0) return;
+    if (count > FILE_ROOTS_MAX) count = FILE_ROOTS_MAX;
+    file_root_count = count;
+    file_root_index = 0;
+    for (int i = 0; i < count; i++) {
+        snprintf(file_roots[i], sizeof(file_roots[i]), "%s", roots[i] ? roots[i] : "");
+        snprintf(file_root_labels[i], sizeof(file_root_labels[i]), "%s",
+                 (labels && labels[i] && labels[i][0]) ? labels[i] : "STORAGE");
+    }
+    snprintf(file_root, sizeof(file_root), "%s", file_roots[0]);
+    file_cwd[0] = '\0';
+    if (files_panel) {
+        files_filter_refresh();
+        files_source_refresh();
+        load_dir(file_root);
+    }
 }

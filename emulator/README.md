@@ -41,7 +41,7 @@ Test keys in the native emulator:
 ### Functional panels
 
 * **Radio** — FM/AM radio buttons, icon tune/seek, presets, **save preset to 1–6**, RDS station name, power, mute with crossed-speaker volume popup
-* **Files** — All/Music/Photos, real directory list for the native build (root `media/`), WAV playback, BMP/PNG/JPG viewer, up/refresh, text/binary preview, **No USB or SD card connected** message
+* **Files** — All/Music/Photos, **USB/SD source selector when both are mounted**, real directory list (root `media/`), WAV playback, BMP/PNG/JPG viewer, up/refresh, text/binary preview, **No USB or SD card connected** message
 * **Settings** — accent color, 12/24 h clock, **in-device date/time buttons**, **boot volume**, **dark/light theme**, **night dim**, **screensaver timeout**, About, reset
 * **Now Playing** — maximises when playback starts, with large art and controls
 * **Call** — 560×280 recent-contacts/dial-pad popup with names and numbers; incoming calls show an Answer/Reject banner over Radio/Files/Settings
@@ -59,7 +59,7 @@ python3 tools/ppm_to_png.py artifacts/connected.ppm artifacts/connected.png
 ```
 
 Supported states: `off`, `ready`, `pairing`, `connected`, `playing`, `incoming`, `active`, `error`.
-Extra demo flags: `--interrupt` (music paused by a call), `--radio-mute`, `--file media/Music/sunset_drive.wav`, `--file media/Photos/sunset.bmp`, `--volume 55`, `--light`, `--dim`, `--saver`.
+Extra demo flags: `--interrupt` (music paused by a call), `--radio-mute`, `--files-root media --files-root media-sd`, `--storage-index 1`, `--file media/Music/sunset_drive.wav`, `--file media/Photos/sunset.bmp`, `--volume 55`, `--light`, `--dim`, `--saver`.
 
 ## Docker
 

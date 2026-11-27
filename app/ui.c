@@ -36,6 +36,7 @@ static audio_source_t active_src = SRC_BT;
 static int radio_volume = 70;
 static int bt_volume = 70;
 static bool radio_muted = false;
+static int radio_saved_volume = 0;
 static int boot_volume = 70;     /* Settings slider: level used at power-on */
 static int saver_timeout_sec = 300;
 static bool night_dim = false;
@@ -364,6 +365,7 @@ static void settings_load(void) {
     fclose(f);
     radio_volume = boot_volume;
     bt_volume = boot_volume;
+    radio_saved_volume = boot_volume;
 }
 
 static void settings_save(void) {
@@ -382,8 +384,15 @@ static void volume_apply(int v, bool show) {
 }
 
 static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show(); }
-static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(*active_volume() + 5, true); }
-static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(*active_volume() - 5, true); }
+static void volume_nudge(int delta) {
+    if (active_src == SRC_RADIO && radio_muted) {
+        panels_set_radio_mute(false);
+    }
+    volume_apply(*active_volume() + delta, true);
+}
+
+static void volume_up_cb(lv_event_t *e) { (void)e; volume_nudge(5); }
+static void volume_down_cb(lv_event_t *e) { (void)e; volume_nudge(-5); }
 static void on_volume(int v) {
     if (v < 0) v = 0;
     if (v > 100) v = 100;
@@ -393,13 +402,22 @@ static void on_volume(int v) {
 
 static void on_radio_start(void) {
     radio_volume = boot_volume;
+    radio_saved_volume = boot_volume;
     active_src = SRC_RADIO;
     volume_render();
     volume_show();
 }
 
 static void on_radio_mute(bool muted) {
-    radio_muted = muted;
+    if (muted) {
+        if (!radio_muted) radio_saved_volume = radio_volume;
+        radio_muted = true;
+        radio_volume = 0;
+    } else {
+        radio_muted = false;
+        radio_volume = radio_saved_volume > 0 ? radio_saved_volume : boot_volume;
+    }
+    volume_render();
     volume_show();
 }
 
@@ -495,8 +513,8 @@ void ui_set_screensaver(bool on) { on_saver(on); }
 void ui_show_screensaver(void) { saver_show_now(); }
 void ui_show_volume(void) { volume_show(); }
 void ui_set_volume(int v) { volume_apply(v, false); }
-void ui_volume_up(void) { volume_apply(*active_volume() + 5, true); }
-void ui_volume_down(void) { volume_apply(*active_volume() - 5, true); }
+void ui_volume_up(void) { volume_nudge(5); }
+void ui_volume_down(void) { volume_nudge(-5); }
 void ui_set_saver_timeout(int seconds) { on_saver_timeout(seconds); }
 void ui_set_radio_mute(bool muted) { panels_set_radio_mute(muted); }
 void ui_open_file(const char *path) { panels_open_file(path); }
@@ -983,6 +1001,7 @@ void ui_init(bt_model_t *model) {
     build_call_banner(scr);
     radio_volume = boot_volume;
     bt_volume = boot_volume;
+    radio_saved_volume = boot_volume;
     volume_apply(bt_volume, false);
     panels_set_boot_volume(boot_volume);
     panels_set_saver_timeout(saver_timeout_sec);

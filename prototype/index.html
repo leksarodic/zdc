@@ -394,9 +394,22 @@
   }
   .vol-step:hover{background:var(--btn)}
   .vol-ic{width:24px;height:24px;color:var(--soft);flex:none}
+  .vol-src{position:absolute;left:104px;top:5px;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
   .vol-track{flex:1;height:10px;border-radius:5px;background:var(--btn);overflow:hidden}
   .vol-track i{display:block;height:100%;background:var(--accent);border-radius:5px}
   .vol-pct{width:40px;text-align:right;font-size:12px;font-weight:600;color:var(--text);flex:none}
+
+  /* incoming call banner */
+  .incoming-banner{
+    position:absolute;left:190px;top:60px;width:420px;height:96px;background:var(--card);
+    border-radius:16px;padding:10px 16px;display:none;z-index:25;
+    box-shadow:0 20px 50px rgba(0,0,0,.45);
+  }
+  .incoming-banner.show{display:block}
+  .incoming-banner .ib-title{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+  .incoming-banner .ib-name{font-size:14px;font-weight:600;color:var(--text);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .incoming-banner .ib-actions{display:flex;gap:8px;margin-top:10px}
+  .incoming-banner .ib-actions .btn{flex:1;height:30px;font-size:12px}
 
   /* night dim and screensaver */
   #nightDim{position:absolute;inset:0;background:#000;opacity:.5;display:none;z-index:15;pointer-events:none}
@@ -705,7 +718,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.4.0</b>
+          <span>UI</span><b>LVGL 9.3 / v0.5.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -761,10 +774,21 @@
     </div>
   </section>
 
+  <!-- INCOMING CALL BANNER -->
+  <div class="incoming-banner" id="incomingBanner">
+    <div class="ib-title">INCOMING CALL</div>
+    <div class="ib-name" id="incomingName">Aleksa's iPhone / +381 60 123 4567</div>
+    <div class="ib-actions">
+      <button class="btn primary" id="ibAnswer">Answer</button>
+      <button class="btn ghost" id="ibReject">Reject</button>
+    </div>
+  </div>
+
   <!-- VOLUME OSD -->
   <div class="vol-osd" id="volOsd">
     <button class="vol-step" id="volDown">-</button>
-    <svg class="vol-ic"><use href="#i-volume"/></svg>
+    <svg class="vol-ic"><use id="volIcon" href="#i-volume"/></svg>
+    <span class="vol-src" id="volSrc">BLUETOOTH</span>
     <div class="vol-track"><i id="volFill"></i></div>
     <span class="vol-pct" id="volPct">70%</span>
     <button class="vol-step" id="volUp">+</button>
@@ -824,7 +848,9 @@
     const dv = Number(localStorage.getItem('strada.defaultVolume'));
     if (Number.isFinite(dv) && dv >= 0 && dv <= 100) defaultVolume = dv;
   } catch (e) {}
-  let volume = defaultVolume;
+  let btVolume = defaultVolume;
+  let radioVolume = defaultVolume;
+  let activeSource = 'bt';
   let clockSet = false;
   let clockBase = new Date();
   let clockBaseAt = Date.now();
@@ -860,20 +886,28 @@
   // ── volume overlay ────────────────────────────────────────
   let volTimer = null;
   function showVolume() {
+    renderVolume();
     el('volOsd').classList.add('show');
     clearTimeout(volTimer);
     volTimer = setTimeout(() => el('volOsd').classList.remove('show'), 1800);
   }
+  function currentVolume() { return activeSource === 'radio' ? radioVolume : btVolume; }
   function renderVolume() {
-    el('volFill').style.width = volume + '%';
-    el('volPct').textContent = volume + '%';
+    const muted = activeSource === 'radio' && radioMute;
+    const v = currentVolume();
+    el('volFill').style.width = (muted ? 0 : v) + '%';
+    el('volPct').textContent = muted ? 'MUTED' : v + '%';
+    el('volSrc').textContent = activeSource === 'radio' ? 'RADIO' : 'BLUETOOTH';
+    el('volIcon').setAttribute('href', muted ? '#i-mute' : '#i-volume');
   }
   function renderBootVolume() {
     el('volumeRange').value = defaultVolume;
     el('volumeValue').textContent = defaultVolume + '%';
   }
   function setVolume(v, show) {
-    volume = Math.max(0, Math.min(100, Math.round(v)));
+    const nv = Math.max(0, Math.min(100, Math.round(v)));
+    if (activeSource === 'radio') radioVolume = nv;
+    else btVolume = nv;
     renderVolume();
     if (show) showVolume();
   }
@@ -883,8 +917,8 @@
     renderBootVolume();
   }
   el('volBtn').addEventListener('click', () => { showScreen('settings'); showVolume(); });
-  el('volDown').addEventListener('click', () => setVolume(volume - 5, true));
-  el('volUp').addEventListener('click', () => setVolume(volume + 5, true));
+  el('volDown').addEventListener('click', () => setVolume(currentVolume() - 5, true));
+  el('volUp').addEventListener('click', () => setVolume(currentVolume() + 5, true));
 
   // ── theme, night dim, screensaver ─────────────────────────
   let lightTheme = false;
@@ -1059,6 +1093,11 @@
     el('btnCallSim').disabled = !connected;
     el('btnCallSim').style.opacity = connected ? '1' : '.5';
     renderPlayer();
+    renderIncomingBanner();
+  }
+
+  function renderIncomingBanner() {
+    el('incomingBanner').classList.toggle('show', state.mode === 'incoming' && screen !== 'home');
   }
 
   function renderPlayer() {
@@ -1251,10 +1290,13 @@
 
   function showScreen(name) {
     screen = name;
+    if (name === 'radio') activeSource = 'radio';
+    else if (name === 'home') activeSource = 'bt';
     Object.entries(PANELS).forEach(([key, panel]) => panel.classList.toggle('show', key === name));
     closeCallPanel();
     setDockActive(name);
     renderPlayer();
+    renderIncomingBanner();
     if (name === 'radio') renderRadio();
     if (name === 'files') renderFiles();
     if (name === 'settings') renderSettings();
@@ -1277,7 +1319,7 @@
     el('bandFm').classList.toggle('sel', !radioAm);
     el('bandAm').classList.toggle('sel', radioAm);
     el('radioSave').classList.toggle('sel', radioSaveMode);
-    el('muteIcon').setAttribute('href', radioMute ? '#i-volume' : '#i-mute');
+    el('muteIcon').setAttribute('href', radioMute ? '#i-mute' : '#i-volume');
     document.querySelectorAll('#radioPresets [data-preset]').forEach(b => {
       const i = Number(b.dataset.preset);
       b.classList.toggle('sel', radioOn && Math.abs(radioFreq() - bandPresets()[i]) < (radioAm ? 1 : 0.05));
@@ -1318,7 +1360,12 @@
     radioOn = !radioOn;
     if (!radioOn) radioSaveMode = false;
     renderRadio();
-    if (radioOn) setVolume(defaultVolume, true);
+    if (radioOn) {
+      radioVolume = defaultVolume;
+      activeSource = 'radio';
+      renderVolume();
+      showVolume();
+    }
   });
   el('radioMute').addEventListener('click', () => {
     radioMute = !radioMute;
@@ -1582,6 +1629,8 @@
     setAccent('#FE3211');
     setClock(true);
     setBootVolume(70);
+    btVolume = 70;
+    radioVolume = 70;
     setVolume(70, false);
     setTheme(false);
     setNightDim(false);
@@ -1604,6 +1653,18 @@
     renderBootVolume();
     el('saverTimeout').textContent = saverTimeout >= 60 ? (saverTimeout / 60) + ' min' : saverTimeout + ' s';
   }
+
+  el('ibAnswer').addEventListener('click', () => {
+    if (state.mode !== 'incoming') return;
+    go('active');
+    showScreen('home');
+  });
+  el('ibReject').addEventListener('click', () => {
+    if (state.mode !== 'incoming') return;
+    const resume = state.interrupted;
+    state.interrupted = false;
+    go(resume ? 'playing' : 'connected');
+  });
 
   // ── now playing panel ─────────────────────────────────────
   document.querySelectorAll('[data-player-close]').forEach(b => b.addEventListener('click', () => {
@@ -1731,8 +1792,8 @@
       const a = b.dataset.action;
       if (a === 'incoming') go('incoming');
       else if (a === 'calldemo') callDemo();
-      else if (a === 'volup') setVolume(volume + 5, true);
-      else if (a === 'voldown') setVolume(volume - 5, true);
+      else if (a === 'volup') setVolume(currentVolume() + 5, true);
+      else if (a === 'voldown') setVolume(currentVolume() - 5, true);
       else if (a === 'mode') {
         const order = ['home', 'radio', 'files', 'settings'];
         showScreen(order[(order.indexOf(screen) + 1) % order.length]);
@@ -1766,14 +1827,14 @@
     setVolume: (v) => setVolume(v, false),
     showVolume: showVolume,
     callDemo: callDemo,
-    volumeUp: () => setVolume(volume + 5, true),
-    volumeDown: () => setVolume(volume - 5, true),
+    volumeUp: () => setVolume(currentVolume() + 5, true),
+    volumeDown: () => setVolume(currentVolume() - 5, true),
     setSaverTimeout: setSaverTimeout,
     action: (a) => {
       if (a === 'incoming') go('incoming');
       else if (a === 'calldemo') callDemo();
-      else if (a === 'volup') setVolume(volume + 5, true);
-      else if (a === 'voldown') setVolume(volume - 5, true);
+      else if (a === 'volup') setVolume(currentVolume() + 5, true);
+      else if (a === 'voldown') setVolume(currentVolume() - 5, true);
       else if (a === 'mode') {
         const order = ['home', 'radio', 'files', 'settings'];
         showScreen(order[(order.indexOf(screen) + 1) % order.length]);

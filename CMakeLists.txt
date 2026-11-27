@@ -24,6 +24,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(lvgl)
 
+if(CMAKE_CROSSCOMPILING)
+    target_compile_definitions(lvgl PUBLIC STRADA_LOW_SPEC=1)
+    target_compile_options(lvgl PUBLIC -Os -ffunction-sections -fdata-sections)
+    target_link_options(lvgl PUBLIC -Wl,--gc-sections)
+endif()
+
 if(STRADA_BUILD_SDL)
     target_compile_definitions(lvgl PUBLIC STRADA_USE_SDL=1)
     if(TARGET SDL2::SDL2)

@@ -95,6 +95,7 @@ int main(int argc, char **argv) {
     int vol_value = 70;
     const char *open_file = NULL;
     bool interrupt_demo = false;
+    bool radio_mute = false;
     int frames = 0;
     bool interactive = true;
 
@@ -118,6 +119,8 @@ int main(int argc, char **argv) {
             dim = true;
         } else if (!strcmp(argv[i], "--saver")) {
             saver = true;
+        } else if (!strcmp(argv[i], "--radio-mute")) {
+            radio_mute = true;
         } else if (!strcmp(argv[i], "--interrupt")) {
             interrupt_demo = true;
         } else if (!strcmp(argv[i], "--file") && i + 1 < argc) {
@@ -126,7 +129,7 @@ int main(int argc, char **argv) {
             show_vol = true;
             vol_value = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt] [--radio-mute]\n", argv[0]);
             return 0;
         }
     }
@@ -158,6 +161,7 @@ int main(int argc, char **argv) {
     if (light) ui_set_theme(true);
     if (dim) ui_set_night_dim(true);
     if (saver) ui_show_screensaver();
+    if (radio_mute) ui_set_radio_mute(true);
     if (open_file) ui_open_file(open_file);
     if (show_vol) {
         ui_set_volume(vol_value);

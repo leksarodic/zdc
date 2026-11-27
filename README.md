@@ -131,7 +131,7 @@ Switch **Theme → Light** for a daytime palette. The screensaver follows the th
 
 ![Now Playing](docs/screenshots/playing.png)
 
-When Bluetooth music is playing, the Audio card grows wider than the Bluetooth status card, with larger album art and track text. The full Now Playing panel opens when you tap the album art; it is not forced over the home screen.
+When Bluetooth music is playing, the Audio card grows wider than the Bluetooth status card, with larger album art and track text. The album art has **overlay prev / play-pause / next buttons**; the old bottom control row is gone. Tap the art outside those buttons to open the full Now Playing panel; it is not forced over the home screen.
 
 ### Call
 

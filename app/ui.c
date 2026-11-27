@@ -345,7 +345,6 @@ static void apply_accent(uint32_t c) {
     if (phone_source) lv_obj_set_style_text_color(phone_source, col(accent), 0);
     if (bt_name_lbl) lv_obj_set_style_text_color(bt_name_lbl, col(accent), 0);
     if (audio_source) lv_obj_set_style_text_color(audio_source, col(accent), 0);
-    if (play_btn) lv_obj_set_style_bg_color(play_btn, col(accent), 0);
     if (dock_circles[0]) update_dock(screen_idx);
     ui_update();
 }
@@ -728,6 +727,19 @@ static void layout_bt_actions(bool connected, bool narrow) {
     }
 }
 
+static void layout_art_controls(int d) {
+    if (!prev_btn || !play_btn || !next_btn) return;
+    const int sb = 32, pb = 42, gap = 6;
+    int x = (d - (sb + pb + sb + gap * 2)) / 2;
+    int y = (d - pb) / 2;
+    lv_obj_set_pos(prev_btn, x, y + 5);
+    lv_obj_set_size(prev_btn, sb, sb);
+    lv_obj_set_pos(play_btn, x + sb + gap, y);
+    lv_obj_set_size(play_btn, pb, pb);
+    lv_obj_set_pos(next_btn, x + sb + gap + pb + gap, y + 5);
+    lv_obj_set_size(next_btn, sb, sb);
+}
+
 static void apply_home_layout(void) {
     if (!phone_card || !bt_card || !audio_card) return;
     bool big = M && M->state == BT_PLAYING;
@@ -797,15 +809,7 @@ static void apply_home_layout(void) {
     lv_obj_set_width(artist_lbl, aw - 16);
     lv_obj_set_pos(time_pos_lbl, 8, big ? 238 : 220);
     lv_obj_set_width(time_pos_lbl, aw - 16);
-    if (big) {
-        lv_obj_set_pos(prev_btn, 62, 258);
-        lv_obj_set_pos(play_btn, 114, 252);
-        lv_obj_set_pos(next_btn, 178, 258);
-    } else {
-        lv_obj_set_pos(prev_btn, 26, 246);
-        lv_obj_set_pos(play_btn, 70, 240);
-        lv_obj_set_pos(next_btn, 126, 246);
-    }
+    layout_art_controls(d);
 }
 static void update_bt(void) {
     bool connected = bt_sim_connected(M->state);
@@ -1216,22 +1220,25 @@ void ui_init(bt_model_t *model) {
     audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
     art_circle = circle(audio, 22, 20, 150, accent);
-    icon_center(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
     lv_obj_add_event_cb(art_circle, art_open_cb, LV_EVENT_CLICKED, NULL);
+
+    prev_btn = button(art_circle, LV_SYMBOL_PREV, 16, 59, 32, 32, 0x0D0E11, 0xFFFFFF,
+                      &lv_font_montserrat_12, prev_cb, NULL);
+    lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(prev_btn, LV_OPA_60, 0);
+    play_btn = button(art_circle, LV_SYMBOL_PLAY, 54, 54, 42, 42, 0x0D0E11, 0xFFFFFF,
+                      &lv_font_montserrat_18, pc_cb, &play_lbl);
+    lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(play_btn, LV_OPA_70, 0);
+    next_btn = button(art_circle, LV_SYMBOL_NEXT, 102, 59, 32, 32, 0x0D0E11, 0xFFFFFF,
+                      &lv_font_montserrat_12, next_cb, NULL);
+    lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(next_btn, LV_OPA_60, 0);
 
     track_lbl = label(audio, "Test Song", 8, 182, 178, 22, &lv_font_montserrat_16, C_TEXT, LV_TEXT_ALIGN_CENTER);
     artist_lbl = label(audio, "Demo Artist", 8, 204, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
     time_pos_lbl = label(audio, "1:08 / 3:35", 8, 220, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    prev_btn = button(audio, LV_SYMBOL_PREV, 26, 246, 42, 42, C_BTN, 0xFFFFFF,
-                      &lv_font_montserrat_18, prev_cb, NULL);
-    lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
-    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 240, 54, 54, accent, 0xFFFFFF,
-                      &lv_font_montserrat_24, pc_cb, &play_lbl);
-    lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
-    next_btn = button(audio, LV_SYMBOL_NEXT, 126, 246, 42, 42, C_BTN, 0xFFFFFF,
-                      &lv_font_montserrat_18, next_cb, NULL);
-    lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
 
     /* ── dock: Radio, Bluetooth, Files, Settings ────────────── */
     lv_obj_t *dock = box(scr, 0, 392, 800, 88, C_DOCK, 0);

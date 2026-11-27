@@ -783,7 +783,9 @@ static void update_phone(void) {
             lv_label_set_text(music_status_lbl, "Incoming call");
             lv_obj_set_style_text_color(music_status_lbl, col(C_GREEN), 0);
         } else if (M->state == BT_ACTIVE) {
-            lv_label_set_text(music_status_lbl, "Call in progress");
+            char cbuf[32];
+            fmt_time(M->call_seconds, cbuf, sizeof(cbuf));
+            lv_label_set_text_fmt(music_status_lbl, "In call %s", cbuf);
             lv_obj_set_style_text_color(music_status_lbl, col(C_GREEN), 0);
         } else if (connected) {
             lv_label_set_text(music_status_lbl, "Connected / A2DP");
@@ -1051,7 +1053,9 @@ void ui_update(void) {
         } else if (M->state == BT_INCOMING) {
             snprintf(line, sizeof(line), "BT  |  incoming call");
         } else if (M->state == BT_ACTIVE) {
-            snprintf(line, sizeof(line), "BT  |  call in progress");
+            char cbuf[16];
+            fmt_time(M->call_seconds, cbuf, sizeof(cbuf));
+            snprintf(line, sizeof(line), "BT  |  in call %s", cbuf);
         } else if (M->state == BT_READY || M->state == BT_OFF || M->state == BT_ERROR) {
             snprintf(line, sizeof(line), "No media");
         } else if (panels_radio_on()) {
@@ -1213,6 +1217,8 @@ void ui_init(bt_model_t *model) {
     time_label = label(scr, "00:00", 16, 4, 92, 34, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
     date_label = label(scr, "", 112, 12, 260, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
     now_playing_lbl = label(scr, "", 386, 13, 300, 16, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
+    lv_obj_set_style_bg_opa(now_playing_lbl, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(now_playing_lbl, col(C_BG), 0);
 
     symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 710, 10, 22, 22);
     top_bt_dot = circle(scr, 728, 25, 6, C_GREEN);
@@ -1316,6 +1322,9 @@ void ui_init(bt_model_t *model) {
     artist_lbl = label(audio, "Demo Artist", 240, 90, 220, 20, &lv_font_montserrat_16, C_MUTED, LV_TEXT_ALIGN_LEFT);
     time_pos_lbl = label(audio, "1:08 / 3:35", 240, 116, 220, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
     music_status_lbl = label(audio, "Connected / A2DP", 240, 142, 220, 14, &lv_font_montserrat_10, C_GREEN, LV_TEXT_ALIGN_LEFT);
+    lv_label_set_long_mode(music_status_lbl, LV_LABEL_LONG_MODE_CLIP);
+    lv_obj_set_style_bg_opa(music_status_lbl, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(music_status_lbl, col(C_CARD), 0);
     label(audio, "Tap album art for full player", 240, 270, 220, 14,
           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 

@@ -323,7 +323,8 @@ Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UP
 - Bluetooth page → Bluetooth audio is active; radio is not audible.
 - Radio power button off → Bluetooth music resumes.
 - Bluetooth mute and radio mute are independent and restore their last volume.
-- The top-middle label shows `BT | song | artist` or `RADIO frequency | RDS name`.
+- The top-middle label shows `BT | song | artist`, `RADIO frequency | RDS name`, or `BT | in call 1:15`.
+- Active-call time counts in the Music block, top bar and call banner.
 - The Bluetooth page uses two blocks: Phone status and Music. Calls are controlled from the Music block on home, or from a banner on the other panels.
 
 ## Real-device status

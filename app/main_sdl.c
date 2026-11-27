@@ -47,6 +47,14 @@ static void handle_keys(bt_model_t *m) {
     bool mm = k[SDL_SCANCODE_M] != 0;
     if (mm && !prev_m) { bt_sim_secondary(m); ui_update(); }
     prev_m = mm;
+    static bool prev_plus = false, prev_minus = false;
+    bool plus = k[SDL_SCANCODE_EQUALS] != 0 || k[SDL_SCANCODE_KP_PLUS] != 0;
+    if (plus && !prev_plus) ui_volume_up();
+    prev_plus = plus;
+    bool minus = k[SDL_SCANCODE_MINUS] != 0 || k[SDL_SCANCODE_KP_MINUS] != 0;
+    if (minus && !prev_minus) ui_volume_down();
+    prev_minus = minus;
+
     static bool prev_r = false, prev_f = false, prev_g = false, prev_h = false;
     bool r = k[SDL_SCANCODE_R] != 0;
     if (r && !prev_r) ui_show_panel(0);
@@ -170,7 +178,7 @@ int main(int argc, char **argv) {
 
     if (!interactive) return 0;
 
-    printf("Test keys: 1-8 set state, Space primary, N next, P prev, M secondary/mute, R radio, F files, G settings, H home\n");
+    printf("Test keys: 1-8 set state, Space primary, N next, P prev, M secondary/mute, R radio, F files, G settings, H home, + / - volume\n");
     for (;;) {
         handle_keys(&model);
         uint32_t wait = lv_timer_handler();

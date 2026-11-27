@@ -2,6 +2,8 @@
 
 A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, with a simulated Bluetooth stack, an SDL2 emulator, an ARMv5 framebuffer target, and a safe Bluetooth-name patch for the stock firmware.
 
+> **Disclaimer:** this is an unofficial experimental project. Flashing or modifying firmware can brick the device, erase data or break radio/Bluetooth. Use it entirely at your own risk. The authors are not responsible or liable for any damage, data loss, injury or legal issue. Read [DISCLAIMER.md](DISCLAIMER.md) before doing anything.
+
 ![Connected](docs/screenshots/connected.png)
 
 ![Incoming call](docs/screenshots/incoming.png)
@@ -73,18 +75,23 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Accent color swatches (red, orange, green, blue, purple) update the whole UI
 * 24 h / 12 h clock switch
 * **Date and time setting** — in-device +/- buttons, no browser or system popups
-* **Boot volume** slider: sets the volume used when the device powers on; saved in `strada.settings` (native) and `localStorage` (browser)
+* **Boot volume** slider: sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
 * **Dark / Light theme** — the whole 800×480 UI recolors immediately
 * **Night dim** — a 50% black overlay for night driving
-* **Screensaver** — idle screen with the clock after 30 seconds; tap to wake
+* **Screensaver timeout** — choose 15 s, 30 s, 1 min or 5 min; tap the clock screen to wake
 * About/build information and “Reset UI”
 * Settings apply immediately; boot volume and radio presets persist, theme/night/saver reset on restart
 
-### Volume overlay
+### Volume overlay and physical buttons
 
 ![Volume](docs/screenshots/volume.png)
 
-The top-bar speaker button opens **Settings and the volume popup together**, with **- / +**, a live bar and percentage. The popup also appears when the Settings slider changes, then hides after 1.8 s. The top-bar button and the Settings slider share one current volume; the Settings slider sets the power-on default.
+The top-bar speaker button opens **Settings and the volume popup together**, with **- / +**, a live bar and percentage. The popup also appears from **VOL+ / VOL−**, and when Radio mute is pressed. It hides after 1.8 s.
+
+- Native SDL: `+` / `-` (and keypad `+` / `-`) simulate VOL+ / VOL−.
+- Linux framebuffer: `--buttons /dev/input/event1` maps `KEY_VOLUMEUP` / `KEY_VOLUMEDOWN`.
+- Browser test bar: **HW VOL− / VOL+ / MODE** buttons.
+- Boot volume is separate from current volume: the Settings slider sets the boot/radio-start level; VOL+ / VOL− change current volume only.
 
 ### Theme, night dim and screensaver
 
@@ -92,7 +99,7 @@ The top-bar speaker button opens **Settings and the volume popup together**, wit
 
 ![Light settings](docs/screenshots/light-settings.png)
 
-Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after 30 seconds of no input; tap anywhere to wake.
+Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after the selected timeout (**After** cycles 15 s / 30 s / 1 min / 5 min); tap anywhere to wake.
 
 ![Night dim](docs/screenshots/night-dim.png)
 
@@ -127,6 +134,7 @@ Open [prototype/index.html](prototype/index.html) in any browser. It is the same
 * **Off / Ready / Pairing / Connected / Playing / Incoming / Active / Error** — jump directly to a state
 * **Simulate call** — incoming call from the mock phone
 * **Call demo** — plays music, interrupts it with an incoming call, answers, hangs up and resumes
+* **HW VOL− / VOL+ / MODE** — simulate the physical device buttons
 * **Next track / Prev track** — mock AVRCP
 * **Reset** — back to connected
 * **Hide** — hide the test bar for a clean view
@@ -265,6 +273,22 @@ Flashing instructions, SPI programmer commands, FEL recovery and safety rules: *
 ```
 90fda1101bf72c70f1d0a5edb60a75c33275de34ecb2190e0385c5e153d68075
 ```
+
+## Firmware updates
+
+The stock update path is encoded in `app_config.fex` and `update.mod`:
+
+- `usb_fw_name = f:\C500_7\ePDKv100.img`
+- `sd_fw_name = g:\C500_7\ePDKv100.img`
+- `update.mod` uses `FULLIMG_00000000`, `modupdate`, `update_nor.c`, `IMAGEWTY` and `spinor` page-program commands, then restarts.
+
+Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UPDATE.md](docs/FIRMWARE_UPDATE.md). The repo's `7010b-CAR_482.img` is a full SPI dump for a programmer, not the vendor `ePDKv100.img` package.
+
+## Releases and updates
+
+- `VERSION` is the UI version.
+- Pushing a `v*` tag runs the full CI and publishes a GitHub Release with the ARMv5 binary, the patched SPI image and screenshots.
+- See [docs/RELEASES.md](docs/RELEASES.md) for the update policy.
 
 ## GitHub Actions
 

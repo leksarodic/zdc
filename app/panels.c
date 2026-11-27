@@ -33,10 +33,14 @@ static void (*cb_volume)(int);
 static void (*cb_theme)(bool);
 static void (*cb_night)(bool);
 static void (*cb_saver)(bool);
+static void (*cb_radio_start)(void);
+static void (*cb_volume_osd)(void);
+static void (*cb_saver_timeout)(int);
 
 static bool night_on = false;
 static bool saver_on = true;
 static bool light_on = false;
+static int saver_timeout = 30;
 
 static lv_color_t col(uint32_t hex) { return lv_color_hex(hex); }
 
@@ -257,12 +261,14 @@ static void radio_power_cb(lv_event_t *e) {
     radio_on = !radio_on;
     if (!radio_on) radio_save_mode = false;
     radio_update();
+    if (radio_on && cb_radio_start) cb_radio_start();
 }
 
 static void radio_mute_cb(lv_event_t *e) {
     (void)e;
     radio_mute = !radio_mute;
     radio_update();
+    if (cb_volume_osd) cb_volume_osd();
 }
 
 static void radio_preset_cb(lv_event_t *e) {
@@ -744,6 +750,7 @@ static lv_obj_t *theme_dark_lbl;
 static lv_obj_t *theme_light_lbl;
 static lv_obj_t *night_lbl;
 static lv_obj_t *saver_lbl;
+static lv_obj_t *timeout_lbl;
 
 static struct tm cal;
 static bool cal_ready = false;
@@ -824,6 +831,10 @@ static void settings_refresh(void) {
         lv_obj_set_style_border_color(lv_obj_get_parent(theme_light_lbl), col(ACCENTS[accent_idx]), 0);
         lv_label_set_text(night_lbl, night_on ? "Dim on" : "Dim off");
         lv_label_set_text(saver_lbl, saver_on ? "Saver on" : "Saver off");
+        if (timeout_lbl) {
+            if (saver_timeout >= 60) lv_label_set_text_fmt(timeout_lbl, "%d min", saver_timeout / 60);
+            else lv_label_set_text_fmt(timeout_lbl, "%d s", saver_timeout);
+        }
     }
     cal_show();
 }
@@ -888,6 +899,16 @@ static void saver_cb(lv_event_t *e) {
     settings_refresh();
 }
 
+static void timeout_cb(lv_event_t *e) {
+    (void)e;
+    static const int STEPS[] = {15, 30, 60, 300};
+    int idx = 0;
+    for (int i = 0; i < 4; i++) if (STEPS[i] == saver_timeout) idx = i;
+    saver_timeout = STEPS[(idx + 1) % 4];
+    if (cb_saver_timeout) cb_saver_timeout(saver_timeout);
+    settings_refresh();
+}
+
 static void settings_reset_cb(lv_event_t *e) {
     (void)e;
     accent_idx = 0;
@@ -901,9 +922,11 @@ static void settings_reset_cb(lv_event_t *e) {
     light_on = false;
     night_on = false;
     saver_on = true;
+    saver_timeout = 30;
     if (cb_theme) cb_theme(false);
     if (cb_night) cb_night(false);
     if (cb_saver) cb_saver(true);
+    if (cb_saver_timeout) cb_saver_timeout(30);
     settings_refresh();
 }
 
@@ -970,11 +993,17 @@ static void build_settings(lv_obj_t *parent) {
     button(settings_panel, "Saver on", 610, 108, 138, 28, C_INNER, &lv_font_montserrat_10,
            saver_cb, &saver_lbl);
 
+    label(settings_panel, "AFTER", 552, 148, 52, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(settings_panel, "30 s", 610, 142, 138, 28, C_INNER, &lv_font_montserrat_10,
+           timeout_cb, &timeout_lbl);
+
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / LVGL 9.3", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.4.0 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    label(settings_panel, "Experimental - use at your own risk", 24, 266, 420, 12,
+          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     button(settings_panel, "Reset UI", 606, 250, 140, 32, C_INNER, &lv_font_montserrat_12, settings_reset_cb, NULL);
     cal_load_now();
@@ -984,7 +1013,7 @@ static void build_settings(lv_obj_t *parent) {
 
 /* ── public API ──────────────────────────────────────────────── */
 
-void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long), void (*on_volume)(int), void (*on_theme)(bool), void (*on_night)(bool), void (*on_saver)(bool)) {
+void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long), void (*on_volume)(int), void (*on_theme)(bool), void (*on_night)(bool), void (*on_saver)(bool), void (*on_radio_start)(void), void (*on_volume_osd)(void), void (*on_saver_timeout)(int)) {
     cb_home = on_home;
     cb_accent = on_accent;
     cb_clock = on_clock;
@@ -993,16 +1022,24 @@ void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint
     cb_theme = on_theme;
     cb_night = on_night;
     cb_saver = on_saver;
+    cb_radio_start = on_radio_start;
+    cb_volume_osd = on_volume_osd;
+    cb_saver_timeout = on_saver_timeout;
 
     build_radio(parent);
     build_files(parent);
     build_settings(parent);
 }
 
-void panels_set_volume(int value) {
+void panels_set_boot_volume(int value) {
     if (!volume_slider) return;
     lv_slider_set_value(volume_slider, value, LV_ANIM_OFF);
     if (volume_lbl) lv_label_set_text_fmt(volume_lbl, "%d%%", value);
+}
+
+void panels_set_saver_timeout(int seconds) {
+    saver_timeout = seconds;
+    if (settings_panel) settings_refresh();
 }
 
 void panels_open_file(const char *path) {

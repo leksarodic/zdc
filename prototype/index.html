@@ -235,7 +235,7 @@
 
   /* ── dock ───────────────────────────────────────────────── */
   .dock{
-    position:absolute;left:0;right:0;bottom:0;height:123.75px;background:var(--dock);
+    position:absolute;left:0;right:0;bottom:0;height:104px;background:var(--dock);
     border-top:1px solid rgba(255,255,255,.035);
     display:flex;align-items:flex-start;justify-content:space-around;padding:10px 18px 0;
   }
@@ -265,21 +265,21 @@
     width:30px;height:30px;font-size:16px;line-height:1;cursor:pointer;
   }
   .panel-close:hover{background:var(--btn)}
-  .radio-top{display:flex;align-items:center;justify-content:flex-end;height:24px;margin-top:-2px}
-  .radio-band{display:flex;gap:6px;margin-right:34px}
+  .radio-top{position:absolute;right:54px;top:12px;height:24px}
+  .radio-band{display:flex;gap:6px}
   .radio-band .clock-btn{padding:3px 12px;font-size:11px}
-  .radio-freq{font-size:52px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:-2px}
-  .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:14px;line-height:14px}
-  .radio-row{display:flex;gap:10px;margin-top:10px}
-  .radio-row .btn{flex:1;height:42px;font-size:12px}
+  .radio-freq{font-size:48px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:8px}
+  .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:12px;line-height:12px}
+  .radio-row{display:flex;gap:10px;margin-top:6px}
+  .radio-row .btn{flex:1;height:38px;font-size:12px}
   .radio-ic svg{width:20px;height:20px}
   .radio-bottom .radio-ic{display:grid;place-items:center;padding:0}
   .radio-bottom .btn.sel{background:var(--accent);color:#fff}
-  .radio-presets{display:flex;gap:10px;margin-top:8px}
+  .radio-presets{display:flex;gap:10px;margin-top:4px}
   .radio-presets .btn{flex:1;height:32px;font-size:12px}
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
-  .radio-bottom{display:flex;justify-content:space-between;margin-top:12px}
-  .radio-bottom .btn{width:110px;height:34px;font-size:12px}
+  .radio-bottom{display:flex;justify-content:space-between;margin-top:6px}
+  .radio-bottom .btn{width:110px;height:32px;font-size:12px}
   .files-path{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .files-tools{display:flex;gap:8px;margin-top:6px;align-items:center}
   .files-tools .btn{width:54px;height:30px;font-size:14px}
@@ -342,6 +342,7 @@
   .about-grid{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:10px;color:var(--muted);margin-top:6px}
   .about-grid b{color:var(--text);font-weight:500}
   .settings-reset{position:absolute;right:24px;bottom:16px;width:140px;height:34px;font-size:12px}
+  .settings-disclaimer{position:absolute;left:24px;bottom:14px;font-size:9px;color:var(--muted)}
 
 
   /* ── now playing / call panels ─────────────────────────── */
@@ -497,9 +498,6 @@
       </div>
       <div class="gear" id="volBtn" title="Volume">
         <svg style="color:var(--soft)"><use href="#i-volume"/></svg>
-      </div>
-      <div class="gear" title="Settings">
-        <svg style="color:var(--icon,#fff)"><use href="#i-gear"/></svg>
       </div>
     </div>
   </header>
@@ -680,6 +678,10 @@
           <span>Idle</span>
           <button class="clock-btn sel" id="saverToggle">Saver on</button>
         </div>
+        <div class="settings-row">
+          <span>Saver after</span>
+          <button class="clock-btn" id="saverTimeout">30 s</button>
+        </div>
       </div>
       <div class="settings-col">
         <div class="settings-row">
@@ -702,12 +704,13 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / 800x480</b>
+          <span>UI</span><b>LVGL 9.3 / v0.4.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
     </div>
     <button class="btn ghost settings-reset" id="settingsReset">Reset UI</button>
+    <div class="settings-disclaimer">Experimental - use at your own risk.</div>
   </section>
 
   <!-- NOW PLAYING -->
@@ -796,6 +799,11 @@
   <span class="tb-sep"></span>
   <button data-action="incoming">Simulate call</button>
   <button data-action="calldemo">Call demo</button>
+  <span class="tb-sep"></span>
+  <span class="tb-title">HW</span>
+  <button data-action="voldown">VOL -</button>
+  <button data-action="volup">VOL +</button>
+  <button data-action="mode">MODE</button>
   <button data-action="next">Next track</button>
   <button data-action="prev">Prev track</button>
   <button data-action="reset">Reset</button>
@@ -858,17 +866,20 @@
   function renderVolume() {
     el('volFill').style.width = volume + '%';
     el('volPct').textContent = volume + '%';
-    el('volumeRange').value = volume;
-    el('volumeValue').textContent = volume + '%';
   }
-  function setVolume(v, show, saveDefault) {
+  function renderBootVolume() {
+    el('volumeRange').value = defaultVolume;
+    el('volumeValue').textContent = defaultVolume + '%';
+  }
+  function setVolume(v, show) {
     volume = Math.max(0, Math.min(100, Math.round(v)));
-    if (saveDefault) {
-      defaultVolume = volume;
-      try { localStorage.setItem('strada.defaultVolume', String(defaultVolume)); } catch (e) {}
-    }
     renderVolume();
     if (show) showVolume();
+  }
+  function setBootVolume(v) {
+    defaultVolume = Math.max(0, Math.min(100, Math.round(v)));
+    try { localStorage.setItem('strada.defaultVolume', String(defaultVolume)); } catch (e) {}
+    renderBootVolume();
   }
   el('volBtn').addEventListener('click', () => { showScreen('settings'); showVolume(); });
   el('volDown').addEventListener('click', () => setVolume(volume - 5, true));
@@ -878,6 +889,11 @@
   let lightTheme = false;
   let nightDimOn = false;
   let saverEnabled = true;
+  let saverTimeout = 30;
+  try {
+    const st = Number(localStorage.getItem('strada.saverTimeout'));
+    if (Number.isFinite(st) && st >= 5) saverTimeout = st;
+  } catch (e) {}
   let lastActive = Date.now();
 
   function setTheme(light) {
@@ -896,6 +912,12 @@
     tickClock();
     el('saver').classList.add('show');
   }
+  function setSaverTimeout(sec) {
+    saverTimeout = sec;
+    try { localStorage.setItem('strada.saverTimeout', String(sec)); } catch (e) {}
+    el('saverTimeout').textContent = sec >= 60 ? (sec / 60) + ' min' : sec + ' s';
+    lastActive = Date.now();
+  }
   function setScreensaver(on) {
     saverEnabled = on;
     el('saverToggle').textContent = on ? 'Saver on' : 'Saver off';
@@ -907,6 +929,11 @@
   el('themeLight').addEventListener('click', () => setTheme(true));
   el('nightToggle').addEventListener('click', () => setNightDim(!nightDimOn));
   el('saverToggle').addEventListener('click', () => setScreensaver(!saverEnabled));
+  el('saverTimeout').addEventListener('click', () => {
+    const steps = [15, 30, 60, 300];
+    const i = Math.max(0, steps.indexOf(saverTimeout));
+    setSaverTimeout(steps[(i + 1) % steps.length]);
+  });
   el('saver').addEventListener('click', () => {
     el('saver').classList.remove('show');
     lastActive = Date.now();
@@ -916,7 +943,7 @@
   setInterval(() => {
     if (!saverEnabled) return;
     if (el('saver').classList.contains('show')) return;
-    if (Date.now() - lastActive > 30000) showSaver();
+    if (Date.now() - lastActive > saverTimeout * 1000) showSaver();
   }, 1000);
 
   function fmt(sec) {
@@ -974,7 +1001,7 @@
     );
     const titles = {
       off: ['Bluetooth off', 'Tap to power on'],
-      ready: ['Pair from your phone', 'CAR_482 / PIN 0000 / Open Bluetooth on your phone'],
+      ready: ['Pair from your phone', 'CAR_482 / PIN 0000 / Open Bluetooth on your phone.'],
       pairing: ['Waiting for phone', 'Select CAR_482 on your phone'],
       connected: ['Connected', "Aleksa's iPhone / A2DP / AVRCP"],
       playing: ['Playing', "Aleksa's iPhone / A2DP / AVRCP"],
@@ -1233,7 +1260,6 @@
   }
   function showHome() { showScreen('home'); }
 
-  document.querySelector('.gear').addEventListener('click', () => showScreen('settings'));
 
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', showHome));
 
@@ -1291,8 +1317,13 @@
     radioOn = !radioOn;
     if (!radioOn) radioSaveMode = false;
     renderRadio();
+    if (radioOn) setVolume(defaultVolume, true);
   });
-  el('radioMute').addEventListener('click', () => { radioMute = !radioMute; renderRadio(); });
+  el('radioMute').addEventListener('click', () => {
+    radioMute = !radioMute;
+    renderRadio();
+    showVolume();
+  });
   el('radioSave').addEventListener('click', () => { radioSaveMode = !radioSaveMode; renderRadio(); });
 
   // ── media demo helpers ────────────────────────────────────
@@ -1528,7 +1559,7 @@
   el('clock24').addEventListener('click', () => setClock(true));
   el('clock12').addEventListener('click', () => setClock(false));
   el('volumeRange').addEventListener('input', e => {
-    setVolume(Number(e.target.value), true, true);
+    setBootVolume(Number(e.target.value));
   });
   function calAdjust(field, delta) {
     const d = currentClock();
@@ -1549,7 +1580,8 @@
   el('settingsReset').addEventListener('click', () => {
     setAccent('#FE3211');
     setClock(true);
-    setVolume(70, false, true);
+    setBootVolume(70);
+    setVolume(70, false);
     setTheme(false);
     setNightDim(false);
     setScreensaver(true);
@@ -1568,6 +1600,8 @@
     el('nightToggle').classList.toggle('sel', nightDimOn);
     el('saverToggle').textContent = saverEnabled ? 'Saver on' : 'Saver off';
     el('saverToggle').classList.toggle('sel', saverEnabled);
+    renderBootVolume();
+    el('saverTimeout').textContent = saverTimeout >= 60 ? (saverTimeout / 60) + ' min' : saverTimeout + ' s';
   }
 
   // ── now playing panel ─────────────────────────────────────
@@ -1696,6 +1730,12 @@
       const a = b.dataset.action;
       if (a === 'incoming') go('incoming');
       else if (a === 'calldemo') callDemo();
+      else if (a === 'volup') setVolume(volume + 5, true);
+      else if (a === 'voldown') setVolume(volume - 5, true);
+      else if (a === 'mode') {
+        const order = ['home', 'radio', 'files', 'settings'];
+        showScreen(order[(order.indexOf(screen) + 1) % order.length]);
+      }
       else if (a === 'next') el('btnNext').click();
       else if (a === 'prev') el('btnPrev').click();
       else if (a === 'reset') go('connected');
@@ -1725,9 +1765,18 @@
     setVolume: (v) => setVolume(v, false),
     showVolume: showVolume,
     callDemo: callDemo,
+    volumeUp: () => setVolume(volume + 5, true),
+    volumeDown: () => setVolume(volume - 5, true),
+    setSaverTimeout: setSaverTimeout,
     action: (a) => {
       if (a === 'incoming') go('incoming');
       else if (a === 'calldemo') callDemo();
+      else if (a === 'volup') setVolume(volume + 5, true);
+      else if (a === 'voldown') setVolume(volume - 5, true);
+      else if (a === 'mode') {
+        const order = ['home', 'radio', 'files', 'settings'];
+        showScreen(order[(order.indexOf(screen) + 1) % order.length]);
+      }
       else if (a === 'next') el('btnNext').click();
       else if (a === 'prev') el('btnPrev').click();
       else if (a === 'reset') go('connected');
@@ -1750,6 +1799,8 @@
 
   syncClockInputs();
   renderVolume();
+  renderBootVolume();
+  setSaverTimeout(saverTimeout);
   setTheme(false);
   setNightDim(false);
   setScreensaver(true);

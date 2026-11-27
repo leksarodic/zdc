@@ -31,8 +31,9 @@ static time_t clock_base;
 static time_t clock_base_at;
 static bool clock_base_set = false;
 static int screen_idx = -1;
-static int volume = 70;
-static int volume_default = 70;
+static int volume = 70;          /* current volume, changed by VOL+ / VOL- */
+static int boot_volume = 70;     /* Settings slider: level used at power-on */
+static int saver_timeout_sec = 30;
 static bool night_dim = false;
 static bool saver_enabled = true;
 
@@ -322,18 +323,22 @@ static void volume_show(void) {
 static void settings_load(void) {
     FILE *f = fopen("strada.settings", "r");
     if (!f) return;
-    int v = 70;
-    if (fscanf(f, "volume=%d", &v) == 1 && v >= 0 && v <= 100) {
-        volume = v;
-        volume_default = v;
+    char key[32];
+    int v;
+    while (fscanf(f, " %31[^=]=%d", key, &v) == 2) {
+        if (!strcmp(key, "volume") && v >= 0 && v <= 100) boot_volume = v;
+        else if (!strcmp(key, "saver") && v >= 5 && v <= 3600) saver_timeout_sec = v;
+        int c;
+        while ((c = fgetc(f)) != EOF && c != '\n') {}
     }
     fclose(f);
+    volume = boot_volume;
 }
 
 static void settings_save(void) {
     FILE *f = fopen("strada.settings", "w");
     if (!f) return;
-    fprintf(f, "volume=%d\n", volume_default);
+    fprintf(f, "volume=%d\nsaver=%d\n", boot_volume, saver_timeout_sec);
     fclose(f);
 }
 
@@ -343,7 +348,6 @@ static void volume_apply(int v, bool show) {
     volume = v;
     if (vol_bar) lv_bar_set_value(vol_bar, v, LV_ANIM_OFF);
     if (vol_pct) lv_label_set_text_fmt(vol_pct, "%d%%", v);
-    panels_set_volume(v);
     if (show) volume_show();
 }
 
@@ -351,9 +355,25 @@ static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show
 static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(volume + 5, true); }
 static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(volume - 5, true); }
 static void on_volume(int v) {
-    volume_default = v;
+    if (v < 0) v = 0;
+    if (v > 100) v = 100;
+    boot_volume = v;
     settings_save();
-    volume_apply(v, true);
+}
+
+static void on_radio_start(void) {
+    volume_apply(boot_volume, true);
+}
+
+static void on_volume_osd(void) {
+    volume_show();
+}
+
+static void on_saver_timeout(int seconds) {
+    if (seconds < 5 || seconds > 3600) return;
+    saver_timeout_sec = seconds;
+    settings_save();
+    panels_set_saver_timeout(seconds);
 }
 
 /* ── theme and night mode ───────────────────────────────────── */
@@ -400,7 +420,7 @@ static void idle_cb(lv_timer_t *t) {
     (void)t;
     if (!saver || !saver_enabled) return;
     if (!lv_obj_has_flag(saver, LV_OBJ_FLAG_HIDDEN)) return;
-    if (lv_display_get_inactive_time(NULL) < 30000) return;
+    if (lv_display_get_inactive_time(NULL) < (uint32_t)saver_timeout_sec * 1000u) return;
     saver_show_now();
 }
 
@@ -416,9 +436,10 @@ void ui_set_screensaver(bool on) { on_saver(on); }
 void ui_show_screensaver(void) { saver_show_now(); }
 void ui_show_volume(void) { volume_show(); }
 void ui_set_volume(int v) { volume_apply(v, false); }
+void ui_volume_up(void) { volume_apply(volume + 5, true); }
+void ui_volume_down(void) { volume_apply(volume - 5, true); }
+void ui_set_saver_timeout(int seconds) { on_saver_timeout(seconds); }
 void ui_open_file(const char *path) { panels_open_file(path); }
-
-static void settings_cb(lv_event_t *e) { (void)e; show_screen(2); }
 
 static void dock_cb(lv_event_t *e) {
     int idx = (int)(intptr_t)lv_event_get_user_data(e);
@@ -537,7 +558,7 @@ static void update_bt(void) {
     case BT_READY:
         value = 18; core = 0x3A3E48;
         title = "Pair from your phone";
-        sub = BT_LOCAL_NAME " / PIN 0000 / Open Bluetooth on your phone";
+        sub = BT_LOCAL_NAME " / PIN 0000 / Open Bluetooth on your phone.";
         primary = "Start pairing";
         secondary = "Settings";
         break;
@@ -771,13 +792,9 @@ void ui_init(bt_model_t *model) {
     symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 674, 10, 22, 22);
     top_bt_dot = circle(scr, 692, 25, 6, C_GREEN);
 
-    lv_obj_t *vol_btn = circle(scr, 710, 8, 32, C_CIRCLE);
+    lv_obj_t *vol_btn = circle(scr, 744, 8, 32, C_CIRCLE);
     icon_center(vol_btn, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_16, C_TEXT);
     lv_obj_add_event_cb(vol_btn, volume_open_cb, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *gear = circle(scr, 752, 8, 32, C_CIRCLE);
-    icon_center(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT);
-    lv_obj_add_event_cb(gear, settings_cb, LV_EVENT_CLICKED, NULL);
 
     /* ── phone card ─────────────────────────────────────────── */
     lv_obj_t *phone = card(home, 12, 50, 234, 297);
@@ -799,7 +816,7 @@ void ui_init(bt_model_t *model) {
           C_SOFT, LV_TEXT_ALIGN_LEFT);
     label(phone, "Open Bluetooth on your phone", 14, 156, 206, 12, &lv_font_montserrat_10,
           C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(phone, "and select " BT_LOCAL_NAME, 14, 174, 206, 12, &lv_font_montserrat_10,
+    label(phone, "and select " BT_LOCAL_NAME ".", 14, 174, 206, 12, &lv_font_montserrat_10,
           C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     disconnect_btn = button(phone, "Disconnect", 14, 245, 130, 36, C_INNER, C_TEXT,
@@ -868,25 +885,28 @@ void ui_init(bt_model_t *model) {
     lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
 
     /* ── dock: Radio, Bluetooth, Files, Settings ────────────── */
-    lv_obj_t *dock = box(scr, 0, 356, 800, 124, C_DOCK, 0);
+    lv_obj_t *dock = box(scr, 0, 376, 800, 104, C_DOCK, 0);
     const char *dock_icons[] = { LV_SYMBOL_AUDIO, LV_SYMBOL_BLUETOOTH, LV_SYMBOL_DIRECTORY, LV_SYMBOL_SETTINGS };
     const char *dock_names[] = { "Radio", "Bluetooth", "Files", "Settings" };
     for (int i = 0; i < 4; i++) {
         int slot = 180 + i * 110;
-        lv_obj_t *c = circle(dock, slot + 30, 14, 50, C_CIRCLE);
+        lv_obj_t *c = circle(dock, slot + 30, 8, 50, C_CIRCLE);
         dock_circles[i] = c;
         icon_center(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF);
-        dock_labels[i] = label(dock, dock_names[i], slot + 5, 70, 100, 16, &lv_font_montserrat_12,
+        dock_labels[i] = label(dock, dock_names[i], slot + 5, 62, 100, 16, &lv_font_montserrat_12,
                                i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
         lv_obj_add_event_cb(c, dock_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
     panels_init(scr, on_home, on_accent, on_clock, on_set_time, on_volume,
-                on_theme, on_night, on_saver);
+                on_theme, on_night, on_saver, on_radio_start, on_volume_osd,
+                on_saver_timeout);
     build_player(scr);
     call_panel_init(scr, on_call_close, on_outgoing_call);
     build_volume_osd(scr);
     volume_apply(volume, false);
+    panels_set_boot_volume(boot_volume);
+    panels_set_saver_timeout(saver_timeout_sec);
     build_overlays(scr);
     show_screen(-1);
 

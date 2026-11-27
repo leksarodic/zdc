@@ -43,7 +43,6 @@ Test keys in the native emulator:
 * **Radio** — FM/AM radio buttons, icon tune/seek, presets, **save preset to 1–6**, RDS station name, power, mute with crossed-speaker volume popup
 * **Files** — All/Music/Photos, **USB/SD source selector when both are mounted**, real directory list (root `media/`), WAV playback, BMP/PNG/JPG viewer, up/refresh, text/binary preview, **No USB or SD card connected** message
 * **Settings** — accent color, 12/24 h clock, **in-device date/time buttons**, **boot volume**, **dark/light theme**, **night dim**, **screensaver timeout**, About, reset
-* **Now Playing** — maximises when playback starts, with large art and controls
 * **Call** — 560×280 recent-contacts/dial-pad popup with names and numbers; incoming calls show an Answer/Reject banner over Radio/Files/Settings
 * **Volume** — top-bar speaker button opens Settings and the live volume overlay together; Radio and Bluetooth have separate volume levels and the popup labels the source
 

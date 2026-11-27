@@ -406,19 +406,7 @@
   .settings-modal .panel-close{position:absolute;right:12px;top:10px}
 
 
-  /* ── now playing / call panels ─────────────────────────── */
-  .player-panel{z-index:7;display:none}
-  .player-panel.show{display:block}
-  .player-body{display:flex;gap:34px;align-items:center;margin-top:18px}
-  .player-art{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 34% 28%, #FF7048 0%, var(--accent) 48%, #B51E09 100%);display:grid;place-items:center;flex:none}
-  .player-art svg{width:70px;height:70px;color:#fff}
-  .player-info{flex:1;min-width:0}
-  .player-track{font-size:28px;font-weight:600;letter-spacing:-.01em}
-  .player-artist{font-size:15px;color:var(--muted);margin-top:3px}
-  .player-time{font-size:11px;color:var(--muted);margin-top:4px}
-  .player-bar{height:8px;background:var(--btn);border-radius:4px;margin-top:12px;overflow:hidden;width:420px;max-width:100%}
-  .player-bar i{display:block;height:100%;width:30%;background:var(--accent);border-radius:4px}
-  .player-controls{display:flex;align-items:center;gap:12px;margin-top:16px}
+  /* ── call panel ────────────────────────────────────────── */
   .call-scrim{position:absolute;inset:0;background:#000;opacity:.5;display:none;z-index:8}
   .call-scrim.show{display:block}
   .call-panel{
@@ -809,7 +797,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.9.4</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.5</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -830,25 +818,6 @@
       <button class="panel-close" id="disclaimerClose">×</button>
       <div class="sm-title">DISCLAIMER</div>
       <div class="sm-text">Experimental project. Flashing or modifying firmware can brick the device, erase data or break radio/Bluetooth. Use it entirely at your own risk. The authors and contributors are not responsible or liable for any damage, data loss, injury or legal issue. Do not operate the UI while driving.</div>
-    </div>
-  </section>
-
-  <!-- NOW PLAYING -->
-  <section class="app-panel player-panel" id="playerPanel">
-    <div class="panel-head"><span class="label">Now Playing</span><span class="source">Bluetooth</span><button class="panel-close" data-player-close>×</button></div>
-    <div class="player-body">
-      <div class="player-art" id="playerArt"><svg><use href="#i-note"/></svg></div>
-      <div class="player-info">
-        <div class="player-track" id="playerTrack">Test Song</div>
-        <div class="player-artist" id="playerArtist">Demo Artist</div>
-        <div class="player-time" id="playerTime">1:08 / 3:35</div>
-        <div class="player-bar"><i id="playerBar"></i></div>
-        <div class="player-controls">
-          <button class="circle-btn sm" id="playerPrev"><svg><use href="#i-prev"/></svg></button>
-          <button class="circle-btn lg" id="playerPlay"><svg><use href="#i-pause"/></svg></button>
-          <button class="circle-btn sm" id="playerNext"><svg><use href="#i-next"/></svg></button>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -928,7 +897,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.9.4</span>
+  <span class="tb-ver">web v0.9.5</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -1247,7 +1216,6 @@
       : (btMuted ? 'Unmute' : 'Mute');
     el('btnMute').style.display = connected ? '' : 'none';
     el('artControls').style.display = (m === 'connected' || m === 'playing') ? 'flex' : 'none';
-    renderPlayer();
     renderIncomingBanner();
     renderHomeLayout();
     renderNowBar();
@@ -1294,23 +1262,10 @@
     el('ibReject').textContent = incoming ? 'Reject' : (state.callMuted ? 'Unmute' : 'Mute');
   }
 
-  function renderPlayer() {
-    const show = playerExpanded && state.mode === 'playing' && screen === 'home';
-    el('playerPanel').classList.toggle('show', show);
-    if (!show) return;
-    const t = tracks[state.track];
-    el('playerTrack').textContent = t.title;
-    el('playerArtist').textContent = t.artist;
-    el('playerTime').textContent = `${fmt(state.pos)} / ${fmt(t.dur)}`;
-    el('playerBar').style.width = `${Math.min(100, (state.pos / t.dur) * 100)}%`;
-    el('playerPlay').innerHTML = `<svg><use href="#i-${state.mode === 'playing' ? 'pause' : 'play'}"/></svg>`;
-  }
-
   function go(next) {
     const prev = state.mode;
     if (next === 'incoming' && prev === 'playing') state.interrupted = true;
     if (next !== 'incoming' && next !== 'active') state.interrupted = false;
-    if (next !== 'playing') playerExpanded = false;
     if (next !== 'active' && next !== 'incoming') state.callTarget = '';
     if (next === 'active' && !state.callTarget) state.callTarget = '+381 60 123 4567';
     closeCallPanel();
@@ -1506,7 +1461,6 @@
       presetsAm = saved.am;
     }
   } catch (e) {}
-  let playerExpanded = false;
   const RDS_NAMES = ['CAR_482 FM', 'Radio One', 'Top 40', 'Jazz FM', 'Rock 101', 'News 24'];
 
   function radioFreq() { return radioAm ? freqAm : freqFm; }
@@ -1541,7 +1495,6 @@
     Object.entries(PANELS).forEach(([key, panel]) => panel.classList.toggle('show', key === name));
     closeCallPanel();
     setDockActive(name);
-    renderPlayer();
     renderIncomingBanner();
     renderHomeLayout();
     renderNowBar();
@@ -1986,19 +1939,6 @@
       state.callMuted = !state.callMuted;
       renderIncomingBanner();
     }
-  });
-
-  // ── now playing panel ─────────────────────────────────────
-  document.querySelectorAll('[data-player-close]').forEach(b => b.addEventListener('click', () => {
-    playerExpanded = false;
-    renderPlayer();
-  }));
-  el('playerPlay').addEventListener('click', () => go(state.mode === 'playing' ? 'connected' : 'playing'));
-  el('playerNext').addEventListener('click', () => el('btnNext').click());
-  el('playerPrev').addEventListener('click', () => el('btnPrev').click());
-  el('art').addEventListener('click', (e) => {
-    if (e.target.closest('.art-btn')) return;
-    if (state.mode === 'playing') { playerExpanded = true; renderPlayer(); }
   });
 
   // ── call panel ────────────────────────────────────────────

@@ -10,6 +10,9 @@ void ui_set_storage_roots(const char *const *roots, const char *const *labels, i
 void ui_select_storage(int index);
 void ui_show_panel(int idx);
 void ui_show_call(void);
+void ui_show_pair_help(void);
+void ui_show_reset_confirm(void);
+void ui_show_disclaimer(void);
 void ui_set_theme(bool light);
 void ui_set_night_dim(bool on);
 void ui_set_screensaver(bool on);

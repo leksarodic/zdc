@@ -54,6 +54,12 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-music.ppm artifacts/files-music.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-photo.ppm --frames 30 --state connected --panel files --file media/Photos/sunset.bmp
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-photo.ppm artifacts/files-photo.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/pair-help.ppm --frames 30 --state ready --pair-help
+	@$(PYTHON) tools/ppm_to_png.py artifacts/pair-help.ppm artifacts/pair-help.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/settings-reset.ppm --frames 30 --state connected --settings-modal reset
+	@$(PYTHON) tools/ppm_to_png.py artifacts/settings-reset.ppm artifacts/settings-reset.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/disclaimer.ppm --frames 30 --state connected --settings-modal disclaimer
+	@$(PYTHON) tools/ppm_to_png.py artifacts/disclaimer.ppm artifacts/disclaimer.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-sources.ppm --frames 30 --state connected --panel files --files-root media --files-root media-sd
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-sources.ppm artifacts/files-sources.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-sd.ppm --frames 30 --state connected --panel files --files-root media --files-root media-sd --storage-index 1

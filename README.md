@@ -30,6 +30,9 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Night dim | [night-dim.png](docs/screenshots/night-dim.png) |
 | Screensaver | [screensaver.png](docs/screenshots/screensaver.png) |
 | Light screensaver | [screensaver-light.png](docs/screenshots/screensaver-light.png) |
+| Reset confirmation | [settings-reset.png](docs/screenshots/settings-reset.png) |
+| Disclaimer | [disclaimer.png](docs/screenshots/disclaimer.png) |
+| Pairing help | [pair-help.png](docs/screenshots/pair-help.png) |
 | Files music | [files-music.png](docs/screenshots/files-music.png) |
 | Files photo | [files-photo.png](docs/screenshots/files-photo.png) |
 | USB + SD sources | [files-sources.png](docs/screenshots/files-sources.png) |
@@ -51,6 +54,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
 * **RDS** shows the tuned station name only, for example `RDS - Jazz FM`; AM shows `RDS not available`
 * **Radio mute** shows a crossed speaker and a `MUTED` volume popup. The last radio volume is remembered and restored when you unmute.
+* **Quick tuning slider** for FM/AM; no power button, the radio panel is always live
 * FM/AM are mutually exclusive radio-button pairs
 * Radio has no top-right close button; leave it through the dock
 * Power and mute states; the old “Stereo / 5 bars” line is gone
@@ -61,7 +65,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 ![Files](docs/screenshots/files.png)
 
 * **All / Music / Photos** filters; Music and Photos jump to their folders
-* **Source selector**: if USB and SD are mounted at the same time, Files shows **USB / SD** buttons and switches the whole browser to the selected root
+* **Source selector**: if USB and SD are mounted at the same time, Files shows **USB / SD** buttons and switches the whole browser to the selected root. The header says only what is connected: **USB**, **SD**, or **USB + SD**.
 * Native detection scans `/proc/mounts`; `mmcblk` mounts are labelled **SD**, other removable mounts **USB**
 * `--files-root` can be repeated in the emulator to simulate both sources
 * Real directory browser in the native build (`opendir`/`stat`): folders first, files with sizes
@@ -86,7 +90,8 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Accent color swatches (red, orange, green, blue, purple) update the whole UI
 * 24 h / 12 h clock switch
 * **Date and time setting** — in-device +/- buttons, no browser or system popups
-* **Boot volume** slider: sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
+* **Volume on boot** slider: sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
+* **Reset UI** asks for confirmation; **Disclaimer** opens the safety text in-app.
 * **Dark / Light theme** — the whole 800×480 UI recolors immediately
 * **Night dim** — a 50% black overlay for night driving
 * **Screensaver timeout** — choose 1 min, 5 min or 30 min; tap the clock screen to wake
@@ -97,7 +102,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 ![Volume](docs/screenshots/volume.png)
 
-The top-bar speaker button opens **Settings and the volume popup together**, with **- / +**, a live bar and percentage. The popup also appears from **VOL+ / VOL−**, and when Radio mute is pressed. It hides after 1.8 s.
+The top-bar speaker button opens the **volume popup on the current screen** (Radio or Bluetooth), with **- / +**, a live bar, source label and percentage. It no longer jumps to Settings. The popup also appears from **VOL+ / VOL−**, and when Radio or Bluetooth mute is pressed. It hides after 1.8 s.
 
 - Native SDL: `+` / `-` (and keypad `+` / `-`) simulate VOL+ / VOL−.
 - Linux framebuffer: `--buttons /dev/input/event1` maps `KEY_VOLUMEUP` / `KEY_VOLUMEDOWN`.
@@ -133,6 +138,8 @@ The phone card **Call** button opens a **560×280 popup** with recent contacts a
 The paired-device list on the Bluetooth page has been removed. The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select CAR_482 on your phone.** The car advertises; the phone connects to the car.
 
 Bluetooth remains connected when Radio is on. An incoming call overlays an Answer/Reject banner on any panel; answering opens the call screen, rejecting returns to what you were doing.
+
+The Bluetooth card now has **Play / Mute / Disconnect**, a larger album-art and track area, and a **How to connect** info dialog when disconnected. The secondary button no longer starts pairing by accident.
 
 ### Music interrupted by a call
 

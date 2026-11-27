@@ -98,6 +98,8 @@ int main(int argc, char **argv) {
     const char *open_file = NULL;
     bool interrupt_demo = false;
     bool radio_mute = false;
+    bool show_pair_help = false;
+    const char *settings_modal = NULL;
     int storage_index = 0;
     int frames = 0;
     bool interactive = true;
@@ -130,6 +132,10 @@ int main(int argc, char **argv) {
             saver = true;
         } else if (!strcmp(argv[i], "--storage-index") && i + 1 < argc) {
             storage_index = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--settings-modal") && i + 1 < argc) {
+            settings_modal = argv[++i];
+        } else if (!strcmp(argv[i], "--pair-help")) {
+            show_pair_help = true;
         } else if (!strcmp(argv[i], "--radio-mute")) {
             radio_mute = true;
         } else if (!strcmp(argv[i], "--interrupt")) {
@@ -140,7 +146,7 @@ int main(int argc, char **argv) {
             show_vol = true;
             vol_value = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR]... [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt] [--radio-mute] [--storage-index N]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR]... [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt] [--radio-mute] [--storage-index N] [--pair-help] [--settings-modal reset|disclaimer]\n", argv[0]);
             return 0;
         }
     }
@@ -177,6 +183,12 @@ int main(int argc, char **argv) {
     if (light) ui_set_theme(true);
     if (dim) ui_set_night_dim(true);
     if (saver) ui_show_screensaver();
+    if (settings_modal) {
+        ui_show_panel(2);
+        if (!strcmp(settings_modal, "reset")) ui_show_reset_confirm();
+        else if (!strcmp(settings_modal, "disclaimer")) ui_show_disclaimer();
+    }
+    if (show_pair_help) ui_show_pair_help();
     if (storage_index > 0) ui_select_storage(storage_index);
     if (radio_mute) ui_set_radio_mute(true);
     if (open_file) ui_open_file(open_file);

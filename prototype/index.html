@@ -96,7 +96,7 @@
   .topbar{position:absolute;left:0;right:0;top:0;height:50px}
   .clock{position:absolute;left:16px;top:4px;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1}
   .date{position:absolute;left:112px;top:13px;font-size:12px;color:var(--muted);white-space:nowrap;margin:0}
-  .top-right{position:absolute;right:24px;top:8px;height:32px;display:flex;align-items:flex-start;gap:48px;margin:0}
+  .top-right{position:absolute;right:24px;top:8px;height:32px;display:flex;align-items:flex-start;gap:10px;margin:0}
   .status-bt{width:22px;height:22px;position:relative;display:grid;place-items:center;opacity:.9;margin-top:2px}
   .status-bt .dot{position:absolute;right:-1px;bottom:1px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--bg)}
   .weather{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500}
@@ -197,9 +197,11 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .bt-title{font-size:20px;font-weight:600;margin-top:8px;letter-spacing:-.01em}
   .bt-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis}
-  .bt-actions{display:flex;gap:8px;margin-top:10px}
-  .bt-actions .btn{height:34px;border-radius:11px;font-size:12px;padding:0 16px}
-  .bt-actions .btn.primary{min-width:124px}
+  .bt-actions{display:flex;gap:6px;margin-top:10px}
+  .bt-actions .btn{height:34px;border-radius:11px;font-size:11px;padding:0 8px}
+  .bt-actions .btn.primary{min-width:82px}
+  #btnMute{width:62px}
+  #btnSecondary{width:102px}
   .bt-features{display:flex;gap:6px;margin-top:8px;color:var(--muted);font-size:9px}
   .chip{display:flex;align-items:center;gap:4px;background:var(--inner);border-radius:999px;padding:4px 8px}
   .chip svg{width:11px;height:11px}
@@ -207,7 +209,7 @@
 
 
   /* ── audio card ─────────────────────────────────────────── */
-  .art-wrap{position:relative;width:128px;height:128px;margin:14px auto 0}
+  .art-wrap{position:relative;width:150px;height:150px;margin:12px auto 0}
   .art-wrap svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
   .art{
     position:absolute;inset:7px;border-radius:50%;
@@ -215,10 +217,10 @@
     display:grid;place-items:center;
     transition:background .25s ease, filter .25s ease;
   }
-  .art svg{width:50px;height:50px}
+  .art svg{width:60px;height:60px}
   .art.off{background:radial-gradient(circle at 34% 28%, #3A3E48, #23262E 70%);filter:saturate(.2)}
-  .track{font-size:14px;font-weight:600;text-align:center;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
-  .artist{font-size:11px;color:var(--muted);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+  .track{font-size:16px;font-weight:600;text-align:center;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+  .artist{font-size:12px;color:var(--muted);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
   .time{font-size:10px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.02em}
   .media-actions{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:7px}
   .circle-btn{
@@ -274,6 +276,7 @@
   .radio-band .clock-btn.sel{background:var(--accent);color:#fff}
   .radio-freq{font-size:48px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:8px}
   .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:12px;line-height:12px}
+  .radio-scale{width:100%;height:16px;margin-top:4px;accent-color:var(--accent)}
   .radio-row{display:flex;gap:10px;margin-top:6px}
   .radio-row .btn{flex:1;height:38px;font-size:12px}
   .radio-ic svg{width:20px;height:20px}
@@ -283,11 +286,12 @@
   .radio-presets .btn{flex:1;height:32px;font-size:12px}
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
   .radio-bottom{display:flex;justify-content:space-between;margin-top:6px}
-  .radio-bottom .btn{width:110px;height:32px;font-size:12px}
+  .radio-bottom .btn{width:180px;height:32px;font-size:12px}
   .files-sources{display:flex;align-items:center;gap:8px;margin-top:4px}
   .files-sources .sub-label{margin-right:4px}
   .files-sources .clock-btn{padding:4px 12px;font-size:11px}
   .files-sources .clock-btn.sel{background:var(--accent);color:#fff}
+  .files-sources .clock-btn.sel::before{content:'✓ '}
   .files-path{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .files-tools{display:flex;gap:8px;margin-top:6px;align-items:center}
   .files-tools .btn{width:54px;height:30px;font-size:14px}
@@ -346,6 +350,7 @@
   .swatch{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer}
   .swatch.sel{box-shadow:0 0 0 3px var(--text)}
   .settings-row input[type=range]{width:280px;accent-color:var(--accent)}
+  #volumeRange{width:180px}
   .clock-btn{
     border:0;border-radius:8px;background:var(--inner);color:var(--soft);
     font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;cursor:pointer;
@@ -353,8 +358,16 @@
   .clock-btn.sel{background:var(--btn);color:var(--text)}
   .about-grid{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:10px;color:var(--muted);margin-top:6px}
   .about-grid b{color:var(--text);font-weight:500}
-  .settings-reset{position:absolute;right:24px;bottom:16px;width:140px;height:34px;font-size:12px}
-  .settings-disclaimer{position:absolute;left:24px;bottom:14px;font-size:9px;color:var(--muted)}
+  .settings-reset{position:absolute;right:24px;bottom:16px;width:110px;height:28px;font-size:11px}
+  .settings-info{position:absolute;right:146px;bottom:16px;width:100px;height:28px;font-size:11px}
+  .settings-modal{position:absolute;left:150px;top:52px;width:476px;height:210px;background:var(--card);border:1px solid var(--btn);border-radius:14px;padding:18px;display:none;z-index:20;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .settings-modal.show{display:block}
+  #disclaimerModal{left:50px;top:28px;width:676px;height:250px}
+  .sm-title{font-size:15px;font-weight:700;color:var(--text)}
+  .sm-text{font-size:11px;line-height:1.55;color:var(--muted);margin-top:12px;white-space:pre-wrap}
+  .sm-actions{display:flex;gap:10px;margin-top:18px}
+  .sm-actions .btn{flex:1;height:30px;font-size:11px}
+  .settings-modal .panel-close{position:absolute;right:12px;top:10px}
 
 
   /* ── now playing / call panels ─────────────────────────── */
@@ -409,6 +422,15 @@
   .vol-track{flex:1;height:10px;border-radius:5px;background:var(--btn);overflow:hidden}
   .vol-track i{display:block;height:100%;background:var(--accent);border-radius:5px}
   .vol-pct{width:40px;text-align:right;font-size:12px;font-weight:600;color:var(--text);flex:none}
+
+  /* pair help */
+  .pair-help{position:absolute;left:240px;top:80px;width:320px;height:190px;background:var(--card);border-radius:16px;padding:14px 18px;display:none;z-index:26;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+  .pair-help.show{display:block}
+  .pair-help .ph-title{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+  .pair-help .ph-step{font-size:12px;color:var(--text);margin-top:12px}
+  .pair-help .ph-note{font-size:10px;color:var(--muted);margin-top:10px}
+  .pair-help .panel-close{position:absolute;right:12px;top:10px;width:24px;height:24px;font-size:13px}
+  .pair-help .btn{position:absolute;left:90px;bottom:14px;width:140px;height:28px;font-size:11px}
 
   /* incoming call banner */
   .incoming-banner{
@@ -571,6 +593,7 @@
       <div class="bt-sub" id="btSub">Aleksa's iPhone / A2DP / AVRCP</div>
       <div class="bt-actions">
         <button class="btn primary" id="btnPrimary">Play</button>
+        <button class="btn ghost" id="btnMute">Mute</button>
         <button class="btn ghost" id="btnSecondary">Disconnect</button>
       </div>
     </div>
@@ -618,6 +641,7 @@
     <div class="radio-freq" id="radioFreq">98.1 MHz</div>
     <div class="radio-hint" id="radioHint"></div>
     <div class="radio-rds" id="radioRds">RDS - CAR_482 FM</div>
+    <input type="range" class="radio-scale" id="radioScale" min="875" max="1080" value="981">
     <div class="radio-row">
       <button class="btn ghost radio-ic" data-radio="-0.1" title="Tune down"><svg><use href="#i-left"/></svg></button>
       <button class="btn ghost radio-ic" data-radio="-1" title="Seek down"><svg><use href="#i-prev"/></svg></button>
@@ -634,7 +658,6 @@
       <button class="btn ghost" data-preset="5">6</button>
     </div>
     <div class="radio-bottom">
-      <button class="btn primary radio-ic" id="radioPower" title="Power"><svg><use href="#i-power"/></svg></button>
       <button class="btn ghost radio-ic" id="radioSave" title="Save preset"><svg><use href="#i-save"/></svg></button>
       <button class="btn ghost radio-ic" id="radioMute" title="Mute"><svg><use id="muteIcon" href="#i-mute"/></svg></button>
     </div>
@@ -694,7 +717,7 @@
           <button class="clock-btn" id="clock12">12 h</button>
         </div>
         <div class="settings-row">
-          <span>Boot vol</span>
+          <span>Volume on boot</span>
           <input type="range" id="volumeRange" min="0" max="100" value="70">
           <span class="value" id="volumeValue">70%</span>
         </div>
@@ -739,13 +762,28 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.6.1</b>
+          <span>UI</span><b>LVGL 9.3 / v0.7.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
     </div>
+    <button class="btn ghost settings-info" id="settingsDisclaimer">Disclaimer</button>
     <button class="btn ghost settings-reset" id="settingsReset">Reset UI</button>
-    <div class="settings-disclaimer">Experimental - use at your own risk.</div>
+
+    <div class="settings-modal" id="resetModal">
+      <div class="sm-title">Reset UI?</div>
+      <div class="sm-text">This resets theme, layout, volume and date/time settings. Do you agree?</div>
+      <div class="sm-actions">
+        <button class="btn ghost" id="resetNo">No</button>
+        <button class="btn primary" id="resetYes">Yes, reset</button>
+      </div>
+    </div>
+
+    <div class="settings-modal" id="disclaimerModal">
+      <button class="panel-close" id="disclaimerClose">×</button>
+      <div class="sm-title">DISCLAIMER</div>
+      <div class="sm-text">Experimental project. Flashing or modifying firmware can brick the device, erase data or break radio/Bluetooth. Use it entirely at your own risk. The authors and contributors are not responsible or liable for any damage, data loss, injury or legal issue. Do not operate the UI while driving.</div>
+    </div>
   </section>
 
   <!-- NOW PLAYING -->
@@ -794,6 +832,17 @@
       </div>
     </div>
   </section>
+
+  <!-- PAIR HELP -->
+  <div class="pair-help" id="pairHelp">
+    <div class="ph-title">HOW TO CONNECT</div>
+    <button class="panel-close" id="pairHelpClose">×</button>
+    <div class="ph-step">1. Open Bluetooth on your phone</div>
+    <div class="ph-step">2. Select <b>CAR_482</b></div>
+    <div class="ph-step">3. Enter PIN <b>0000</b></div>
+    <div class="ph-note">The car advertises; your phone connects to the car.</div>
+    <button class="btn primary" id="pairHelpOk">Got it</button>
+  </div>
 
   <!-- INCOMING CALL BANNER -->
   <div class="incoming-banner" id="incomingBanner">
@@ -870,6 +919,8 @@
     if (Number.isFinite(dv) && dv >= 0 && dv <= 100) defaultVolume = dv;
   } catch (e) {}
   let btVolume = defaultVolume;
+  let btSavedVolume = defaultVolume;
+  let btMuted = false;
   let radioVolume = defaultVolume;
   let radioSavedVolume = defaultVolume;
   let activeSource = 'bt';
@@ -915,7 +966,8 @@
   }
   function currentVolume() { return activeSource === 'radio' ? radioVolume : btVolume; }
   function renderVolume() {
-    const muted = activeSource === 'radio' && radioMute;
+    const muted = (activeSource === 'radio' && radioMute) ||
+                  (activeSource === 'bt' && btMuted);
     const v = currentVolume();
     el('volFill').style.width = (muted ? 0 : v) + '%';
     el('volPct').textContent = muted ? 'MUTED' : v + '%';
@@ -931,6 +983,10 @@
       radioMute = false;
       radioVolume = radioSavedVolume;
       renderRadio();
+    } else if (activeSource === 'bt' && btMuted) {
+      btMuted = false;
+      btVolume = btSavedVolume;
+      el('btnMute').textContent = 'Mute';
     }
     const nv = Math.max(0, Math.min(100, Math.round(v)));
     if (activeSource === 'radio') radioVolume = nv;
@@ -943,7 +999,7 @@
     try { localStorage.setItem('strada.defaultVolume', String(defaultVolume)); } catch (e) {}
     renderBootVolume();
   }
-  el('volBtn').addEventListener('click', () => { showScreen('settings'); showVolume(); });
+  el('volBtn').addEventListener('click', showVolume);
   el('volDown').addEventListener('click', () => setVolume(currentVolume() - 5, true));
   el('volUp').addEventListener('click', () => setVolume(currentVolume() + 5, true));
 
@@ -1078,7 +1134,7 @@
     const secondary = el('btnSecondary');
     const map = {
       off: ['Power on', 'Settings'],
-      ready: ['Start pairing', 'Settings'],
+      ready: ['Start pairing', 'How to connect'],
       pairing: ['Cancel', '—'],
       connected: ['Play', 'Disconnect'],
       playing: ['Pause', 'Disconnect'],
@@ -1117,6 +1173,8 @@
     el('btnNext').disabled = !connected;
     el('btnCallSim').disabled = !connected;
     el('btnCallSim').style.opacity = connected ? '1' : '.5';
+    el('btnMute').textContent = btMuted ? 'Unmute' : 'Mute';
+    el('btnMute').style.display = connected ? '' : 'none';
     renderPlayer();
     renderIncomingBanner();
   }
@@ -1179,7 +1237,7 @@
   el('btnPrimary').addEventListener('click', () => {
     switch (state.mode) {
       case 'off': go('ready'); toast('Bluetooth on'); break;
-      case 'ready': go('pairing'); break;
+      case 'ready': showPairHelp(); break;
       case 'pairing': go('ready'); break;
       case 'connected': state.playing = true; go('playing'); break;
       case 'playing': state.playing = false; go('connected'); break;
@@ -1197,7 +1255,7 @@
 
   el('btnSecondary').addEventListener('click', () => {
     switch (state.mode) {
-      case 'ready': go('pairing'); break;
+      case 'ready': showPairHelp(); break;
       case 'connected':
       case 'playing': go('ready'); toast('Disconnected'); break;
       case 'incoming': {
@@ -1219,7 +1277,26 @@
     else { go('pairing'); }
   });
 
+  function showPairHelp() { el('pairHelp').classList.add('show'); }
+  function hidePairHelp() { el('pairHelp').classList.remove('show'); }
+  el('pairHelpClose').addEventListener('click', hidePairHelp);
+  el('pairHelpOk').addEventListener('click', hidePairHelp);
+  el('pairHelp').addEventListener('click', e => { if (e.target === el('pairHelp')) hidePairHelp(); });
+
   el('btnCallSim').addEventListener('click', openCallPanel);
+  el('btnMute').addEventListener('click', () => {
+    if (!btMuted) {
+      btSavedVolume = btVolume;
+      btVolume = 0;
+      btMuted = true;
+    } else {
+      btMuted = false;
+      btVolume = btSavedVolume;
+    }
+    el('btnMute').textContent = btMuted ? 'Unmute' : 'Mute';
+    renderVolume();
+    showVolume();
+  });
 
   el('btnPlay').addEventListener('click', () => {
     if (state.mode === 'playing') go('connected');
@@ -1345,6 +1422,9 @@
     el('bandAm').classList.toggle('sel', radioAm);
     el('radioSave').classList.toggle('sel', radioSaveMode);
     el('muteIcon').setAttribute('href', radioMute ? '#i-mute' : '#i-volume');
+    el('radioScale').min = radioAm ? '530' : '875';
+    el('radioScale').max = radioAm ? '1700' : '1080';
+    el('radioScale').value = radioAm ? String(Math.round(freqAm)) : String(Math.round(freqFm * 10));
     document.querySelectorAll('#radioPresets [data-preset]').forEach(b => {
       const i = Number(b.dataset.preset);
       b.classList.toggle('sel', radioOn && Math.abs(radioFreq() - bandPresets()[i]) < (radioAm ? 1 : 0.05));
@@ -1379,20 +1459,14 @@
     }
     renderRadio();
   }));
+  el('radioScale').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    if (radioAm) freqAm = v;
+    else freqFm = v / 10;
+    renderRadio();
+  });
   el('bandFm').addEventListener('click', () => { radioAm = false; radioSaveMode = false; renderRadio(); });
   el('bandAm').addEventListener('click', () => { radioAm = true; radioSaveMode = false; renderRadio(); });
-  el('radioPower').addEventListener('click', () => {
-    radioOn = !radioOn;
-    if (!radioOn) radioSaveMode = false;
-    renderRadio();
-    if (radioOn) {
-      radioVolume = defaultVolume;
-      radioSavedVolume = defaultVolume;
-      activeSource = 'radio';
-      renderVolume();
-      showVolume();
-    }
-  });
   el('radioMute').addEventListener('click', () => {
     if (!radioMute) {
       radioSavedVolume = radioVolume;
@@ -1686,11 +1760,13 @@
     const code = b.dataset.cal;
     calAdjust(code[0], code[1] === '-' ? -1 : 1);
   }));
-  el('settingsReset').addEventListener('click', () => {
+  function resetUiNow() {
     setAccent('#FE3211');
     setClock(true);
     setBootVolume(70);
     btVolume = 70;
+    btSavedVolume = 70;
+    btMuted = false;
     radioVolume = 70;
     radioSavedVolume = 70;
     radioMute = false;
@@ -1698,12 +1774,18 @@
     setTheme(false);
     setNightDim(false);
     setScreensaver(true);
+    setSaverTimeout(300);
     clockSet = false;
     clockBase = new Date();
     clockBaseAt = Date.now();
     syncClockInputs();
     tickClock();
-  });
+  }
+  el('settingsReset').addEventListener('click', () => el('resetModal').classList.add('show'));
+  el('resetNo').addEventListener('click', () => el('resetModal').classList.remove('show'));
+  el('resetYes').addEventListener('click', () => { el('resetModal').classList.remove('show'); resetUiNow(); });
+  el('settingsDisclaimer').addEventListener('click', () => el('disclaimerModal').classList.add('show'));
+  el('disclaimerClose').addEventListener('click', () => el('disclaimerModal').classList.remove('show'));
   function renderSettings() {
     renderVolume();
     syncClockInputs();
@@ -1817,6 +1899,7 @@
     el('date').textContent = dateText;
     el('saverDate').textContent = dateText;
     el('saverTime').textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: !clock24 });
+    syncClockInputs();
   }
   tickClock();
   setInterval(tickClock, 1000);

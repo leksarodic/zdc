@@ -37,7 +37,7 @@ static int radio_volume = 70;
 static int bt_volume = 70;
 static bool radio_muted = false;
 static int boot_volume = 70;     /* Settings slider: level used at power-on */
-static int saver_timeout_sec = 30;
+static int saver_timeout_sec = 300;
 static bool night_dim = false;
 static bool saver_enabled = true;
 
@@ -354,7 +354,10 @@ static void settings_load(void) {
     int v;
     while (fscanf(f, " %31[^=]=%d", key, &v) == 2) {
         if (!strcmp(key, "volume") && v >= 0 && v <= 100) boot_volume = v;
-        else if (!strcmp(key, "saver") && v >= 5 && v <= 3600) saver_timeout_sec = v;
+        else if (!strcmp(key, "saver")) {
+            if (v == 60 || v == 300 || v == 1800) saver_timeout_sec = v;
+            else if (v > 0) saver_timeout_sec = 300; /* migrate old 15/30 s values */
+        }
         int c;
         while ((c = fgetc(f)) != EOF && c != '\n') {}
     }
@@ -401,7 +404,7 @@ static void on_radio_mute(bool muted) {
 }
 
 static void on_saver_timeout(int seconds) {
-    if (seconds < 5 || seconds > 3600) return;
+    if (seconds != 60 && seconds != 300 && seconds != 1800) return;
     saver_timeout_sec = seconds;
     settings_save();
     panels_set_saver_timeout(seconds);

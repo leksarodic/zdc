@@ -37,6 +37,8 @@ static int radio_volume = 70;
 static int bt_volume = 70;
 static bool radio_muted = false;
 static int radio_saved_volume = 0;
+static int bt_saved_volume = 70;
+static bool bt_muted = false;
 static int boot_volume = 70;     /* Settings slider: level used at power-on */
 static int saver_timeout_sec = 300;
 static bool night_dim = false;
@@ -51,6 +53,7 @@ static lv_timer_t *osd_timer;
 
 static lv_obj_t *call_banner;
 static lv_obj_t *call_banner_name;
+static lv_obj_t *pair_help;
 
 static lv_obj_t *dim_overlay;
 static lv_obj_t *saver;
@@ -96,6 +99,8 @@ static lv_obj_t *primary_btn;
 static lv_obj_t *primary_lbl;
 static lv_obj_t *secondary_btn;
 static lv_obj_t *secondary_lbl;
+static lv_obj_t *bt_mute_btn;
+static lv_obj_t *bt_mute_lbl;
 
 static lv_obj_t *art_circle;
 static lv_obj_t *track_lbl;
@@ -198,8 +203,27 @@ static lv_obj_t *icon_center(lv_obj_t *parent, const char *sym, const lv_font_t 
 
 static void clock_update(void);
 
+static void pair_help_close_cb(lv_event_t *e) {
+    (void)e;
+    if (pair_help) lv_obj_add_flag(pair_help, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void pair_help_show(void) {
+    if (!pair_help) return;
+    lv_obj_remove_flag(pair_help, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(pair_help);
+}
+
 static void pc_cb(lv_event_t *e) { (void)e; bt_sim_primary(M); ui_update(); }
-static void sc_cb(lv_event_t *e) { (void)e; bt_sim_secondary(M); ui_update(); }
+static void sc_cb(lv_event_t *e) {
+    (void)e;
+    if (M->state == BT_READY || M->state == BT_OFF || M->state == BT_ERROR) {
+        pair_help_show();
+        return;
+    }
+    bt_sim_secondary(M);
+    ui_update();
+}
 static void next_cb(lv_event_t *e) { (void)e; bt_sim_next(M); ui_update(); }
 static void prev_cb(lv_event_t *e) { (void)e; bt_sim_prev(M); ui_update(); }
 static void incoming_cb(lv_event_t *e) {
@@ -323,7 +347,8 @@ static int *active_volume(void) {
 }
 
 static void volume_render(void) {
-    bool muted = active_src == SRC_RADIO && radio_muted;
+    bool muted = (active_src == SRC_RADIO && radio_muted) ||
+                 (active_src == SRC_BT && bt_muted);
     int v = *active_volume();
     if (vol_icon) lv_label_set_text(vol_icon, muted ? LV_SYMBOL_MUTE : LV_SYMBOL_VOLUME_MAX);
     if (vol_src_lbl) lv_label_set_text(vol_src_lbl, active_src == SRC_RADIO ? "RADIO" : "BLUETOOTH");
@@ -367,6 +392,7 @@ static void settings_load(void) {
     radio_volume = boot_volume;
     bt_volume = boot_volume;
     radio_saved_volume = boot_volume;
+    bt_saved_volume = boot_volume;
 }
 
 static void settings_save(void) {
@@ -384,10 +410,14 @@ static void volume_apply(int v, bool show) {
     else volume_render();
 }
 
-static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show(); }
+static void volume_open_cb(lv_event_t *e) { (void)e; volume_show(); }
 static void volume_nudge(int delta) {
     if (active_src == SRC_RADIO && radio_muted) {
         panels_set_radio_mute(false);
+    } else if (active_src == SRC_BT && bt_muted) {
+        bt_muted = false;
+        bt_volume = bt_saved_volume > 0 ? bt_saved_volume : boot_volume;
+        if (bt_mute_lbl) lv_label_set_text(bt_mute_lbl, "Mute");
     }
     volume_apply(*active_volume() + delta, true);
 }
@@ -405,6 +435,21 @@ static void on_radio_start(void) {
     radio_volume = boot_volume;
     radio_saved_volume = boot_volume;
     active_src = SRC_RADIO;
+    volume_render();
+    volume_show();
+}
+
+static void bt_mute_cb(lv_event_t *e) {
+    (void)e;
+    if (!bt_muted) {
+        bt_saved_volume = bt_volume;
+        bt_volume = 0;
+        bt_muted = true;
+    } else {
+        bt_muted = false;
+        bt_volume = bt_saved_volume > 0 ? bt_saved_volume : boot_volume;
+    }
+    if (bt_mute_lbl) lv_label_set_text(bt_mute_lbl, bt_muted ? "Unmute" : "Mute");
     volume_render();
     volume_show();
 }
@@ -649,7 +694,7 @@ static void update_bt(void) {
         title = "Pair from your phone";
         sub = "PIN 0000 / Open Bluetooth on your phone.";
         primary = "Start pairing";
-        secondary = "Settings";
+        secondary = "How to connect";
         break;
     case BT_PAIRING:
         value = 55; core = 0x4A4F5A;
@@ -712,12 +757,17 @@ static void update_bt(void) {
     set_text_if(bt_sub, sub);
     set_text_if(primary_lbl, primary);
     set_text_if(secondary_lbl, secondary);
+    if (bt_mute_lbl) set_text_if(bt_mute_lbl, bt_muted ? "Unmute" : "Mute");
     lv_obj_set_style_bg_color(primary_btn, col(primary_bg), 0);
 
     if (secondary[0]) {
         lv_obj_remove_flag(secondary_btn, LV_OBJ_FLAG_HIDDEN);
     } else {
         lv_obj_add_flag(secondary_btn, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (bt_mute_btn) {
+        if (connected) lv_obj_remove_flag(bt_mute_btn, LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(bt_mute_btn, LV_OBJ_FLAG_HIDDEN);
     }
 
     uint32_t dot = C_MUTED;
@@ -839,6 +889,28 @@ static void build_volume_osd(lv_obj_t *scr) {
     lv_timer_pause(osd_timer);
 }
 
+static void build_pair_help(lv_obj_t *scr) {
+    pair_help = box(scr, 240, 80, 320, 190, C_CARD, 16);
+    lv_obj_set_style_border_width(pair_help, 1, 0);
+    lv_obj_set_style_border_color(pair_help, col(C_BTN), 0);
+    lv_obj_add_flag(pair_help, LV_OBJ_FLAG_HIDDEN);
+
+    label(pair_help, "HOW TO CONNECT", 20, 14, 240, 16,
+          &lv_font_montserrat_12, accent, LV_TEXT_ALIGN_LEFT);
+    button(pair_help, LV_SYMBOL_CLOSE, 278, 8, 30, 30, C_INNER, C_TEXT,
+           &lv_font_montserrat_12, pair_help_close_cb, NULL);
+    label(pair_help, "1. Open Bluetooth on your phone", 20, 44, 286, 16,
+          &lv_font_montserrat_12, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    label(pair_help, "2. Select " BT_LOCAL_NAME, 20, 68, 286, 16,
+          &lv_font_montserrat_12, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    label(pair_help, "3. Enter PIN 0000", 20, 92, 286, 16,
+          &lv_font_montserrat_12, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    label(pair_help, "The car advertises; your phone connects.", 20, 122, 286, 30,
+          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(pair_help, "Got it", 90, 154, 140, 28, accent, 0xFFFFFF,
+           &lv_font_montserrat_12, pair_help_close_cb, NULL);
+}
+
 static void build_call_banner(lv_obj_t *scr) {
     call_banner = box(scr, 190, 60, 420, 96, C_CARD, 16);
     lv_obj_add_flag(call_banner, LV_OBJ_FLAG_HIDDEN);
@@ -894,8 +966,8 @@ void ui_init(bt_model_t *model) {
     time_label = label(scr, "00:00", 16, 4, 92, 34, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
     date_label = label(scr, "", 112, 12, 260, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
-    symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 674, 10, 22, 22);
-    top_bt_dot = circle(scr, 692, 25, 6, C_GREEN);
+    symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 710, 10, 22, 22);
+    top_bt_dot = circle(scr, 728, 25, 6, C_GREEN);
 
     lv_obj_t *vol_btn = circle(scr, 744, 8, 32, C_CIRCLE);
     icon_center(vol_btn, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_16, C_TEXT);
@@ -960,9 +1032,11 @@ void ui_init(bt_model_t *model) {
     bt_title = label(bt, "Connected", 14, 186, 300, 28, &lv_font_montserrat_22, C_TEXT, LV_TEXT_ALIGN_CENTER);
     bt_sub = label(bt, "", 14, 212, 300, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    primary_btn = button(bt, "Play", 54, 262, 130, 36, accent, 0xFFFFFF,
+    primary_btn = button(bt, "Play", 24, 262, 84, 36, accent, 0xFFFFFF,
                          &lv_font_montserrat_12, pc_cb, &primary_lbl);
-    secondary_btn = button(bt, "Disconnect", 190, 262, 110, 36, C_INNER, C_TEXT,
+    bt_mute_btn = button(bt, "Mute", 116, 262, 70, 36, C_INNER, C_TEXT,
+                         &lv_font_montserrat_12, bt_mute_cb, &bt_mute_lbl);
+    secondary_btn = button(bt, "Disconnect", 194, 262, 100, 36, C_INNER, C_TEXT,
                            &lv_font_montserrat_12, sc_cb, &secondary_lbl);
 
 
@@ -971,21 +1045,21 @@ void ui_init(bt_model_t *model) {
     label(audio, "AUDIO", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
-    art_circle = circle(audio, 33, 32, 128, accent);
+    art_circle = circle(audio, 22, 20, 150, accent);
     icon_center(art_circle, LV_SYMBOL_AUDIO, &lv_font_montserrat_40, 0xFFFFFF);
     lv_obj_add_event_cb(art_circle, art_open_cb, LV_EVENT_CLICKED, NULL);
 
-    track_lbl = label(audio, "Test Song", 8, 170, 178, 20, &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_CENTER);
-    artist_lbl = label(audio, "Demo Artist", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
-    time_pos_lbl = label(audio, "1:08 / 3:35", 8, 206, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
+    track_lbl = label(audio, "Test Song", 8, 182, 178, 22, &lv_font_montserrat_16, C_TEXT, LV_TEXT_ALIGN_CENTER);
+    artist_lbl = label(audio, "Demo Artist", 8, 204, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
+    time_pos_lbl = label(audio, "1:08 / 3:35", 8, 220, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    prev_btn = button(audio, LV_SYMBOL_PREV, 30, 242, 42, 42, C_BTN, 0xFFFFFF,
+    prev_btn = button(audio, LV_SYMBOL_PREV, 26, 246, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, prev_cb, NULL);
     lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
-    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 236, 54, 54, accent, 0xFFFFFF,
+    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 240, 54, 54, accent, 0xFFFFFF,
                       &lv_font_montserrat_24, pc_cb, &play_lbl);
     lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
-    next_btn = button(audio, LV_SYMBOL_NEXT, 130, 242, 42, 42, C_BTN, 0xFFFFFF,
+    next_btn = button(audio, LV_SYMBOL_NEXT, 126, 246, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, next_cb, NULL);
     lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
 
@@ -1010,6 +1084,7 @@ void ui_init(bt_model_t *model) {
     call_panel_init(scr, on_call_close, on_outgoing_call);
     build_volume_osd(scr);
     build_call_banner(scr);
+    build_pair_help(scr);
     radio_volume = boot_volume;
     bt_volume = boot_volume;
     radio_saved_volume = boot_volume;
@@ -1046,6 +1121,18 @@ void ui_show_panel(int idx) {
 
 void ui_show_call(void) {
     if (M && bt_sim_connected(M->state)) call_panel_show();
+}
+
+void ui_show_pair_help(void) {
+    pair_help_show();
+}
+
+void ui_show_reset_confirm(void) {
+    panels_show_reset_confirm();
+}
+
+void ui_show_disclaimer(void) {
+    panels_show_disclaimer();
 }
 
 #ifdef STRADA_USE_SDL

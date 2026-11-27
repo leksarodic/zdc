@@ -122,9 +122,10 @@ static lv_obj_t *make_panel(lv_obj_t *parent) {
 /* ── Radio ───────────────────────────────────────────────────── */
 
 static lv_obj_t *radio_freq_lbl;
+static lv_obj_t *radio_scale;
+static bool radio_scale_sync = false;
 static lv_obj_t *radio_hint_lbl;
 static lv_obj_t *radio_rds_lbl;
-static lv_obj_t *radio_power_lbl;
 static lv_obj_t *radio_mute_lbl;
 static lv_obj_t *radio_save_lbl;
 static lv_obj_t *radio_fm_lbl;
@@ -188,6 +189,19 @@ static int rds_slot(void) {
     return best;
 }
 
+static void radio_scale_update(void) {
+    if (!radio_scale) return;
+    radio_scale_sync = true;
+    if (radio_am) {
+        lv_slider_set_range(radio_scale, 530, 1700);
+        lv_slider_set_value(radio_scale, (int)(radio_am_freq + 0.5), LV_ANIM_OFF);
+    } else {
+        lv_slider_set_range(radio_scale, 875, 1080);
+        lv_slider_set_value(radio_scale, (int)(radio_fm_freq * 10.0 + 0.5), LV_ANIM_OFF);
+    }
+    radio_scale_sync = false;
+}
+
 static void radio_update(void) {
     char buf[48];
     if (!radio_on) snprintf(buf, sizeof(buf), "OFF");
@@ -227,6 +241,7 @@ static void radio_update(void) {
         lv_obj_set_style_border_width(radio_preset_btns[i], selected ? 2 : 0, 0);
         lv_obj_set_style_border_color(radio_preset_btns[i], col(0xFE3211), 0);
     }
+    radio_scale_update();
 }
 
 static void radio_step(double fm_delta, double am_delta) {
@@ -256,12 +271,13 @@ static void radio_band_cb(lv_event_t *e) {
     radio_update();
 }
 
-static void radio_power_cb(lv_event_t *e) {
+static void radio_scale_cb(lv_event_t *e) {
     (void)e;
-    radio_on = !radio_on;
-    if (!radio_on) radio_save_mode = false;
+    if (radio_scale_sync || !radio_on) return;
+    int v = (int)lv_slider_get_value(radio_scale);
+    if (radio_am) radio_am_freq = (double)v;
+    else radio_fm_freq = (double)v / 10.0;
     radio_update();
-    if (radio_on && cb_radio_start) cb_radio_start();
 }
 
 static void radio_mute_cb(lv_event_t *e) {
@@ -304,6 +320,16 @@ static void build_radio(lv_obj_t *parent) {
     radio_rds_lbl = label(radio_panel, "RDS  -  off", 0, 110, 776, 14,
                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
+    radio_scale = lv_slider_create(radio_panel);
+    lv_obj_set_pos(radio_scale, 90, 128);
+    lv_obj_set_size(radio_scale, 596, 18);
+    lv_slider_set_range(radio_scale, 875, 1080);
+    lv_slider_set_value(radio_scale, 981, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(radio_scale, col(C_BTN), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(radio_scale, col(0xFE3211), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(radio_scale, col(0xFE3211), LV_PART_KNOB);
+    lv_obj_add_event_cb(radio_scale, radio_scale_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
     lv_obj_t *fm = button(radio_panel, "FM", 650, 34, 54, 28, C_BTN,
                           &lv_font_montserrat_12, NULL, &radio_fm_lbl);
     lv_obj_add_event_cb(fm, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)0);
@@ -312,29 +338,27 @@ static void build_radio(lv_obj_t *parent) {
     lv_obj_add_event_cb(am, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)1);
     (void)fm; (void)am;
 
-    button(radio_panel, LV_SYMBOL_LEFT, 96, 132, 84, 42, C_INNER,
+    button(radio_panel, LV_SYMBOL_LEFT, 96, 158, 84, 38, C_INNER,
            &lv_font_montserrat_18, radio_tune_down_cb, NULL);
-    button(radio_panel, LV_SYMBOL_PREV, 204, 132, 84, 42, C_BTN,
+    button(radio_panel, LV_SYMBOL_PREV, 204, 158, 84, 38, C_BTN,
            &lv_font_montserrat_16, radio_seek_down_cb, NULL);
-    button(radio_panel, LV_SYMBOL_NEXT, 488, 132, 84, 42, C_BTN,
+    button(radio_panel, LV_SYMBOL_NEXT, 488, 158, 84, 38, C_BTN,
            &lv_font_montserrat_16, radio_seek_up_cb, NULL);
-    button(radio_panel, LV_SYMBOL_RIGHT, 596, 132, 84, 42, C_INNER,
+    button(radio_panel, LV_SYMBOL_RIGHT, 596, 158, 84, 38, C_INNER,
            &lv_font_montserrat_18, radio_tune_up_cb, NULL);
 
-    label(radio_panel, "PRESETS", 40, 182, 300, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    label(radio_panel, "PRESETS", 40, 202, 300, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 6; i++) {
         char b[8];
         snprintf(b, sizeof(b), "%d", i + 1);
-        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 200, 104, 32, C_INNER,
+        radio_preset_btns[i] = button(radio_panel, b, 40 + i * 120, 220, 104, 32, C_INNER,
                                       &lv_font_montserrat_12, NULL, NULL);
         lv_obj_add_event_cb(radio_preset_btns[i], radio_preset_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
-    button(radio_panel, LV_SYMBOL_POWER, 120, 264, 90, 34, 0xFE3211,
-           &lv_font_montserrat_18, radio_power_cb, &radio_power_lbl);
-    button(radio_panel, LV_SYMBOL_SAVE, 328, 264, 120, 34, C_INNER,
+    button(radio_panel, LV_SYMBOL_SAVE, 238, 266, 160, 34, C_INNER,
            &lv_font_montserrat_16, radio_save_cb, &radio_save_lbl);
-    button(radio_panel, LV_SYMBOL_MUTE, 566, 264, 90, 34, C_INNER,
+    button(radio_panel, LV_SYMBOL_MUTE, 508, 266, 90, 34, C_INNER,
            &lv_font_montserrat_16, radio_mute_cb, &radio_mute_lbl);
 
     presets_load();
@@ -618,7 +642,8 @@ static void load_dir(const char *path) {
     qsort(file_entries, (size_t)file_entry_count, sizeof(file_entry_t), file_cmp);
     snprintf(file_cwd, sizeof(file_cwd), "%s", path);
     lv_label_set_text(files_path_lbl, file_cwd);
-    lv_label_set_text(files_status_lbl, file_root_count > 1 ? "USB + SD" : "USB / SD");
+    lv_label_set_text(files_status_lbl,
+                      file_root_count > 1 ? "USB + SD" : file_root_labels[0]);
 
     lv_obj_clean(files_list);
     if (file_entry_count == 0) {
@@ -694,6 +719,10 @@ static void files_source_refresh(void) {
         lv_obj_set_style_bg_color(files_source_btns[i], col(sel ? 0xFE3211 : C_INNER), 0);
         lv_obj_set_style_text_color(lv_obj_get_child(files_source_btns[i], 0),
                                     col(sel ? 0xFFFFFF : C_SOFT), 0);
+        char txt[32];
+        if (sel) snprintf(txt, sizeof(txt), "%s %s", LV_SYMBOL_OK, file_root_labels[i]);
+        else snprintf(txt, sizeof(txt), "%s", file_root_labels[i]);
+        lv_label_set_text(lv_obj_get_child(files_source_btns[i], 0), txt);
     }
 }
 
@@ -952,8 +981,36 @@ static void timeout_cb(lv_event_t *e) {
     settings_refresh();
 }
 
-static void settings_reset_cb(lv_event_t *e) {
+static lv_obj_t *reset_confirm;
+static lv_obj_t *disclaimer_box;
+
+static void reset_cancel_cb(lv_event_t *e) {
     (void)e;
+    if (reset_confirm) lv_obj_add_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void reset_ask_cb(lv_event_t *e) {
+    (void)e;
+    if (!reset_confirm) return;
+    lv_obj_remove_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(reset_confirm);
+}
+
+static void disclaimer_close_cb(lv_event_t *e) {
+    (void)e;
+    if (disclaimer_box) lv_obj_add_flag(disclaimer_box, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void disclaimer_open_cb(lv_event_t *e) {
+    (void)e;
+    if (!disclaimer_box) return;
+    lv_obj_remove_flag(disclaimer_box, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(disclaimer_box);
+}
+
+static void reset_apply_cb(lv_event_t *e) {
+    (void)e;
+    if (reset_confirm) lv_obj_add_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
     accent_idx = 0;
     clock_is_24 = true;
     lv_slider_set_value(volume_slider, 70, LV_ANIM_OFF);
@@ -990,10 +1047,10 @@ static void build_settings(lv_obj_t *parent) {
     lv_obj_t *b12 = button(settings_panel, "12 h", 198, 74, 70, 28, C_INNER, &lv_font_montserrat_12, clock12_cb, &clock12_lbl);
     (void)b24; (void)b12;
 
-    label(settings_panel, "BOOT VOL", 24, 114, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    label(settings_panel, "VOLUME ON BOOT", 24, 114, 100, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     volume_slider = lv_slider_create(settings_panel);
-    lv_obj_set_pos(volume_slider, 120, 110);
-    lv_obj_set_size(volume_slider, 300, 20);
+    lv_obj_set_pos(volume_slider, 132, 110);
+    lv_obj_set_size(volume_slider, 288, 20);
     lv_slider_set_range(volume_slider, 0, 100);
     lv_slider_set_value(volume_slider, 70, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(volume_slider, col(C_BTN), LV_PART_MAIN);
@@ -1047,14 +1104,43 @@ static void build_settings(lv_obj_t *parent) {
     }
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / v0.6.1 / LVGL", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.7.0 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "Experimental - use at your own risk", 24, 286, 420, 12,
-          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(settings_panel, "Disclaimer", 536, 252, 104, 26, C_INNER, &lv_font_montserrat_10,
+           disclaimer_open_cb, NULL);
+    button(settings_panel, "Reset UI", 652, 252, 96, 26, C_INNER, &lv_font_montserrat_10,
+           reset_ask_cb, NULL);
 
-    button(settings_panel, "Reset UI", 606, 250, 140, 32, C_INNER, &lv_font_montserrat_12, settings_reset_cb, NULL);
+    reset_confirm = box(settings_panel, 220, 70, 336, 150, C_CARD, 14);
+    lv_obj_set_style_border_width(reset_confirm, 1, 0);
+    lv_obj_set_style_border_color(reset_confirm, col(C_BTN), 0);
+    lv_obj_add_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
+    label(reset_confirm, "Reset UI?", 20, 16, 296, 24, &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    label(reset_confirm, "This resets theme, layout, volume and date/time settings. Do you agree?",
+          20, 50, 296, 40, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(reset_confirm, "No", 64, 104, 80, 28, C_INNER, &lv_font_montserrat_10, reset_cancel_cb, NULL);
+    button(reset_confirm, "Yes, reset", 172, 104, 100, 28, 0xFE3211, &lv_font_montserrat_10, reset_apply_cb, NULL);
+
+    disclaimer_box = box(settings_panel, 40, 40, 696, 238, C_CARD, 14);
+    lv_obj_set_style_border_width(disclaimer_box, 1, 0);
+    lv_obj_set_style_border_color(disclaimer_box, col(C_BTN), 0);
+    lv_obj_add_flag(disclaimer_box, LV_OBJ_FLAG_HIDDEN);
+    label(disclaimer_box, "DISCLAIMER", 20, 14, 300, 16, &lv_font_montserrat_12, 0xFE3211, LV_TEXT_ALIGN_LEFT);
+    button(disclaimer_box, LV_SYMBOL_CLOSE, 650, 8, 30, 30, C_INNER, &lv_font_montserrat_12,
+           disclaimer_close_cb, NULL);
+    lv_obj_t *dtxt = lv_label_create(disclaimer_box);
+    lv_label_set_text(dtxt,
+        "Experimental project. Flashing or modifying firmware can brick the device, erase data "
+        "or break radio/Bluetooth. Use it entirely at your own risk. The authors and contributors "
+        "are not responsible or liable for any damage, data loss, injury or legal issue. "
+        "Do not operate the UI while driving.");
+    lv_label_set_long_mode(dtxt, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_pos(dtxt, 20, 42);
+    lv_obj_set_size(dtxt, 656, 176);
+    lv_obj_set_style_text_font(dtxt, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_color(dtxt, col(C_SOFT), 0);
     cal_load_now();
     cal_show();
     settings_refresh();
@@ -1150,6 +1236,14 @@ void panels_set_now(long epoch) {
     cal.tm_isdst = -1;
     cal_ready = true;
     cal_show();
+}
+
+void panels_show_reset_confirm(void) {
+    reset_ask_cb(NULL);
+}
+
+void panels_show_disclaimer(void) {
+    disclaimer_open_cb(NULL);
 }
 
 void panels_select_storage(int index) {

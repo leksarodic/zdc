@@ -29,6 +29,7 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Light settings | [light-settings.png](docs/screenshots/light-settings.png) |
 | Night dim | [night-dim.png](docs/screenshots/night-dim.png) |
 | Screensaver | [screensaver.png](docs/screenshots/screensaver.png) |
+| Light screensaver | [screensaver-light.png](docs/screenshots/screensaver-light.png) |
 | Files music | [files-music.png](docs/screenshots/files-music.png) |
 | Files photo | [files-photo.png](docs/screenshots/files-photo.png) |
 | USB + SD sources | [files-sources.png](docs/screenshots/files-sources.png) |
@@ -111,7 +112,7 @@ The top-bar speaker button opens **Settings and the volume popup together**, wit
 
 ![Light settings](docs/screenshots/light-settings.png)
 
-Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after the selected timeout (**After**: 1m / 5m / 30m); tap anywhere to wake.
+Switch **Theme → Light** for a daytime palette. The screensaver follows the theme: light background with dark text in Light mode, dark background with light text in Dark mode. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after the selected timeout (**After**: 1m / 5m / 30m); tap anywhere to wake.
 
 ![Night dim](docs/screenshots/night-dim.png)
 

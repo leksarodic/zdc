@@ -56,6 +56,7 @@ static lv_obj_t *dim_overlay;
 static lv_obj_t *saver;
 static lv_obj_t *saver_time;
 static lv_obj_t *saver_date;
+static lv_obj_t *saver_hint;
 static lv_timer_t *idle_timer;
 
 static lv_obj_t *home;
@@ -459,11 +460,20 @@ static void sync_panel_modes(void) {
     panels_set_modes(theme_is_light(), night_dim, saver_enabled);
 }
 
+static void saver_apply_theme(bool light) {
+    if (!saver) return;
+    lv_obj_set_style_bg_color(saver, col(light ? 0xF3F5F9 : 0x07080A), 0);
+    if (saver_time) lv_obj_set_style_text_color(saver_time, col(light ? 0x14161B : 0xF7F8FA), 0);
+    if (saver_date) lv_obj_set_style_text_color(saver_date, col(light ? 0x6C727C : 0x9AA0A9), 0);
+    if (saver_hint) lv_obj_set_style_text_color(saver_hint, col(light ? 0x6C727C : 0x9AA0A9), 0);
+}
+
 static void on_theme(bool light) {
     theme_set_light(lv_screen_active(), light);
     if (vol_osd) lv_obj_set_style_bg_color(vol_osd, col(C_CARD), 0);
     if (vol_bar) lv_obj_set_style_bg_color(vol_bar, col(C_BTN), LV_PART_MAIN);
     if (dim_overlay) lv_obj_set_style_bg_color(dim_overlay, col(0x000000), 0);
+    saver_apply_theme(light);
     sync_panel_modes();
     ui_update();
 }
@@ -488,6 +498,7 @@ static void saver_wake_cb(lv_event_t *e) {
 
 static void saver_show_now(void) {
     if (!saver) return;
+    saver_apply_theme(theme_is_light());
     clock_update();
     lv_obj_remove_flag(saver, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(saver);
@@ -857,8 +868,8 @@ static void build_overlays(lv_obj_t *scr) {
                        LV_TEXT_ALIGN_CENTER);
     saver_date = label(saver, "", 0, 248, 800, 20, &lv_font_montserrat_14, 0x9AA0A9,
                        LV_TEXT_ALIGN_CENTER);
-    label(saver, "Tap anywhere to wake", 0, 330, 800, 16, &lv_font_montserrat_10, 0x9AA0A9,
-          LV_TEXT_ALIGN_CENTER);
+    saver_hint = label(saver, "Tap anywhere to wake", 0, 330, 800, 16, &lv_font_montserrat_10, 0x9AA0A9,
+                       LV_TEXT_ALIGN_CENTER);
 }
 
 void ui_init(bt_model_t *model) {

@@ -636,7 +636,7 @@ static void update_bt(void) {
     case BT_READY:
         value = 18; core = 0x3A3E48;
         title = "Pair from your phone";
-        sub = BT_LOCAL_NAME " / PIN 0000 / Open Bluetooth on your phone.";
+        sub = "PIN 0000 / Open Bluetooth on your phone.";
         primary = "Start pairing";
         secondary = "Settings";
         break;

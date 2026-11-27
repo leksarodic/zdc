@@ -153,7 +153,10 @@ You can also use URL parameters:
 ```
 prototype/index.html?state=incoming
 prototype/index.html?clean=1&state=pairing
+prototype/index.html?clean=1&fixed=1
 ```
+
+The browser page is an HTML mock, not the LVGL renderer. It scales the 800×480 board to the window and uses system fonts, so it will not be pixel-identical to the native screenshots. The top bar, cards and dock positions are aligned to the native build. Use `?fixed=1` in a viewport of at least 800×480 for a 1:1 layout reference.
 
 Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')`, `window.strada.showScreen('files')`, `window.strada.setVolume(40)`, `window.strada.showVolume()`, `window.strada.setTheme(true)`, `window.strada.nightDim(true)` and `window.strada.showScreensaver()` are available for browser automation.
 

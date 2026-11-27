@@ -323,6 +323,10 @@
   }
   .file-preview .panel-close{position:absolute;right:12px;top:10px}
   .settings-cols{display:flex;gap:28px;margin-top:8px}
+  .settings-cols .settings-row{margin-top:6px}
+  .settings-cols .settings-row > span:first-child{white-space:nowrap;flex:none}
+  .settings-cols .settings-row .clock-btn{padding:5px 12px}
+  .settings-row [data-timeout].sel{background:var(--accent);color:#fff}
   .settings-col{flex:1;min-width:0}
   .settings-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--muted)}
   .settings-input{background:var(--inner);border:0;border-radius:8px;color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;color-scheme:dark;width:180px}
@@ -656,7 +660,7 @@
 
   <!-- SETTINGS PANEL -->
   <section class="app-panel" id="settingsPanel">
-    <div class="panel-head"><span class="label">Settings</span><span class="source">CAR_482 / 7010B</span><button class="panel-close" data-close>×</button></div>
+    <div class="panel-head"><span class="label">Settings</span><span class="source">CAR_482</span></div>
     <div class="settings-cols">
       <div class="settings-col">
         <div class="settings-row">
@@ -694,7 +698,9 @@
         </div>
         <div class="settings-row">
           <span>Saver after</span>
-          <button class="clock-btn" id="saverTimeout">30 s</button>
+          <button class="clock-btn" data-timeout="60">1m</button>
+          <button class="clock-btn sel" data-timeout="300">5m</button>
+          <button class="clock-btn" data-timeout="1800">30m</button>
         </div>
       </div>
       <div class="settings-col">
@@ -718,7 +724,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.5.0</b>
+          <span>UI</span><b>LVGL 9.3 / v0.5.1</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -924,10 +930,10 @@
   let lightTheme = false;
   let nightDimOn = false;
   let saverEnabled = true;
-  let saverTimeout = 30;
+  let saverTimeout = 300;
   try {
     const st = Number(localStorage.getItem('strada.saverTimeout'));
-    if (Number.isFinite(st) && st >= 5) saverTimeout = st;
+    if (st === 60 || st === 300 || st === 1800) saverTimeout = st;
   } catch (e) {}
   let lastActive = Date.now();
 
@@ -950,7 +956,8 @@
   function setSaverTimeout(sec) {
     saverTimeout = sec;
     try { localStorage.setItem('strada.saverTimeout', String(sec)); } catch (e) {}
-    el('saverTimeout').textContent = sec >= 60 ? (sec / 60) + ' min' : sec + ' s';
+    document.querySelectorAll('[data-timeout]').forEach(b =>
+      b.classList.toggle('sel', Number(b.dataset.timeout) === sec));
     lastActive = Date.now();
   }
   function setScreensaver(on) {
@@ -964,11 +971,8 @@
   el('themeLight').addEventListener('click', () => setTheme(true));
   el('nightToggle').addEventListener('click', () => setNightDim(!nightDimOn));
   el('saverToggle').addEventListener('click', () => setScreensaver(!saverEnabled));
-  el('saverTimeout').addEventListener('click', () => {
-    const steps = [15, 30, 60, 300];
-    const i = Math.max(0, steps.indexOf(saverTimeout));
-    setSaverTimeout(steps[(i + 1) % steps.length]);
-  });
+  document.querySelectorAll('[data-timeout]').forEach(b =>
+    b.addEventListener('click', () => setSaverTimeout(Number(b.dataset.timeout))));
   el('saver').addEventListener('click', () => {
     el('saver').classList.remove('show');
     lastActive = Date.now();
@@ -1651,7 +1655,8 @@
     el('saverToggle').textContent = saverEnabled ? 'Saver on' : 'Saver off';
     el('saverToggle').classList.toggle('sel', saverEnabled);
     renderBootVolume();
-    el('saverTimeout').textContent = saverTimeout >= 60 ? (saverTimeout / 60) + ' min' : saverTimeout + ' s';
+    document.querySelectorAll('[data-timeout]').forEach(b =>
+      b.classList.toggle('sel', Number(b.dataset.timeout) === saverTimeout));
   }
 
   el('ibAnswer').addEventListener('click', () => {

@@ -83,7 +83,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * **Boot volume** slider: sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
 * **Dark / Light theme** — the whole 800×480 UI recolors immediately
 * **Night dim** — a 50% black overlay for night driving
-* **Screensaver timeout** — choose 15 s, 30 s, 1 min or 5 min; tap the clock screen to wake
+* **Screensaver timeout** — choose 1 min, 5 min or 30 min; tap the clock screen to wake
 * About/build information and “Reset UI”
 * Settings apply immediately; boot volume and radio presets persist, theme/night/saver reset on restart
 
@@ -106,7 +106,7 @@ The top-bar speaker button opens **Settings and the volume popup together**, wit
 
 ![Light settings](docs/screenshots/light-settings.png)
 
-Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after the selected timeout (**After** cycles 15 s / 30 s / 1 min / 5 min); tap anywhere to wake.
+Switch **Theme → Light** for a daytime palette. **Night → Dim on** drops a 50% black overlay over the whole screen. **Idle → Saver on** shows the clock after the selected timeout (**After**: 1m / 5m / 30m); tap anywhere to wake.
 
 ![Night dim](docs/screenshots/night-dim.png)
 

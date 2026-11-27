@@ -40,7 +40,7 @@ static void (*cb_saver_timeout)(int);
 static bool night_on = false;
 static bool saver_on = true;
 static bool light_on = false;
-static int saver_timeout = 30;
+static int saver_timeout = 300;
 
 static lv_color_t col(uint32_t hex) { return lv_color_hex(hex); }
 
@@ -750,7 +750,7 @@ static lv_obj_t *theme_dark_lbl;
 static lv_obj_t *theme_light_lbl;
 static lv_obj_t *night_lbl;
 static lv_obj_t *saver_lbl;
-static lv_obj_t *timeout_lbl;
+static lv_obj_t *timeout_btns[3];
 
 static struct tm cal;
 static bool cal_ready = false;
@@ -831,9 +831,14 @@ static void settings_refresh(void) {
         lv_obj_set_style_border_color(lv_obj_get_parent(theme_light_lbl), col(ACCENTS[accent_idx]), 0);
         lv_label_set_text(night_lbl, night_on ? "Dim on" : "Dim off");
         lv_label_set_text(saver_lbl, saver_on ? "Saver on" : "Saver off");
-        if (timeout_lbl) {
-            if (saver_timeout >= 60) lv_label_set_text_fmt(timeout_lbl, "%d min", saver_timeout / 60);
-            else lv_label_set_text_fmt(timeout_lbl, "%d s", saver_timeout);
+        if (timeout_btns[0]) {
+            static const int STEPS[] = {60, 300, 1800};
+            for (int i = 0; i < 3; i++) {
+                bool sel = saver_timeout == STEPS[i];
+                lv_obj_set_style_bg_color(timeout_btns[i], col(sel ? 0xFE3211 : C_INNER), 0);
+                lv_obj_set_style_text_color(lv_obj_get_child(timeout_btns[i], 0),
+                                            col(sel ? 0xFFFFFF : C_SOFT), 0);
+            }
         }
     }
     cal_show();
@@ -900,11 +905,9 @@ static void saver_cb(lv_event_t *e) {
 }
 
 static void timeout_cb(lv_event_t *e) {
-    (void)e;
-    static const int STEPS[] = {15, 30, 60, 300};
-    int idx = 0;
-    for (int i = 0; i < 4; i++) if (STEPS[i] == saver_timeout) idx = i;
-    saver_timeout = STEPS[(idx + 1) % 4];
+    int seconds = (int)(intptr_t)lv_event_get_user_data(e);
+    if (seconds != 60 && seconds != 300 && seconds != 1800) return;
+    saver_timeout = seconds;
     if (cb_saver_timeout) cb_saver_timeout(saver_timeout);
     settings_refresh();
 }
@@ -922,17 +925,17 @@ static void settings_reset_cb(lv_event_t *e) {
     light_on = false;
     night_on = false;
     saver_on = true;
-    saver_timeout = 30;
+    saver_timeout = 300;
     if (cb_theme) cb_theme(false);
     if (cb_night) cb_night(false);
     if (cb_saver) cb_saver(true);
-    if (cb_saver_timeout) cb_saver_timeout(30);
+    if (cb_saver_timeout) cb_saver_timeout(300);
     settings_refresh();
 }
 
 static void build_settings(lv_obj_t *parent) {
     settings_panel = make_panel(parent);
-    panel_header(settings_panel, "SETTINGS", "CAR_482 / 7010B", true);
+    panel_header(settings_panel, "SETTINGS", "CAR_482", false);
 
     label(settings_panel, "ACCENT", 24, 44, 90, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 5; i++) {
@@ -994,11 +997,17 @@ static void build_settings(lv_obj_t *parent) {
            saver_cb, &saver_lbl);
 
     label(settings_panel, "AFTER", 552, 148, 52, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(settings_panel, "30 s", 610, 142, 138, 28, C_INNER, &lv_font_montserrat_10,
-           timeout_cb, &timeout_lbl);
+    static const char *TIMEOUT_TXT[] = {"1m", "5m", "30m"};
+    static const int TIMEOUT_SEC[] = {60, 300, 1800};
+    for (int i = 0; i < 3; i++) {
+        timeout_btns[i] = button(settings_panel, TIMEOUT_TXT[i], 610 + i * 46, 142, 42, 28,
+                                 C_INNER, &lv_font_montserrat_10, NULL, NULL);
+        lv_obj_add_event_cb(timeout_btns[i], timeout_cb, LV_EVENT_CLICKED,
+                            (void *)(intptr_t)TIMEOUT_SEC[i]);
+    }
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / v0.5.0 / LVGL", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.5.1 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);

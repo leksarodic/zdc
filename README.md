@@ -47,7 +47,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * **Save preset**: press the save icon, then 1–6 to store the current station; the hint line tells you when save mode is active
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
 * **RDS** shows the tuned station name only, for example `RDS - Jazz FM`; AM shows `RDS not available`
-* **Radio mute** shows a crossed speaker, and the volume popup shows `MUTED`
+* **Radio mute** shows a crossed speaker and a `MUTED` volume popup. The last radio volume is remembered and restored when you unmute.
 * FM/AM are mutually exclusive radio-button pairs
 * Radio has no top-right close button; leave it through the dock
 * Power and mute states; the old “Stereo / 5 bars” line is gone

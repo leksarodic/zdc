@@ -724,7 +724,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.5.1</b>
+          <span>UI</span><b>LVGL 9.3 / v0.5.2</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -856,6 +856,7 @@
   } catch (e) {}
   let btVolume = defaultVolume;
   let radioVolume = defaultVolume;
+  let radioSavedVolume = defaultVolume;
   let activeSource = 'bt';
   let clockSet = false;
   let clockBase = new Date();
@@ -911,6 +912,11 @@
     el('volumeValue').textContent = defaultVolume + '%';
   }
   function setVolume(v, show) {
+    if (activeSource === 'radio' && radioMute) {
+      radioMute = false;
+      radioVolume = radioSavedVolume;
+      renderRadio();
+    }
     const nv = Math.max(0, Math.min(100, Math.round(v)));
     if (activeSource === 'radio') radioVolume = nv;
     else btVolume = nv;
@@ -1366,13 +1372,21 @@
     renderRadio();
     if (radioOn) {
       radioVolume = defaultVolume;
+      radioSavedVolume = defaultVolume;
       activeSource = 'radio';
       renderVolume();
       showVolume();
     }
   });
   el('radioMute').addEventListener('click', () => {
-    radioMute = !radioMute;
+    if (!radioMute) {
+      radioSavedVolume = radioVolume;
+      radioVolume = 0;
+      radioMute = true;
+    } else {
+      radioMute = false;
+      radioVolume = radioSavedVolume;
+    }
     renderRadio();
     showVolume();
   });
@@ -1635,6 +1649,8 @@
     setBootVolume(70);
     btVolume = 70;
     radioVolume = 70;
+    radioSavedVolume = 70;
+    radioMute = false;
     setVolume(70, false);
     setTheme(false);
     setNightDim(false);

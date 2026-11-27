@@ -2,6 +2,8 @@
 
 The 7010B stores its firmware on an **8 MiB SPI NOR flash** (commonly `25L6406E`, `25QH64`, `QH64`). The dump in `firmware/7010b-original.bin` is the complete flash, not just the app.
 
+> **Disclaimer:** flashing firmware can brick the device. Use this at your own risk; the authors are not responsible for damage or data loss. Read [../DISCLAIMER.md](../DISCLAIMER.md).
+>
 > **The patched image in this repo is the stock firmware with only the Bluetooth name changed.** It keeps the original Melis UI. The new CAR_482 UI in `app/` is a Linux/SDL build and is **not** a replacement for the stock Melis app. Do not flash the UI binary into this image.
 
 ## 1. Before you touch the radio

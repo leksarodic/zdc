@@ -31,8 +31,9 @@ static time_t clock_base;
 static time_t clock_base_at;
 static bool clock_base_set = false;
 static int screen_idx = -1;
-static int volume = 70;
-static int volume_default = 70;
+static int volume = 70;          /* current volume, changed by VOL+ / VOL- */
+static int boot_volume = 70;     /* Settings slider: level used at power-on */
+static int saver_timeout_sec = 30;
 static bool night_dim = false;
 static bool saver_enabled = true;
 
@@ -322,18 +323,22 @@ static void volume_show(void) {
 static void settings_load(void) {
     FILE *f = fopen("strada.settings", "r");
     if (!f) return;
-    int v = 70;
-    if (fscanf(f, "volume=%d", &v) == 1 && v >= 0 && v <= 100) {
-        volume = v;
-        volume_default = v;
+    char key[32];
+    int v;
+    while (fscanf(f, " %31[^=]=%d", key, &v) == 2) {
+        if (!strcmp(key, "volume") && v >= 0 && v <= 100) boot_volume = v;
+        else if (!strcmp(key, "saver") && v >= 5 && v <= 3600) saver_timeout_sec = v;
+        int c;
+        while ((c = fgetc(f)) != EOF && c != '\n') {}
     }
     fclose(f);
+    volume = boot_volume;
 }
 
 static void settings_save(void) {
     FILE *f = fopen("strada.settings", "w");
     if (!f) return;
-    fprintf(f, "volume=%d\n", volume_default);
+    fprintf(f, "volume=%d\nsaver=%d\n", boot_volume, saver_timeout_sec);
     fclose(f);
 }
 
@@ -343,7 +348,6 @@ static void volume_apply(int v, bool show) {
     volume = v;
     if (vol_bar) lv_bar_set_value(vol_bar, v, LV_ANIM_OFF);
     if (vol_pct) lv_label_set_text_fmt(vol_pct, "%d%%", v);
-    panels_set_volume(v);
     if (show) volume_show();
 }
 
@@ -351,9 +355,25 @@ static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show
 static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(volume + 5, true); }
 static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(volume - 5, true); }
 static void on_volume(int v) {
-    volume_default = v;
+    if (v < 0) v = 0;
+    if (v > 100) v = 100;
+    boot_volume = v;
     settings_save();
-    volume_apply(v, true);
+}
+
+static void on_radio_start(void) {
+    volume_apply(boot_volume, true);
+}
+
+static void on_volume_osd(void) {
+    volume_show();
+}
+
+static void on_saver_timeout(int seconds) {
+    if (seconds < 5 || seconds > 3600) return;
+    saver_timeout_sec = seconds;
+    settings_save();
+    panels_set_saver_timeout(seconds);
 }
 
 /* ── theme and night mode ───────────────────────────────────── */
@@ -400,7 +420,7 @@ static void idle_cb(lv_timer_t *t) {
     (void)t;
     if (!saver || !saver_enabled) return;
     if (!lv_obj_has_flag(saver, LV_OBJ_FLAG_HIDDEN)) return;
-    if (lv_display_get_inactive_time(NULL) < 30000) return;
+    if (lv_display_get_inactive_time(NULL) < (uint32_t)saver_timeout_sec * 1000u) return;
     saver_show_now();
 }
 
@@ -416,9 +436,10 @@ void ui_set_screensaver(bool on) { on_saver(on); }
 void ui_show_screensaver(void) { saver_show_now(); }
 void ui_show_volume(void) { volume_show(); }
 void ui_set_volume(int v) { volume_apply(v, false); }
+void ui_volume_up(void) { volume_apply(volume + 5, true); }
+void ui_volume_down(void) { volume_apply(volume - 5, true); }
+void ui_set_saver_timeout(int seconds) { on_saver_timeout(seconds); }
 void ui_open_file(const char *path) { panels_open_file(path); }
-
-static void settings_cb(lv_event_t *e) { (void)e; show_screen(2); }
 
 static void dock_cb(lv_event_t *e) {
     int idx = (int)(intptr_t)lv_event_get_user_data(e);
@@ -537,7 +558,7 @@ static void update_bt(void) {
     case BT_READY:
         value = 18; core = 0x3A3E48;
         title = "Pair from your phone";
-        sub = BT_LOCAL_NAME " / PIN 0000 / Open Bluetooth on your phone";
+        sub = BT_LOCAL_NAME " / PIN 0000 / Open Bluetooth on your phone.";
         primary = "Start pairing";
         secondary = "Settings";
         break;
@@ -659,7 +680,7 @@ void ui_update(void) {
 }
 
 static void build_player(lv_obj_t *scr) {
-    player_panel = card(scr, 12, 50, 776, 297);
+    player_panel = card(scr, 12, 50, 776, 318);
     lv_obj_add_flag(player_panel, LV_OBJ_FLAG_HIDDEN);
 
     label(player_panel, "NOW PLAYING", 18, 12, 200, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
@@ -771,16 +792,12 @@ void ui_init(bt_model_t *model) {
     symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 674, 10, 22, 22);
     top_bt_dot = circle(scr, 692, 25, 6, C_GREEN);
 
-    lv_obj_t *vol_btn = circle(scr, 710, 8, 32, C_CIRCLE);
+    lv_obj_t *vol_btn = circle(scr, 744, 8, 32, C_CIRCLE);
     icon_center(vol_btn, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_16, C_TEXT);
     lv_obj_add_event_cb(vol_btn, volume_open_cb, LV_EVENT_CLICKED, NULL);
 
-    lv_obj_t *gear = circle(scr, 752, 8, 32, C_CIRCLE);
-    icon_center(gear, LV_SYMBOL_SETTINGS, &lv_font_montserrat_18, C_TEXT);
-    lv_obj_add_event_cb(gear, settings_cb, LV_EVENT_CLICKED, NULL);
-
     /* ── phone card ─────────────────────────────────────────── */
-    lv_obj_t *phone = card(home, 12, 50, 234, 297);
+    lv_obj_t *phone = card(home, 12, 50, 234, 318);
     label(phone, "PHONE", 14, 12, 100, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -799,16 +816,16 @@ void ui_init(bt_model_t *model) {
           C_SOFT, LV_TEXT_ALIGN_LEFT);
     label(phone, "Open Bluetooth on your phone", 14, 156, 206, 12, &lv_font_montserrat_10,
           C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(phone, "and select " BT_LOCAL_NAME, 14, 174, 206, 12, &lv_font_montserrat_10,
+    label(phone, "and select " BT_LOCAL_NAME ".", 14, 174, 206, 12, &lv_font_montserrat_10,
           C_MUTED, LV_TEXT_ALIGN_LEFT);
 
-    disconnect_btn = button(phone, "Disconnect", 14, 245, 130, 36, C_INNER, C_TEXT,
+    disconnect_btn = button(phone, "Disconnect", 14, 268, 130, 36, C_INNER, C_TEXT,
                             &lv_font_montserrat_12, sc_cb, &disconnect_lbl);
-    call_btn = button(phone, "Call", 150, 245, 70, 36, C_INNER, C_TEXT,
+    call_btn = button(phone, "Call", 150, 268, 70, 36, C_INNER, C_TEXT,
                       &lv_font_montserrat_12, call_open_cb, NULL);
 
     /* ── bluetooth card ─────────────────────────────────────── */
-    lv_obj_t *bt = card(home, 256, 50, 328, 297);
+    lv_obj_t *bt = card(home, 256, 50, 328, 318);
     label(bt, "BLUETOOTH", 14, 12, 120, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     bt_name_lbl = label(bt, BT_LOCAL_NAME, 220, 12, 94, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -838,14 +855,14 @@ void ui_init(bt_model_t *model) {
     bt_title = label(bt, "Connected", 14, 186, 300, 28, &lv_font_montserrat_22, C_TEXT, LV_TEXT_ALIGN_CENTER);
     bt_sub = label(bt, "", 14, 212, 300, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    primary_btn = button(bt, "Play", 54, 238, 130, 36, accent, 0xFFFFFF,
+    primary_btn = button(bt, "Play", 54, 262, 130, 36, accent, 0xFFFFFF,
                          &lv_font_montserrat_12, pc_cb, &primary_lbl);
-    secondary_btn = button(bt, "Disconnect", 190, 238, 110, 36, C_INNER, C_TEXT,
+    secondary_btn = button(bt, "Disconnect", 190, 262, 110, 36, C_INNER, C_TEXT,
                            &lv_font_montserrat_12, sc_cb, &secondary_lbl);
 
 
     /* ── audio card ─────────────────────────────────────────── */
-    lv_obj_t *audio = card(home, 594, 50, 194, 297);
+    lv_obj_t *audio = card(home, 594, 50, 194, 318);
     label(audio, "AUDIO", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -857,36 +874,39 @@ void ui_init(bt_model_t *model) {
     artist_lbl = label(audio, "Demo Artist", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
     time_pos_lbl = label(audio, "1:08 / 3:35", 8, 206, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    prev_btn = button(audio, LV_SYMBOL_PREV, 30, 230, 42, 42, C_BTN, 0xFFFFFF,
+    prev_btn = button(audio, LV_SYMBOL_PREV, 30, 242, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, prev_cb, NULL);
     lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
-    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 224, 54, 54, accent, 0xFFFFFF,
+    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 236, 54, 54, accent, 0xFFFFFF,
                       &lv_font_montserrat_24, pc_cb, &play_lbl);
     lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
-    next_btn = button(audio, LV_SYMBOL_NEXT, 130, 230, 42, 42, C_BTN, 0xFFFFFF,
+    next_btn = button(audio, LV_SYMBOL_NEXT, 130, 242, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, next_cb, NULL);
     lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
 
     /* ── dock: Radio, Bluetooth, Files, Settings ────────────── */
-    lv_obj_t *dock = box(scr, 0, 356, 800, 124, C_DOCK, 0);
+    lv_obj_t *dock = box(scr, 0, 392, 800, 88, C_DOCK, 0);
     const char *dock_icons[] = { LV_SYMBOL_AUDIO, LV_SYMBOL_BLUETOOTH, LV_SYMBOL_DIRECTORY, LV_SYMBOL_SETTINGS };
     const char *dock_names[] = { "Radio", "Bluetooth", "Files", "Settings" };
     for (int i = 0; i < 4; i++) {
         int slot = 180 + i * 110;
-        lv_obj_t *c = circle(dock, slot + 30, 14, 50, C_CIRCLE);
+        lv_obj_t *c = circle(dock, slot + 35, 6, 40, C_CIRCLE);
         dock_circles[i] = c;
-        icon_center(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF);
-        dock_labels[i] = label(dock, dock_names[i], slot + 5, 70, 100, 16, &lv_font_montserrat_12,
+        icon_center(c, dock_icons[i], &lv_font_montserrat_20, 0xFFFFFF);
+        dock_labels[i] = label(dock, dock_names[i], slot + 5, 50, 100, 14, &lv_font_montserrat_10,
                                i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
         lv_obj_add_event_cb(c, dock_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
     panels_init(scr, on_home, on_accent, on_clock, on_set_time, on_volume,
-                on_theme, on_night, on_saver);
+                on_theme, on_night, on_saver, on_radio_start, on_volume_osd,
+                on_saver_timeout);
     build_player(scr);
     call_panel_init(scr, on_call_close, on_outgoing_call);
     build_volume_osd(scr);
     volume_apply(volume, false);
+    panels_set_boot_volume(boot_volume);
+    panels_set_saver_timeout(saver_timeout_sec);
     build_overlays(scr);
     show_screen(-1);
 

@@ -59,6 +59,12 @@ jobs:
         run: |
           file build-arm/strada-ui-fb
           file build-arm/strada-ui-fb | grep -q "ARM"
+      - name: Run ARMv5 tests under QEMU
+        run: |
+          sudo apt-get install -y --no-install-recommends qemu-user
+          arm-linux-gnueabi-gcc -static -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft \
+            -O2 -Iapp tests/test_bt.c app/bt_sim.c app/bt_uart.c -o build-arm/test_bt_arm
+          qemu-arm ./build-arm/test_bt_arm
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
@@ -100,7 +106,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: car482-7010b-*
+          pattern: '*'
           merge-multiple: true
       - name: Publish with gh
         env:
@@ -109,6 +115,9 @@ jobs:
           ls -lh artifacts
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
+            gh release edit "$GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
           else
-            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+            gh release create "$GITHUB_REF_NAME" artifacts/* \
+              --title "CAR_482 $GITHUB_REF_NAME" \
+              --notes-file docs/RELEASE_NOTES.md
           fi

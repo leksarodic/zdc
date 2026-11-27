@@ -125,9 +125,19 @@
   .card .label{font-size:10px;font-weight:600;letter-spacing:.10em;color:var(--muted);text-transform:uppercase}
   .card .source{font-size:10px;font-weight:600;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
   .card-head{display:flex;align-items:center;justify-content:space-between;height:14px}
-  .phone-card{left:12px;width:234px}
-  .bt-card{left:256px;width:328px}
-  .audio-card{left:594px;width:194px}
+  .phone-card{left:12px;width:280px}
+  .bt-card{display:none}
+  .audio-card{left:304px;width:484px}
+  .audio-card .art-wrap{position:absolute;left:26px;top:36px;width:190px;height:190px;margin:0}
+  .audio-card .track{position:absolute;left:240px;top:42px;width:230px;text-align:left;font-size:26px;margin:0;padding:0}
+  .audio-card .artist{position:absolute;left:240px;top:86px;width:230px;text-align:left;font-size:16px;margin:0;padding:0}
+  .audio-card .time{position:absolute;left:240px;top:112px;width:230px;text-align:left;font-size:12px;margin:0}
+  .music-status{position:absolute;left:240px;top:140px;width:230px;font-size:10px;color:var(--green)}
+  .music-actions{position:absolute;left:240px;top:228px;display:flex;gap:8px}
+  .music-actions .btn{height:36px;font-size:12px}
+  #btnMute{width:90px}
+  #btnCallSim{width:110px}
+  .music-hint{position:absolute;left:240px;top:272px;width:230px;font-size:10px;color:var(--muted)}
 
   /* ── phone card ─────────────────────────────────────────── */
   .device{display:flex;align-items:center;gap:10px;margin-top:18px}
@@ -136,7 +146,7 @@
     display:grid;place-items:center;flex:none;
   }
   .device-ic svg{width:25px;height:25px}
-  .device-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .device-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .device-state{font-size:11px;color:var(--green);margin-top:2px;display:flex;align-items:center;gap:4px}
   .device-state.off{color:var(--muted)}
   .device-state.err{color:var(--accent)}
@@ -163,6 +173,8 @@
   .pair-row .ok{margin-left:auto;color:var(--green);font-size:12px}
   .pair-row .add{margin-left:auto;color:var(--muted);font-size:12px}
   .phone-actions{position:absolute;left:14px;right:14px;bottom:14px;display:flex;gap:8px}
+  .phone-actions #btnDisconnect{width:130px;flex:none}
+  .phone-actions #btnPairHelp{flex:1;font-size:10px;padding:0 6px}
   .btn{
     border:0;border-radius:11px;font-family:inherit;font-size:12px;font-weight:600;
     color:var(--text);background:var(--btn);height:36px;padding:0 14px;cursor:pointer;
@@ -265,21 +277,6 @@
   .dock-item.active .dock-label{color:var(--text);font-weight:600}
 
 
-  /* music focus: audio card grows, Bluetooth card shrinks */
-  #stage.music-focus .phone-card{left:12px;width:210px}
-  #stage.music-focus .bt-card{left:234px;width:260px}
-  #stage.music-focus .audio-card{left:506px;width:282px}
-  #stage.music-focus .device-name{font-size:13px}
-  #stage.music-focus .phone-actions .btn{font-size:10px;padding:0 8px}
-  #stage.music-focus .device-name{font-size:14px}
-  #stage.music-focus .bt-actions .btn{font-size:10px;padding:0 4px}
-  #stage.music-focus .bt-actions .btn.primary{min-width:70px}
-  #stage.music-focus #btnMute{width:60px}
-  #stage.music-focus #btnSecondary{width:90px}
-  #stage.music-focus .bt-sub{max-width:232px}
-  #stage.music-focus .art-wrap{width:170px;height:170px;margin-top:18px}
-  #stage.music-focus .art svg{width:70px;height:70px}
-  #stage.music-focus .track{font-size:18px}
 
   /* ── app panels: Radio / Files / Settings ───────────────── */
   .app-panel{
@@ -598,7 +595,7 @@
     <div class="phone-hint">Phone connects to the car<br><span>Open Bluetooth on your phone and select <b id="pairName">CAR_482</b></span></div>
     <div class="phone-actions">
       <button class="btn ghost full" id="btnDisconnect">Disconnect</button>
-      <button class="btn ghost" id="btnCallSim" title="Open call panel">Call</button>
+      <button class="btn ghost" id="btnPairHelp" title="Pairing help">How to connect</button>
     </div>
   </section>
 
@@ -620,7 +617,6 @@
       <div class="bt-sub" id="btSub">Aleksa's iPhone / A2DP / AVRCP</div>
       <div class="bt-actions">
         <button class="btn primary" id="btnPrimary">Play</button>
-        <button class="btn ghost" id="btnMute">Mute</button>
         <button class="btn ghost" id="btnSecondary">Disconnect</button>
       </div>
     </div>
@@ -628,7 +624,7 @@
 
   <!-- RIGHT: AUDIO -->
   <section class="card audio-card">
-    <div class="card-head"><span class="label">Audio</span><span class="source" id="audioSource">Bluetooth</span></div>
+    <div class="card-head"><span class="label">Music</span><span class="source" id="audioSource">Bluetooth</span></div>
     <div class="art-wrap">
       <svg class="ring" viewBox="0 0 136 136">
         <circle cx="68" cy="68" r="63" fill="none" stroke="var(--ring)" stroke-width="3"/>
@@ -636,7 +632,7 @@
                 stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="150"/>
       </svg>
       <div class="art" id="art">
-        <div class="art-controls">
+        <div class="art-controls" id="artControls">
           <button class="art-btn" id="btnPrev" title="Previous"><svg><use href="#i-prev"/></svg></button>
           <button class="art-btn lg" id="btnPlay" title="Play"><svg><use href="#i-play"/></svg></button>
           <button class="art-btn" id="btnNext" title="Next"><svg><use href="#i-next"/></svg></button>
@@ -646,6 +642,12 @@
     <div class="track" id="track">Test Song</div>
     <div class="artist" id="artist">Demo Artist</div>
     <div class="time" id="time">1:08 / 3:35</div>
+    <div class="music-status" id="musicStatus">Connected / A2DP</div>
+    <div class="music-actions">
+      <button class="btn ghost" id="btnMute">Mute</button>
+      <button class="btn ghost" id="btnCallSim">Call</button>
+    </div>
+    <div class="music-hint">Tap album art for full player</div>
   </section>
 
   <!-- DOCK -->
@@ -791,7 +793,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.8.2</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -875,7 +877,7 @@
 
   <!-- INCOMING CALL BANNER -->
   <div class="incoming-banner" id="incomingBanner">
-    <div class="ib-title">INCOMING CALL</div>
+    <div class="ib-title" id="ibTitle">INCOMING CALL</div>
     <div class="ib-name" id="incomingName">Aleksa's iPhone / +381 60 123 4567</div>
     <div class="ib-actions">
       <button class="btn primary" id="ibAnswer">Answer</button>
@@ -911,7 +913,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.8.2</span>
+  <span class="tb-ver">web v0.9.0</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -969,6 +971,7 @@
     callTimer: null,
     callTarget: '',
     interrupted: false,
+    callMuted: false,
   };
 
   const tracks = [
@@ -1136,8 +1139,14 @@
     else if (m === 'active') { ds.innerHTML = '<span class="mini-dot"></span>In call'; }
     else { ds.innerHTML = '<span class="mini-dot"></span>Connected'; }
     el('deviceMac').textContent = connected ? 'AA:BB:CC:DD:EE:FF' : '—';
-    el('btnDisconnect').textContent = connected ? 'Disconnect' : 'Pair from phone';
+    el('btnDisconnect').textContent = connected ? 'Disconnect'
+      : m === 'off' ? 'Power on' : m === 'pairing' ? 'Cancel pairing' : m === 'error' ? 'Retry' : 'Start pairing';
     el('btnDisconnect').classList.toggle('primary', !connected && m !== 'off');
+    el('musicStatus').textContent = connected ? (m === 'playing' ? 'Playing / A2DP'
+      : m === 'incoming' ? 'Incoming call'
+      : m === 'active' ? 'Call in progress' : 'Connected / A2DP')
+      : 'No phone connected';
+    el('musicStatus').style.color = connected ? 'var(--green)' : 'var(--muted)';
 
     // center
     const circle = el('btCircle');
@@ -1204,8 +1213,12 @@
     el('btnNext').disabled = !connected;
     el('btnCallSim').disabled = !connected;
     el('btnCallSim').style.opacity = connected ? '1' : '.5';
-    el('btnMute').textContent = btMuted ? 'Unmute' : 'Mute';
+    el('btnCallSim').textContent = m === 'incoming' ? 'Answer' : m === 'active' ? 'Hang up' : 'Call';
+    el('btnMute').textContent = m === 'incoming' ? 'Reject'
+      : m === 'active' ? (state.callMuted ? 'Unmute' : 'Mute')
+      : (btMuted ? 'Unmute' : 'Mute');
     el('btnMute').style.display = connected ? '' : 'none';
+    el('artControls').style.display = (m === 'connected' || m === 'playing') ? 'flex' : 'none';
     renderPlayer();
     renderIncomingBanner();
     renderHomeLayout();
@@ -1226,6 +1239,8 @@
       text = 'BT | incoming call';
     } else if (state.mode === 'active') {
       text = 'BT | call in progress';
+    } else if (state.mode === 'ready' || state.mode === 'off' || state.mode === 'error') {
+      text = 'No media';
     } else if (radioOn) {
       text = radioAm ? `RADIO ${Math.round(freqAm)} kHz`
         : `RADIO ${freqFm.toFixed(1)} MHz | ${RDS_NAMES[rdsSlot()]}`;
@@ -1238,7 +1253,17 @@
   }
 
   function renderIncomingBanner() {
-    el('incomingBanner').classList.toggle('show', state.mode === 'incoming' && screen !== 'home');
+    const incoming = state.mode === 'incoming';
+    const active = state.mode === 'active';
+    const show = (incoming || active) && screen !== 'home';
+    el('incomingBanner').classList.toggle('show', show);
+    if (!show) return;
+    el('ibTitle').textContent = incoming ? 'INCOMING CALL' : 'IN CALL';
+    el('incomingName').textContent = incoming
+      ? "Aleksa's iPhone / +381 60 123 4567"
+      : `${fmt(state.callSec || 0)} / ${state.callTarget || "Aleksa's iPhone"}`;
+    el('ibAnswer').textContent = incoming ? 'Answer' : 'Hang up';
+    el('ibReject').textContent = incoming ? 'Reject' : (state.callMuted ? 'Unmute' : 'Mute');
   }
 
   function renderPlayer() {
@@ -1331,17 +1356,42 @@
   el('btnDisconnect').addEventListener('click', () => {
     if (deviceConnected()) { go('ready'); toast('Disconnected'); }
     else if (state.mode === 'off') { go('ready'); toast('Bluetooth on'); }
+    else if (state.mode === 'pairing') { go('ready'); toast('Pairing cancelled'); }
     else { go('pairing'); }
   });
 
+  el('btnPairHelp').addEventListener('click', () => el('pairHelp').classList.add('show'));
   function showPairHelp() { el('pairHelp').classList.add('show'); }
   function hidePairHelp() { el('pairHelp').classList.remove('show'); }
   el('pairHelpClose').addEventListener('click', hidePairHelp);
   el('pairHelpOk').addEventListener('click', hidePairHelp);
   el('pairHelp').addEventListener('click', e => { if (e.target === el('pairHelp')) hidePairHelp(); });
 
-  el('btnCallSim').addEventListener('click', openCallPanel);
+  el('btnCallSim').addEventListener('click', () => {
+    if (state.mode === 'incoming') {
+      go('active');
+    } else if (state.mode === 'active') {
+      const resume = state.interrupted;
+      state.interrupted = false;
+      go(resume ? 'playing' : 'connected');
+      toast(resume ? 'Call ended - music resumed' : 'Call ended');
+    } else {
+      openCallPanel();
+    }
+  });
   el('btnMute').addEventListener('click', () => {
+    if (state.mode === 'incoming') {
+      const resume = state.interrupted;
+      state.interrupted = false;
+      go(resume ? 'playing' : 'connected');
+      toast(resume ? 'Call rejected - music resumed' : 'Call rejected');
+      return;
+    }
+    if (state.mode === 'active') {
+      state.callMuted = !state.callMuted;
+      render();
+      return;
+    }
     if (!btMuted) {
       btSavedVolume = btVolume;
       btVolume = 0;
@@ -1350,7 +1400,7 @@
       btMuted = false;
       btVolume = btSavedVolume;
     }
-    el('btnMute').textContent = btMuted ? 'Unmute' : 'Mute';
+    render();
     renderVolume();
     showVolume();
   });
@@ -1886,15 +1936,24 @@
   }
 
   el('ibAnswer').addEventListener('click', () => {
-    if (state.mode !== 'incoming') return;
-    go('active');
-    showScreen('home');
+    if (state.mode === 'incoming') {
+      go('active');
+      showScreen('home');
+    } else if (state.mode === 'active') {
+      const resume = state.interrupted;
+      state.interrupted = false;
+      go(resume ? 'playing' : 'connected');
+    }
   });
   el('ibReject').addEventListener('click', () => {
-    if (state.mode !== 'incoming') return;
-    const resume = state.interrupted;
-    state.interrupted = false;
-    go(resume ? 'playing' : 'connected');
+    if (state.mode === 'incoming') {
+      const resume = state.interrupted;
+      state.interrupted = false;
+      go(resume ? 'playing' : 'connected');
+    } else if (state.mode === 'active') {
+      state.callMuted = !state.callMuted;
+      renderIncomingBanner();
+    }
   });
 
   // ── now playing panel ─────────────────────────────────────

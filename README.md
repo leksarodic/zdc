@@ -131,7 +131,7 @@ Switch **Theme → Light** for a daytime palette. The screensaver follows the th
 
 ![Now Playing](docs/screenshots/playing.png)
 
-When Bluetooth music is playing, the Audio card grows wider than the Bluetooth status card, with larger album art and track text. The album art has **overlay prev / play-pause / next buttons**; the old bottom control row is gone. Tap the art outside those buttons to open the full Now Playing panel; it is not forced over the home screen.
+The Bluetooth page now has two blocks: a **Phone** status block and a large **Music** block. The Music block has the album art with **overlay prev / play-pause / next buttons**, track info, Mute and Call. The phone block holds connection status, signal/battery, Disconnect and How to connect. Tap the art outside the buttons to open the full Now Playing panel.
 
 ### Call
 
@@ -143,7 +143,7 @@ The paired-device list on the Bluetooth page has been removed. The pairing copy 
 
 Bluetooth remains connected when Radio is on. An incoming call overlays an Answer/Reject banner on any panel; answering opens the call screen, rejecting returns to what you were doing.
 
-The Bluetooth card now has **Play / Mute / Disconnect**, a larger album-art and track area, and a **How to connect** info dialog when disconnected. The secondary button no longer starts pairing by accident.
+The Bluetooth page is now two blocks: **Phone status** and **Music**. Music has overlay prev/play-pause/next, Mute and Call. The Phone block has Start pairing / Disconnect and How to connect. On a call, the Music block buttons become Answer/Reject or Hang up/Mute; on other panels a call banner appears. The How to connect dialog explains pairing without starting it accidentally.
 
 ### Music interrupted by a call
 
@@ -324,6 +324,7 @@ Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UP
 - Radio power button off → Bluetooth music resumes.
 - Bluetooth mute and radio mute are independent and restore their last volume.
 - The top-middle label shows `BT | song | artist` or `RADIO frequency | RDS name`.
+- The Bluetooth page uses two blocks: Phone status and Music. Calls are controlled from the Music block on home, or from a banner on the other panels.
 
 ## Real-device status
 

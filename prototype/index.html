@@ -138,6 +138,20 @@
   #btnMute{width:90px}
   #btnCallSim{width:110px}
   .music-hint{position:absolute;left:240px;top:272px;width:230px;font-size:10px;color:var(--muted)}
+  .call-info{display:none;position:absolute;left:30px;top:58px;width:424px}
+  .ci-name{font-size:28px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+  .ci-number{font-size:18px;color:var(--soft);margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ci-state{font-size:14px;color:var(--green);margin-top:11px}
+  .audio-card.call-mode .art-wrap,
+  .audio-card.call-mode .track,
+  .audio-card.call-mode .artist,
+  .audio-card.call-mode .time,
+  .audio-card.call-mode .music-status,
+  .audio-card.call-mode .music-hint{display:none}
+  .audio-card.call-mode .call-info{display:block}
+  .audio-card.call-mode .music-actions{left:110px;top:228px;gap:12px}
+  .audio-card.call-mode #btnMute,
+  .audio-card.call-mode #btnCallSim{width:126px}
 
   /* ── phone card ─────────────────────────────────────────── */
   .device{display:flex;align-items:center;gap:10px;margin-top:18px}
@@ -623,7 +637,7 @@
 
   <!-- RIGHT: AUDIO -->
   <section class="card audio-card">
-    <div class="card-head"><span class="label">Music</span><span class="source" id="audioSource">Bluetooth</span></div>
+    <div class="card-head"><span class="label" id="audioHeader">Music</span><span class="source" id="audioSource">Bluetooth</span></div>
     <div class="art-wrap">
       <svg class="ring" viewBox="0 0 136 136">
         <circle cx="68" cy="68" r="63" fill="none" stroke="var(--ring)" stroke-width="3"/>
@@ -642,11 +656,16 @@
     <div class="artist" id="artist">Demo Artist</div>
     <div class="time" id="time">1:08 / 3:35</div>
     <div class="music-status" id="musicStatus">Connected / A2DP</div>
+    <div class="call-info" id="callInfo">
+      <div class="ci-name" id="homeCallName">Aleksa's iPhone</div>
+      <div class="ci-number" id="homeCallNumber">+381 60 123 4567</div>
+      <div class="ci-state" id="homeCallState">Incoming call</div>
+    </div>
     <div class="music-actions">
       <button class="btn ghost" id="btnMute">Mute</button>
       <button class="btn ghost" id="btnCallSim">Call</button>
     </div>
-    <div class="music-hint">Tap album art for full player</div>
+    <div class="music-hint" id="musicHint">Tap album art for full player</div>
   </section>
 
   <!-- DOCK -->
@@ -792,7 +811,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.9.2</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.3</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -911,7 +930,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.9.2</span>
+  <span class="tb-ver">web v0.9.3</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -1124,7 +1143,9 @@
     el('topDot').style.opacity = connected ? '1' : '.7';
 
     // phone card
-    el('phoneSource').textContent = connected ? 'A2DP' : '—';
+    el('phoneSource').textContent = connected
+      ? ((m === 'incoming' || m === 'active') ? 'HFP' : 'A2DP')
+      : '—';
     el('deviceName').textContent = connected ? "Aleksa's iPhone" : 'No device';
     const ds = el('deviceState');
     ds.className = 'device-state';
@@ -1202,7 +1223,18 @@
     el('btnPlay').innerHTML = `<svg><use href="#i-${playing ? 'pause' : 'play'}"/></svg>`;
     el('btnPlay').disabled = !connected;
     el('btnPlay').classList.toggle('off', !connected);
-    el('audioSource').textContent = connected ? 'Bluetooth' : '—';
+    const callMode = connected && (m === 'incoming' || m === 'active');
+    const audioCard = document.querySelector('.audio-card');
+    audioCard.classList.toggle('call-mode', callMode);
+    el('audioHeader').textContent = callMode ? 'CALL' : 'MUSIC';
+    el('audioSource').textContent = callMode ? 'Hands-free' : (connected ? 'Bluetooth' : '—');
+    if (callMode) {
+      el('homeCallName').textContent = "Aleksa's iPhone";
+      el('homeCallNumber').textContent = state.callTarget || '+381 60 123 4567';
+      el('homeCallState').textContent = m === 'incoming'
+        ? 'Incoming call'
+        : `In call ${fmt(state.callSec || 0)}`;
+    }
     el('art').classList.toggle('off', !connected);
     el('artRing').style.opacity = connected ? '1' : '.25';
     setRing('artRing', connected ? state.pos / t.dur : 0);
@@ -1302,6 +1334,7 @@
           state.callSec = (state.callSec || 0) + 1;
           el('btSub').textContent = `${fmt(state.callSec)} / car audio`;
           el('musicStatus').textContent = `In call ${fmt(state.callSec)}`;
+          el('homeCallState').textContent = `In call ${fmt(state.callSec)}`;
           renderIncomingBanner();
           renderNowBar();
         }

@@ -143,7 +143,7 @@ The paired-device list on the Bluetooth page has been removed. The pairing copy 
 
 Bluetooth remains connected when Radio is on. An incoming call overlays an Answer/Reject banner on any panel; answering opens the call screen, rejecting returns to what you were doing.
 
-The Bluetooth page is now two blocks: **Phone status** and **Music**. Music has overlay prev/play-pause/next, Mute and Call. The Phone block has Start pairing / Disconnect and How to connect. On a call, the Music block buttons become Answer/Reject or Hang up/Mute; on other panels a call banner appears. The How to connect dialog explains pairing without starting it accidentally.
+The Bluetooth page has two blocks: **Phone status** and **Music**. Music normally shows album art, track, artist, Mute and Call. During an incoming or active call the Music block hides the artwork and track and shows the caller name, number and state (`Incoming call` or `In call 1:15`); the buttons become Reject/Answer or Mute/Hang up. On other panels a call banner shows the same information. The How to connect dialog explains pairing without starting it accidentally.
 
 ### Music interrupted by a call
 
@@ -324,8 +324,8 @@ Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UP
 - Radio power button off → Bluetooth music resumes.
 - Bluetooth mute and radio mute are independent and restore their last volume.
 - The top-middle label shows `BT | song | artist`, `RADIO frequency | RDS name`, or `BT | in call 1:15`.
-- Active-call time counts in the Music block, top bar and call banner.
-- The Bluetooth page uses two blocks: Phone status and Music. Calls are controlled from the Music block on home, or from a banner on the other panels.
+- Active-call time counts in the call info block, top bar and call banner.
+- The Bluetooth page uses two blocks: Phone status and Music. During a call the Music block is replaced by caller name, number and call state, with Reject/Answer or Mute/Hang up.
 
 ## Real-device status
 

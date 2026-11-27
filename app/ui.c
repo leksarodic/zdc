@@ -79,6 +79,11 @@ static int home_layout_mode = -1;
 static lv_obj_t *dock_circles[4];
 static lv_obj_t *dock_labels[4];
 static lv_obj_t *audio_source;
+static lv_obj_t *audio_header_lbl;
+static lv_obj_t *music_hint_lbl;
+static lv_obj_t *call_info_name;
+static lv_obj_t *call_info_number;
+static lv_obj_t *call_info_state;
 
 static lv_obj_t *player_panel;
 static lv_obj_t *np_art;
@@ -740,7 +745,8 @@ static void update_player(void) {
 
 static void update_phone(void) {
     bool connected = bt_sim_connected(M->state);
-    set_text_if(phone_source, connected ? "A2DP" : "-");
+    bool call_mode = M->state == BT_INCOMING || M->state == BT_ACTIVE;
+    set_text_if(phone_source, connected ? (call_mode ? "HFP" : "A2DP") : "-");
     set_text_if(device_name, connected ? BT_DEVICE_NAME : "No device");
     set_text_if(device_mac, connected ? BT_DEVICE_MAC : "-");
     const char *primary = "Start pairing";
@@ -774,6 +780,46 @@ static void update_phone(void) {
         if (M->state == BT_INCOMING) lv_label_set_text(call_btn_lbl, "Answer");
         else if (M->state == BT_ACTIVE) lv_label_set_text(call_btn_lbl, "Hang up");
         else lv_label_set_text(call_btn_lbl, "Call");
+    }
+    if (audio_header_lbl) set_text_if(audio_header_lbl, call_mode ? "CALL" : "MUSIC");
+    if (audio_source) set_text_if(audio_source, call_mode ? "HANDS-FREE" : "BLUETOOTH");
+    if (call_mode) {
+        lv_obj_add_flag(art_circle, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(track_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(artist_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(time_pos_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(music_status_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(music_hint_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(call_info_name, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(call_info_number, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(call_info_state, LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(call_info_name, BT_DEVICE_NAME);
+        lv_label_set_text(call_info_number, call_target[0] ? call_target : "+381 60 123 4567");
+        if (M->state == BT_INCOMING) {
+            lv_label_set_text(call_info_state, "Incoming call");
+        } else {
+            char cbuf[32];
+            fmt_time(M->call_seconds, cbuf, sizeof(cbuf));
+            lv_label_set_text_fmt(call_info_state, "In call %s", cbuf);
+        }
+        lv_obj_set_pos(bt_mute_btn, 120, 230);
+        lv_obj_set_size(bt_mute_btn, 130, 36);
+        lv_obj_set_pos(call_btn, 270, 230);
+        lv_obj_set_size(call_btn, 130, 36);
+    } else {
+        lv_obj_remove_flag(art_circle, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(track_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(artist_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(time_pos_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(music_status_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_flag(music_hint_lbl, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(call_info_name, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(call_info_number, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(call_info_state, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_pos(bt_mute_btn, 240, 230);
+        lv_obj_set_size(bt_mute_btn, 90, 36);
+        lv_obj_set_pos(call_btn, 340, 230);
+        lv_obj_set_size(call_btn, 110, 36);
     }
     if (music_status_lbl) {
         if (M->state == BT_PLAYING) {
@@ -1299,7 +1345,7 @@ void ui_init(bt_model_t *model) {
     /* ── audio card ─────────────────────────────────────────── */
     audio_card = card(home, 304, 50, 484, 318);
     lv_obj_t *audio = audio_card;
-    label(audio, "MUSIC", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    audio_header_lbl = label(audio, "MUSIC", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     audio_source = label(audio, "BLUETOOTH", 380, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
     art_circle = circle(audio, 28, 30, 190, accent);
@@ -1325,8 +1371,18 @@ void ui_init(bt_model_t *model) {
     lv_label_set_long_mode(music_status_lbl, LV_LABEL_LONG_MODE_CLIP);
     lv_obj_set_style_bg_opa(music_status_lbl, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(music_status_lbl, col(C_CARD), 0);
-    label(audio, "Tap album art for full player", 240, 270, 220, 14,
-          &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    music_hint_lbl = label(audio, "Tap album art for full player", 240, 270, 220, 14,
+                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+
+    call_info_name = label(audio, BT_DEVICE_NAME, 30, 62, 424, 38,
+                           &lv_font_montserrat_28, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    call_info_number = label(audio, "+381 60 123 4567", 30, 106, 424, 24,
+                             &lv_font_montserrat_18, C_SOFT, LV_TEXT_ALIGN_LEFT);
+    call_info_state = label(audio, "Incoming call", 30, 140, 424, 24,
+                            &lv_font_montserrat_14, C_GREEN, LV_TEXT_ALIGN_LEFT);
+    lv_obj_add_flag(call_info_name, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(call_info_number, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(call_info_state, LV_OBJ_FLAG_HIDDEN);
 
 
     call_btn = button(audio, "Call", 340, 230, 110, 36, C_INNER, C_TEXT,

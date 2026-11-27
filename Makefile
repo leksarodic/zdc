@@ -48,6 +48,8 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/night-dim.ppm artifacts/night-dim.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/screensaver.ppm --frames 30 --state connected --saver
 	@$(PYTHON) tools/ppm_to_png.py artifacts/screensaver.ppm artifacts/screensaver.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/screensaver-light.ppm --frames 30 --state connected --saver --light
+	@$(PYTHON) tools/ppm_to_png.py artifacts/screensaver-light.ppm artifacts/screensaver-light.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-music.ppm --frames 30 --state connected --panel files --file media/Music/sunset_drive.wav
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-music.ppm artifacts/files-music.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-photo.ppm --frames 30 --state connected --panel files --file media/Photos/sunset.bmp

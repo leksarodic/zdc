@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store">
 <title>CAR_482 7010B — interactive UI test</title>
 <style>
   :root{
@@ -75,6 +76,7 @@
   #testbar.hidden{display:none}
   .tb-title{font-weight:700;letter-spacing:.10em;color:var(--accent)}
   .tb-state{color:var(--text);min-width:66px;font-weight:600}
+  .tb-ver{font-size:9px;color:var(--muted);letter-spacing:.04em}
   #testbar button{
     border:0;border-radius:7px;background:var(--inner);color:var(--soft);
     font-family:inherit;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;
@@ -199,10 +201,10 @@
   .bt-title{font-size:20px;font-weight:600;margin-top:8px;letter-spacing:-.01em}
   .bt-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis}
   .bt-actions{display:flex;gap:6px;margin-top:10px}
-  .bt-actions .btn{height:34px;border-radius:11px;font-size:11px;padding:0 8px}
-  .bt-actions .btn.primary{min-width:82px}
-  #btnMute{width:62px}
-  #btnSecondary{width:102px}
+  .bt-actions .btn{height:36px;border-radius:11px;font-size:11px;padding:0 6px}
+  .bt-actions .btn.primary{min-width:84px}
+  #btnMute{width:70px}
+  #btnSecondary{width:100px}
   .bt-features{display:flex;gap:6px;margin-top:8px;color:var(--muted);font-size:9px}
   .chip{display:flex;align-items:center;gap:4px;background:var(--inner);border-radius:999px;padding:4px 8px}
   .chip svg{width:11px;height:11px}
@@ -263,10 +265,11 @@
   #stage.music-focus .audio-card{left:506px;width:282px}
   #stage.music-focus .device-name{font-size:13px}
   #stage.music-focus .phone-actions .btn{font-size:10px;padding:0 8px}
+  #stage.music-focus .device-name{font-size:14px}
   #stage.music-focus .bt-actions .btn{font-size:10px;padding:0 4px}
-  #stage.music-focus .bt-actions .btn.primary{min-width:66px}
-  #stage.music-focus #btnMute{width:54px}
-  #stage.music-focus #btnSecondary{width:88px}
+  #stage.music-focus .bt-actions .btn.primary{min-width:70px}
+  #stage.music-focus #btnMute{width:60px}
+  #stage.music-focus #btnSecondary{width:90px}
   #stage.music-focus .bt-sub{max-width:232px}
   #stage.music-focus .art-wrap{width:170px;height:170px;margin-top:18px}
   #stage.music-focus .art svg{width:70px;height:70px}
@@ -292,7 +295,7 @@
   .radio-band .clock-btn.sel{background:var(--accent);color:#fff}
   .radio-freq{font-size:48px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:8px}
   .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:12px;line-height:12px}
-  .radio-scale{width:100%;height:16px;margin-top:4px;accent-color:var(--accent)}
+  .radio-scale{width:596px;height:18px;margin:4px 0 0 72px;accent-color:var(--accent);display:block}
   .radio-row{display:flex;gap:10px;margin-top:6px}
   .radio-row .btn{flex:1;height:38px;font-size:12px}
   .radio-ic svg{width:20px;height:20px}
@@ -302,8 +305,8 @@
   .radio-presets .btn{flex:1;height:32px;font-size:12px}
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
   .radio-bottom{display:flex;justify-content:space-between;margin-top:6px}
-  .radio-bottom .btn{width:150px;height:32px;font-size:12px}
-  #radioPower{width:64px}
+  .radio-bottom .btn{width:90px;height:34px;font-size:12px}
+  #radioSave{width:160px}
   .files-sources{display:flex;align-items:center;gap:8px;margin-top:4px}
   .files-sources .sub-label{margin-right:4px}
   .files-sources .clock-btn{padding:4px 12px;font-size:11px}
@@ -781,7 +784,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.8.0</b>
+          <span>UI</span><b>LVGL 9.3 / v0.8.1</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -901,6 +904,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
+  <span class="tb-ver">web v0.8.1</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>

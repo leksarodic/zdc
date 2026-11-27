@@ -2,6 +2,8 @@
 
 A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, with a simulated Bluetooth stack, an SDL2 emulator, an ARMv5 framebuffer target, and a safe Bluetooth-name patch for the stock firmware.
 
+**Live webview: https://leksarodic.github.io/zdc/** — open it in a browser, no install needed.
+
 > **Disclaimer:** this is an unofficial experimental project. Flashing or modifying firmware can brick the device, erase data or break radio/Bluetooth. Use it entirely at your own risk. The authors are not responsible or liable for any damage, data loss, injury or legal issue. Read [DISCLAIMER.md](DISCLAIMER.md) before doing anything.
 
 ![Connected](docs/screenshots/connected.png)
@@ -151,9 +153,11 @@ The Bluetooth model now remembers that music was playing when a call arrives. Th
 
 ## Interactive testing
 
-### Browser emulator (easiest)
+### Browser / live webview (easiest)
 
-Open [prototype/index.html](prototype/index.html) in any browser. It is the same 800×480 design with a **TEST** bar under the screen:
+Open the live page: **https://leksarodic.github.io/zdc/**
+
+Or open [prototype/index.html](prototype/index.html) locally in any browser. It is the same 800×480 design with a **TEST** bar under the screen:
 
 * **Off / Ready / Pairing / Connected / Playing / Incoming / Active / Error** — jump directly to a state
 * **Simulate call** — incoming call from the mock phone
@@ -171,7 +175,9 @@ prototype/index.html?clean=1&state=pairing
 prototype/index.html?clean=1&fixed=1
 ```
 
-The browser page is an HTML mock, not the LVGL renderer. It scales the 800×480 board to the window and uses system fonts, so it will not be pixel-identical to the native screenshots. The top bar, cards and dock positions are aligned to the native build. Use `?fixed=1` in a viewport of at least 800×480 for a 1:1 layout reference.
+The browser page is an HTML mock, not the LVGL renderer. It scales the 800×480 board to the window and uses system fonts, so it will not be pixel-identical to the native screenshots. The top bar, cards, dock, radio scale and audio-focused layout are aligned to the native build. Use `?fixed=1` in a viewport of at least 800×480 for a 1:1 layout reference.
+
+The live page is deployed by `.github/workflows/pages.yml` on every `prototype/index.html` change.
 
 Keyboard: **Alt+1 … Alt+8** switch state. `window.strada.setState('active')`, `window.strada.action('next')`, `window.strada.showScreen('files')`, `window.strada.setVolume(40)`, `window.strada.showVolume()`, `window.strada.setTheme(true)`, `window.strada.nightDim(true)` and `window.strada.showScreensaver()` are available for browser automation.
 

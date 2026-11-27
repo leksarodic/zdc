@@ -31,6 +31,8 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Screensaver | [screensaver.png](docs/screenshots/screensaver.png) |
 | Files music | [files-music.png](docs/screenshots/files-music.png) |
 | Files photo | [files-photo.png](docs/screenshots/files-photo.png) |
+| USB + SD sources | [files-sources.png](docs/screenshots/files-sources.png) |
+| SD selected | [files-sd.png](docs/screenshots/files-sd.png) |
 | Files, no storage | [files-no-storage.png](docs/screenshots/files-no-storage.png) |
 
 ## Functional panels
@@ -58,6 +60,9 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 ![Files](docs/screenshots/files.png)
 
 * **All / Music / Photos** filters; Music and Photos jump to their folders
+* **Source selector**: if USB and SD are mounted at the same time, Files shows **USB / SD** buttons and switches the whole browser to the selected root
+* Native detection scans `/proc/mounts`; `mmcblk` mounts are labelled **SD**, other removable mounts **USB**
+* `--files-root` can be repeated in the emulator to simulate both sources
 * Real directory browser in the native build (`opendir`/`stat`): folders first, files with sizes
 * **Music playback**: WAV files play through SDL audio in the emulator, with title, progress, play/pause and stop. Other formats show the same transport in simulated mode.
 * **Photos**: BMP, PNG and JPG previews in a contained viewer; BMP/PNG/JPG decoders are enabled in the LVGL build
@@ -65,7 +70,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Sample media in `media/Music/*.wav` and `media/Photos/*.bmp`
 * Emulator root is `media/`; the framebuffer build defaults to `/media`
 * If no USB/SD is available, the panel says **No USB or SD card connected** and asks you to insert one
-* The browser test UI mirrors the filters with working audio and image previews; the Storage button simulates removal
+* The browser test UI mirrors the filters with two virtual roots (`USB` and `SD`) and working audio/image previews; the Storage button simulates removal
 
 ![Files music](docs/screenshots/files-music.png)
 

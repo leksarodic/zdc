@@ -52,6 +52,10 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-music.ppm artifacts/files-music.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-photo.ppm --frames 30 --state connected --panel files --file media/Photos/sunset.bmp
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-photo.ppm artifacts/files-photo.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-sources.ppm --frames 30 --state connected --panel files --files-root media --files-root media-sd
+	@$(PYTHON) tools/ppm_to_png.py artifacts/files-sources.ppm artifacts/files-sources.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/files-sd.ppm --frames 30 --state connected --panel files --files-root media --files-root media-sd --storage-index 1
+	@$(PYTHON) tools/ppm_to_png.py artifacts/files-sd.ppm artifacts/files-sd.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call-interrupt.ppm --frames 30 --state connected --interrupt
 	@$(PYTHON) tools/ppm_to_png.py artifacts/call-interrupt.ppm artifacts/call-interrupt.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call-banner.ppm --frames 30 --state incoming --panel radio

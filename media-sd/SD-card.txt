@@ -1,0 +1,4 @@
+SD-only notes
+=============
+
+Switch Source: USB / SD in the Files panel.

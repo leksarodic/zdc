@@ -6,6 +6,8 @@
 void ui_init(bt_model_t *model);
 void ui_update(void);
 void ui_set_files_root(const char *root);
+void ui_set_storage_roots(const char *const *roots, const char *const *labels, int count);
+void ui_select_storage(int index);
 void ui_show_panel(int idx);
 void ui_show_call(void);
 void ui_set_theme(bool light);

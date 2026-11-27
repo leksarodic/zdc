@@ -86,7 +86,9 @@ int main(int argc, char **argv) {
     const char *shot = NULL;
     const char *state = "connected";
     const char *panel = NULL;
-    const char *files_root = "media";
+    const char *roots[4];
+    const char *root_labels[4];
+    int root_count = 0;
     bool show_call = false;
     bool light = false;
     bool dim = false;
@@ -96,6 +98,7 @@ int main(int argc, char **argv) {
     const char *open_file = NULL;
     bool interrupt_demo = false;
     bool radio_mute = false;
+    int storage_index = 0;
     int frames = 0;
     bool interactive = true;
 
@@ -110,7 +113,13 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[i], "--panel") && i + 1 < argc) {
             panel = argv[++i];
         } else if (!strcmp(argv[i], "--files-root") && i + 1 < argc) {
-            files_root = argv[++i];
+            if (root_count < 4) {
+                roots[root_count] = argv[++i];
+                root_labels[root_count] = root_count == 0 ? "USB" : "SD";
+                root_count++;
+            } else {
+                i++;
+            }
         } else if (!strcmp(argv[i], "--call")) {
             show_call = true;
         } else if (!strcmp(argv[i], "--light")) {
@@ -119,6 +128,8 @@ int main(int argc, char **argv) {
             dim = true;
         } else if (!strcmp(argv[i], "--saver")) {
             saver = true;
+        } else if (!strcmp(argv[i], "--storage-index") && i + 1 < argc) {
+            storage_index = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--radio-mute")) {
             radio_mute = true;
         } else if (!strcmp(argv[i], "--interrupt")) {
@@ -129,7 +140,7 @@ int main(int argc, char **argv) {
             show_vol = true;
             vol_value = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--help")) {
-            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR] [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt] [--radio-mute]\n", argv[0]);
+            printf("usage: %s [--screenshot out.ppm --frames N] [--state ...] [--panel radio|files|settings] [--call] [--files-root DIR]... [--light] [--dim] [--saver] [--volume 0-100] [--file PATH] [--interrupt] [--radio-mute] [--storage-index N]\n", argv[0]);
             return 0;
         }
     }
@@ -145,7 +156,12 @@ int main(int argc, char **argv) {
     lv_sdl_keyboard_create();
     lv_display_set_default(disp);
 
-    ui_set_files_root(files_root);
+    if (root_count == 0) {
+        roots[0] = "media";
+        root_labels[0] = "USB";
+        root_count = 1;
+    }
+    ui_set_storage_roots(roots, root_labels, root_count);
     ui_init(&model);
     if (panel) {
         if (!strcmp(panel, "radio")) ui_show_panel(0);
@@ -161,6 +177,7 @@ int main(int argc, char **argv) {
     if (light) ui_set_theme(true);
     if (dim) ui_set_night_dim(true);
     if (saver) ui_show_screensaver();
+    if (storage_index > 0) ui_select_storage(storage_index);
     if (radio_mute) ui_set_radio_mute(true);
     if (open_file) ui_open_file(open_file);
     if (show_vol) {

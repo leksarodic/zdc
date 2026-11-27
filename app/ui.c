@@ -1021,6 +1021,14 @@ void ui_set_files_root(const char *root) {
     panels_set_files_root(root);
 }
 
+void ui_set_storage_roots(const char *const *roots, const char *const *labels, int count) {
+    panels_set_storage_roots(roots, labels, count);
+}
+
+void ui_select_storage(int index) {
+    panels_select_storage(index);
+}
+
 void ui_show_panel(int idx) {
     show_screen(idx);
 }

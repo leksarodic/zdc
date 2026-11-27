@@ -22,6 +22,8 @@ void panels_init(lv_obj_t *parent,
 void panels_show(int idx);
 void panels_hide(void);
 void panels_set_files_root(const char *root);
+void panels_set_storage_roots(const char *const *roots, const char *const *labels, int count);
+void panels_select_storage(int index);
 void panels_set_now(long epoch);
 void panels_set_boot_volume(int value);
 void panels_set_saver_timeout(int seconds);

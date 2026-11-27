@@ -284,7 +284,11 @@
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
   .radio-bottom{display:flex;justify-content:space-between;margin-top:6px}
   .radio-bottom .btn{width:110px;height:32px;font-size:12px}
-  .files-path{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .files-sources{display:flex;align-items:center;gap:8px;margin-top:4px}
+  .files-sources .sub-label{margin-right:4px}
+  .files-sources .clock-btn{padding:4px 12px;font-size:11px}
+  .files-sources .clock-btn.sel{background:var(--accent);color:#fff}
+  .files-path{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .files-tools{display:flex;gap:8px;margin-top:6px;align-items:center}
   .files-tools .btn{width:54px;height:30px;font-size:14px}
   .files-tools .file-filter{width:auto;padding:0 12px;font-size:11px}
@@ -302,7 +306,7 @@
   .mini-btn svg{width:14px;height:14px}
   .file-preview img{display:none;width:680px;height:150px;object-fit:contain;margin-top:6px;border-radius:8px}
   .file-preview img.show{display:block}
-  .files-list{height:158px;overflow:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px;padding-right:4px}
+  .files-list{height:128px;overflow:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px;padding-right:4px}
   .file-row{
     display:flex;align-items:center;gap:8px;min-height:27px;background:var(--inner);
     border-radius:6px;padding:0 8px;font-size:12px;color:var(--soft);cursor:pointer;
@@ -636,6 +640,11 @@
   <!-- FILES PANEL -->
   <section class="app-panel" id="filesPanel">
     <div class="panel-head"><span class="label">Files</span><span class="source" id="filesStatus">USB / SD</span><button class="panel-close" data-close>×</button></div>
+    <div class="files-sources" id="filesSources">
+      <span class="sub-label">Source</span>
+      <button class="clock-btn sel" data-source="usb">USB</button>
+      <button class="clock-btn" data-source="sd">SD</button>
+    </div>
     <div class="files-path" id="filesPath">media</div>
     <div class="files-tools">
       <button class="btn ghost file-filter sel" data-filter="all">All</button>
@@ -727,7 +736,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.5.3</b>
+          <span>UI</span><b>LVGL 9.3 / v0.6.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -1458,6 +1467,19 @@
       { name: 'README.txt', type: 'file', content: 'CAR_482 7010B media folder\n=========================\n\nThis is the file-browser demo root used by the browser test UI.\nOn the real radio, replace it with /media, /mnt or the USB/SD mount.' },
     ]
   };
+  const sdRoot = {
+    name: 'sdcard', type: 'dir', children: [
+      { name: 'SD-card.txt', type: 'file', content: 'SD card root.\n\nBoth USB and SD are inserted; use Source: USB / SD in the Files panel.' },
+      { name: 'Music', type: 'dir', children: [
+        { name: 'night_loop.wav', type: 'file', kind: 'music', dur: 10, size: 211708, content: '' }
+      ]},
+      { name: 'Photos', type: 'dir', children: [
+        { name: 'grid.bmp', type: 'file', kind: 'photo', img: photoGrid(), size: 172854, content: '' }
+      ]}
+    ]
+  };
+  const storageRoots = { usb: fsRoot, sd: sdRoot };
+  let storageSource = 'usb';
   let fileStack = [fsRoot];
   let storageAvailable = true;
   let fileFilter = 'all';
@@ -1469,12 +1491,13 @@
     fileFilter = name;
     document.querySelectorAll('[data-filter]').forEach(b =>
       b.classList.toggle('sel', b.dataset.filter === name));
+    const root = fileStack[0];
     if (name === 'music' || name === 'photos') {
       const want = name === 'music' ? 'Music' : 'Photos';
-      const folder = fsRoot.children.find(c => c.type === 'dir' && c.name === want);
-      fileStack = folder ? [fsRoot, folder] : [fsRoot];
+      const folder = root.children.find(c => c.type === 'dir' && c.name === want);
+      fileStack = folder ? [root, folder] : [root];
     } else {
-      fileStack = [fsRoot];
+      fileStack = [root];
     }
     renderFiles();
   }
@@ -1546,13 +1569,17 @@
       el('filesPath').textContent = 'No USB or SD card connected';
       el('filesList').innerHTML = '<div class="files-empty"><b>No USB or SD card connected</b><span>Insert a USB drive or SD card, then press Refresh.</span></div>';
       el('filesInfo').textContent = '0 items';
+      el('filesSources').style.display = 'none';
       previewClose();
       return;
     }
-    el('filesStatus').textContent = 'USB / SD';
+    el('filesStatus').textContent = 'USB + SD';
     el('filesStatus').style.color = 'var(--accent)';
+    el('filesSources').style.display = 'flex';
+    document.querySelectorAll('[data-source]').forEach(b =>
+      b.classList.toggle('sel', b.dataset.source === storageSource));
     const dir = fileStack[fileStack.length - 1];
-    const path = 'media' + fileStack.slice(1).map(d => '/' + d.name).join('');
+    const path = fileStack[0].name + fileStack.slice(1).map(d => '/' + d.name).join('');
     el('filesPath').textContent = path;
     el('filesList').innerHTML = '';
     const items = filtered(dir);
@@ -1590,6 +1617,16 @@
 
   document.querySelectorAll('[data-filter]').forEach(b =>
     b.addEventListener('click', () => setFilter(b.dataset.filter)));
+
+  document.querySelectorAll('[data-source]').forEach(b =>
+    b.addEventListener('click', () => {
+      storageSource = b.dataset.source;
+      fileStack = [storageRoots[storageSource]];
+      fileFilter = 'all';
+      document.querySelectorAll('[data-filter]').forEach(x =>
+        x.classList.toggle('sel', x.dataset.filter === 'all'));
+      renderFiles();
+    }));
 
   el('filesUp').addEventListener('click', () => {
     if (fileStack.length > 1) {
@@ -1834,8 +1871,12 @@
       else if (a === 'storage') {
         storageAvailable = !storageAvailable;
         b.textContent = 'Storage: ' + (storageAvailable ? 'on' : 'off');
+        if (storageAvailable) {
+          storageSource = 'usb';
+          fileStack = [fsRoot];
+        }
         if (screen === 'files') renderFiles();
-        toast(storageAvailable ? 'USB/SD connected' : 'USB/SD disconnected');
+        toast(storageAvailable ? 'USB + SD connected' : 'USB/SD disconnected');
       }
       else if (a === 'hide') { el('testbar').classList.add('hidden'); fit(); }
     });

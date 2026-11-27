@@ -34,13 +34,13 @@ static int screen_idx = -1;
 typedef enum { SRC_BT = 0, SRC_RADIO = 1 } audio_source_t;
 static audio_source_t active_src = SRC_BT;
 static int radio_volume = 70;
-static int bt_volume = 70;
+static int bt_volume = 15;
 static bool radio_muted = false;
 static int radio_saved_volume = 0;
-static int bt_saved_volume = 70;
+static int bt_saved_volume = 15;
 static bool bt_muted = false;
 static bool bt_resume_after_radio = false;
-static int boot_volume = 70;     /* Settings slider: level used at power-on */
+static int boot_volume = 15;     /* Settings slider: level used at power-on */
 static int saver_timeout_sec = 300;
 static bool night_dim = false;
 static bool saver_enabled = true;
@@ -80,7 +80,6 @@ static lv_obj_t *dock_circles[4];
 static lv_obj_t *dock_labels[4];
 static lv_obj_t *audio_source;
 static lv_obj_t *audio_header_lbl;
-static lv_obj_t *music_hint_lbl;
 static lv_obj_t *call_info_name;
 static lv_obj_t *call_info_number;
 static lv_obj_t *call_info_state;
@@ -789,7 +788,6 @@ static void update_phone(void) {
         lv_obj_add_flag(artist_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(time_pos_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(music_status_lbl, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(music_hint_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(call_info_name, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(call_info_number, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(call_info_state, LV_OBJ_FLAG_HIDDEN);
@@ -812,7 +810,6 @@ static void update_phone(void) {
         lv_obj_remove_flag(artist_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(time_pos_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(music_status_lbl, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_remove_flag(music_hint_lbl, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(call_info_name, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(call_info_number, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(call_info_state, LV_OBJ_FLAG_HIDDEN);
@@ -1371,8 +1368,6 @@ void ui_init(bt_model_t *model) {
     lv_label_set_long_mode(music_status_lbl, LV_LABEL_LONG_MODE_CLIP);
     lv_obj_set_style_bg_opa(music_status_lbl, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(music_status_lbl, col(C_CARD), 0);
-    music_hint_lbl = label(audio, "Tap album art for full player", 240, 270, 220, 14,
-                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     call_info_name = label(audio, BT_DEVICE_NAME, 30, 62, 424, 38,
                            &lv_font_montserrat_28, C_TEXT, LV_TEXT_ALIGN_LEFT);

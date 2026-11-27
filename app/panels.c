@@ -1033,8 +1033,8 @@ static void reset_apply_cb(lv_event_t *e) {
     if (reset_confirm) lv_obj_add_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
     accent_idx = 0;
     clock_is_24 = true;
-    lv_slider_set_value(volume_slider, 70, LV_ANIM_OFF);
-    if (cb_volume) cb_volume(70);
+    lv_slider_set_value(volume_slider, 15, LV_ANIM_OFF);
+    if (cb_volume) cb_volume(15);
     cal_load_now();
     if (cb_set_time) cb_set_time((long)time(NULL));
     if (cb_accent) cb_accent(ACCENTS[0]);
@@ -1072,12 +1072,12 @@ static void build_settings(lv_obj_t *parent) {
     lv_obj_set_pos(volume_slider, 132, 110);
     lv_obj_set_size(volume_slider, 288, 20);
     lv_slider_set_range(volume_slider, 0, 100);
-    lv_slider_set_value(volume_slider, 70, LV_ANIM_OFF);
+    lv_slider_set_value(volume_slider, 15, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(volume_slider, col(C_BTN), LV_PART_MAIN);
     lv_obj_set_style_bg_color(volume_slider, col(ACCENTS[0]), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(volume_slider, col(ACCENTS[0]), LV_PART_KNOB);
     lv_obj_add_event_cb(volume_slider, volume_cb, LV_EVENT_VALUE_CHANGED, NULL);
-    volume_lbl = label(settings_panel, "70%", 436, 110, 60, 20,
+    volume_lbl = label(settings_panel, "15%", 436, 110, 60, 20,
                        &lv_font_montserrat_12, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "DATE", 24, 148, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     date_lbl = label(settings_panel, "2026-11-26", 120, 148, 100, 20,
@@ -1124,7 +1124,7 @@ static void build_settings(lv_obj_t *parent) {
     }
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / v0.9.3 / LVGL", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.9.4 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
@@ -1133,15 +1133,15 @@ static void build_settings(lv_obj_t *parent) {
     button(settings_panel, "Reset UI", 652, 252, 96, 26, C_INNER, &lv_font_montserrat_10,
            reset_ask_cb, NULL);
 
-    reset_confirm = box(settings_panel, 220, 70, 336, 150, C_CARD, 14);
+    reset_confirm = box(settings_panel, 220, 78, 336, 140, C_CARD, 14);
     lv_obj_set_style_border_width(reset_confirm, 1, 0);
     lv_obj_set_style_border_color(reset_confirm, col(C_BTN), 0);
     lv_obj_add_flag(reset_confirm, LV_OBJ_FLAG_HIDDEN);
     label(reset_confirm, "Reset UI?", 20, 16, 296, 24, &lv_font_montserrat_18, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(reset_confirm, "This resets theme, layout, volume and date/time settings. Do you agree?",
-          20, 50, 296, 40, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    button(reset_confirm, "No", 64, 104, 80, 28, C_INNER, &lv_font_montserrat_10, reset_cancel_cb, NULL);
-    button(reset_confirm, "Yes, reset", 172, 104, 100, 28, 0xFE3211, &lv_font_montserrat_10, reset_apply_cb, NULL);
+          20, 46, 296, 36, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    button(reset_confirm, "No", 64, 96, 80, 28, C_INNER, &lv_font_montserrat_10, reset_cancel_cb, NULL);
+    button(reset_confirm, "Yes, reset", 172, 96, 100, 28, 0xFE3211, &lv_font_montserrat_10, reset_apply_cb, NULL);
 
     disclaimer_box = box(settings_panel, 40, 40, 696, 238, C_CARD, 14);
     lv_obj_set_style_border_width(disclaimer_box, 1, 0);

@@ -93,24 +93,24 @@
   }
 
   /* ── top bar ─────────────────────────────────────────────── */
-  .topbar{position:absolute;left:18px;right:14px;top:8px;height:36px;display:flex;align-items:center}
-  .clock{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1}
-  .date{font-size:12px;color:var(--muted);margin-left:10px;white-space:nowrap}
-  .top-right{margin-left:auto;display:flex;align-items:center;gap:8px;height:100%}
-  .status-bt{width:18px;height:18px;position:relative;display:grid;place-items:center;opacity:.9}
-  .status-bt .dot{position:absolute;right:-1px;bottom:-1px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--bg)}
+  .topbar{position:absolute;left:0;right:0;top:0;height:50px}
+  .clock{position:absolute;left:16px;top:4px;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .date{position:absolute;left:112px;top:13px;font-size:12px;color:var(--muted);white-space:nowrap;margin:0}
+  .top-right{position:absolute;right:24px;top:8px;height:32px;display:flex;align-items:flex-start;gap:48px;margin:0}
+  .status-bt{width:22px;height:22px;position:relative;display:grid;place-items:center;opacity:.9;margin-top:2px}
+  .status-bt .dot{position:absolute;right:-1px;bottom:1px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--bg)}
   .weather{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500}
   .weather svg{width:16px;height:16px}
   .weather .city{color:var(--muted);font-weight:400}
   .sep{width:1px;height:16px;background:rgba(255,255,255,.10);margin:0 3px}
   .greet{font-size:12px;color:var(--soft);white-space:nowrap}
   .gear{
-    width:36px;height:36px;border-radius:50%;background:var(--circle);
-    display:grid;place-items:center;margin-left:6px;cursor:pointer;
+    width:32px;height:32px;border-radius:50%;background:var(--circle);
+    display:grid;place-items:center;margin:0;cursor:pointer;
     transition:background .15s ease;
   }
   .gear:hover{background:#2E323C}
-  .gear svg{width:19px;height:19px}
+  .gear svg{width:17px;height:17px}
 
   /* ── cards ──────────────────────────────────────────────── */
   .card{
@@ -122,9 +122,9 @@
   .card .label{font-size:10px;font-weight:600;letter-spacing:.10em;color:var(--muted);text-transform:uppercase}
   .card .source{font-size:10px;font-weight:600;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
   .card-head{display:flex;align-items:center;justify-content:space-between;height:14px}
-  .phone-card{left:12.5px;width:234.375px}
-  .bt-card{left:256.25px;width:328.125px}
-  .audio-card{left:593.75px;width:193.75px}
+  .phone-card{left:12px;width:234px}
+  .bt-card{left:256px;width:328px}
+  .audio-card{left:594px;width:194px}
 
   /* ── phone card ─────────────────────────────────────────── */
   .device{display:flex;align-items:center;gap:10px;margin-top:18px}
@@ -237,23 +237,26 @@
   .dock{
     position:absolute;left:0;right:0;bottom:0;height:88px;background:var(--dock);
     border-top:1px solid rgba(255,255,255,.035);
-    display:flex;align-items:flex-start;justify-content:space-around;padding:8px 18px 0;
   }
-  .dock-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;cursor:pointer}
+  .dock-item{position:absolute;top:6px;display:flex;flex-direction:column;align-items:center;gap:4px;width:100px;cursor:pointer}
+  .dock-item:nth-child(1){left:185px}
+  .dock-item:nth-child(2){left:295px}
+  .dock-item:nth-child(3){left:405px}
+  .dock-item:nth-child(4){left:515px}
   .dock-ic{
-    width:42px;height:42px;border-radius:50%;background:var(--circle);
+    width:40px;height:40px;border-radius:50%;background:var(--circle);
     display:grid;place-items:center;transition:background .15s ease, box-shadow .15s ease;
   }
   .dock-item:hover .dock-ic{background:#2B2F38}
   .dock-item.active .dock-ic{background:#2C3039;box-shadow:0 0 0 2px var(--accent)}
-  .dock-ic svg{width:21px;height:21px}
+  .dock-ic svg{width:20px;height:20px}
   .dock-label{font-size:10px;color:var(--soft);white-space:nowrap}
   .dock-item.active .dock-label{color:var(--text);font-weight:600}
 
 
   /* ── app panels: Radio / Files / Settings ───────────────── */
   .app-panel{
-    position:absolute;left:12.5px;top:50px;width:775px;height:318px;
+    position:absolute;left:12px;top:50px;width:776px;height:318px;
     border-radius:16px;background:var(--card);padding:14px 18px;
     display:none;z-index:6;overflow:hidden;
   }
@@ -724,7 +727,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.5.2</b>
+          <span>UI</span><b>LVGL 9.3 / v0.5.3</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -1046,7 +1049,7 @@
     );
     const titles = {
       off: ['Bluetooth off', 'Tap to power on'],
-      ready: ['Pair from your phone', 'CAR_482 / PIN 0000 / Open Bluetooth on your phone.'],
+      ready: ['Pair from your phone', 'PIN 0000 / Open Bluetooth on your phone.'],
       pairing: ['Waiting for phone', 'Select CAR_482 on your phone'],
       connected: ['Connected', "Aleksa's iPhone / A2DP / AVRCP"],
       playing: ['Playing', "Aleksa's iPhone / A2DP / AVRCP"],
@@ -1795,8 +1798,14 @@
   // ── fit the fixed 800x480 board into the available window ──
   const frame = el('frame');
   function fit() {
-    const s = Math.min(frame.clientWidth / 800, frame.clientHeight / 480, 1);
     const stage = el('stage');
+    if (new URLSearchParams(location.search).get('fixed') === '1') {
+      stage.style.transform = 'scale(1)';
+      stage.style.left = '0';
+      stage.style.top = '0';
+      return;
+    }
+    const s = Math.min(frame.clientWidth / 800, frame.clientHeight / 480, 1);
     stage.style.transform = `scale(${s})`;
     stage.style.left = `${(frame.clientWidth - 800 * s) / 2}px`;
     stage.style.top = `${(frame.clientHeight - 480 * s) / 2}px`;
@@ -1869,6 +1878,11 @@
   };
 
   const params = new URLSearchParams(location.search);
+  if (params.get('fixed') === '1') {
+    frame.style.width = '800px';
+    frame.style.height = '480px';
+    fit();
+  }
   if (params.get('clean') === '1') {
     document.body.classList.add('clean');
     el('testbar').classList.add('hidden');

@@ -220,7 +220,13 @@
     display:grid;place-items:center;
     transition:background .25s ease, filter .25s ease;
   }
-  .art svg{width:60px;height:60px}
+  .art > svg{width:60px;height:60px}
+  .art-controls{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px}
+  .art-btn{border:0;border-radius:50%;background:rgba(8,9,12,.62);color:#fff;width:32px;height:32px;display:grid;place-items:center;cursor:pointer}
+  .art-btn.lg{width:42px;height:42px;background:rgba(8,9,12,.72)}
+  .art-btn svg{width:14px;height:14px}
+  .art-btn.lg svg{width:18px;height:18px}
+  .art-btn:active{transform:scale(.95)}
   .art.off{background:radial-gradient(circle at 34% 28%, #3A3E48, #23262E 70%);filter:saturate(.2)}
   .track{font-size:16px;font-weight:600;text-align:center;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
   .artist{font-size:12px;color:var(--muted);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
@@ -629,16 +635,17 @@
         <circle id="artRing" cx="68" cy="68" r="63" fill="none" stroke="var(--accent)" stroke-width="3"
                 stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="150"/>
       </svg>
-      <div class="art" id="art"><svg style="color:#fff"><use href="#i-note"/></svg></div>
+      <div class="art" id="art">
+        <div class="art-controls">
+          <button class="art-btn" id="btnPrev" title="Previous"><svg><use href="#i-prev"/></svg></button>
+          <button class="art-btn lg" id="btnPlay" title="Play"><svg><use href="#i-play"/></svg></button>
+          <button class="art-btn" id="btnNext" title="Next"><svg><use href="#i-next"/></svg></button>
+        </div>
+      </div>
     </div>
     <div class="track" id="track">Test Song</div>
     <div class="artist" id="artist">Demo Artist</div>
     <div class="time" id="time">1:08 / 3:35</div>
-    <div class="media-actions">
-      <button class="circle-btn sm" id="btnPrev" title="Previous"><svg><use href="#i-prev"/></svg></button>
-      <button class="circle-btn lg" id="btnPlay" title="Play"><svg><use href="#i-play"/></svg></button>
-      <button class="circle-btn sm" id="btnNext" title="Next"><svg><use href="#i-next"/></svg></button>
-    </div>
   </section>
 
   <!-- DOCK -->
@@ -784,7 +791,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.8.1</b>
+          <span>UI</span><b>LVGL 9.3 / v0.8.2</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -904,7 +911,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.8.1</span>
+  <span class="tb-ver">web v0.8.2</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -1898,7 +1905,8 @@
   el('playerPlay').addEventListener('click', () => go(state.mode === 'playing' ? 'connected' : 'playing'));
   el('playerNext').addEventListener('click', () => el('btnNext').click());
   el('playerPrev').addEventListener('click', () => el('btnPrev').click());
-  el('art').addEventListener('click', () => {
+  el('art').addEventListener('click', (e) => {
+    if (e.target.closest('.art-btn')) return;
     if (state.mode === 'playing') { playerExpanded = true; renderPlayer(); }
   });
 

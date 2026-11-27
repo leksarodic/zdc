@@ -39,6 +39,7 @@ static bool radio_muted = false;
 static int radio_saved_volume = 0;
 static int bt_saved_volume = 70;
 static bool bt_muted = false;
+static bool bt_resume_after_radio = false;
 static int boot_volume = 70;     /* Settings slider: level used at power-on */
 static int saver_timeout_sec = 300;
 static bool night_dim = false;
@@ -63,6 +64,16 @@ static lv_obj_t *saver_hint;
 static lv_timer_t *idle_timer;
 
 static lv_obj_t *home;
+static lv_obj_t *phone_card;
+static lv_obj_t *bt_card;
+static lv_obj_t *audio_card;
+static lv_obj_t *phone_hint1;
+static lv_obj_t *phone_hint2;
+static lv_obj_t *phone_hint3;
+static lv_obj_t *signal_lbl;
+static lv_obj_t *battery_lbl;
+static lv_obj_t *phone_divider;
+static int home_layout_mode = -1;
 static lv_obj_t *dock_circles[4];
 static lv_obj_t *dock_labels[4];
 static lv_obj_t *audio_source;
@@ -80,6 +91,7 @@ static char call_target[48];
 
 static lv_obj_t *time_label;
 static lv_obj_t *date_label;
+static lv_obj_t *now_playing_lbl;
 static lv_obj_t *top_bt_dot;
 
 static lv_obj_t *phone_source;
@@ -298,8 +310,19 @@ static void update_call_banner(void);
 
 static void show_screen(int idx) {
     screen_idx = idx;
-    if (idx == 0) active_src = SRC_RADIO;
-    else if (idx < 0) active_src = SRC_BT;
+    if (idx == 0 && panels_radio_on()) {
+        active_src = SRC_RADIO;
+        if (M->state == BT_PLAYING) {
+            bt_resume_after_radio = true;
+            bt_sim_set_state(M, BT_CONNECTED);
+        }
+    } else if (idx < 0) {
+        active_src = SRC_BT;
+        if (bt_resume_after_radio && M->state == BT_CONNECTED) {
+            bt_resume_after_radio = false;
+            bt_sim_set_state(M, BT_PLAYING);
+        }
+    }
     call_panel_hide();
     if (idx < 0) {
         if (home) lv_obj_remove_flag(home, LV_OBJ_FLAG_HIDDEN);
@@ -312,6 +335,7 @@ static void show_screen(int idx) {
     update_dock(idx);
     update_player_visibility();
     update_call_banner();
+    ui_update();
 }
 
 static void on_home(void) { show_screen(-1); }
@@ -431,12 +455,25 @@ static void on_volume(int v) {
     settings_save();
 }
 
-static void on_radio_start(void) {
-    radio_volume = boot_volume;
-    radio_saved_volume = boot_volume;
-    active_src = SRC_RADIO;
+static void on_radio_power(bool on) {
+    if (on) {
+        radio_volume = boot_volume;
+        radio_saved_volume = boot_volume;
+        active_src = SRC_RADIO;
+        if (M->state == BT_PLAYING) {
+            bt_resume_after_radio = true;
+            bt_sim_set_state(M, BT_CONNECTED);
+        }
+    } else {
+        active_src = SRC_BT;
+        if (bt_resume_after_radio) {
+            bt_resume_after_radio = false;
+            bt_sim_set_state(M, BT_PLAYING);
+        }
+    }
     volume_render();
     volume_show();
+    ui_update();
 }
 
 static void bt_mute_cb(lv_event_t *e) {
@@ -669,6 +706,107 @@ static void update_phone(void) {
     }
 }
 
+
+static void layout_bt_actions(bool connected, bool narrow) {
+    if (!primary_btn) return;
+    if (connected) {
+        if (narrow) {
+            lv_obj_set_pos(primary_btn, 14, 262);  lv_obj_set_size(primary_btn, 70, 36);
+            lv_obj_set_pos(bt_mute_btn, 90, 262);  lv_obj_set_size(bt_mute_btn, 60, 36);
+            lv_obj_set_pos(secondary_btn, 156, 262); lv_obj_set_size(secondary_btn, 90, 36);
+        } else {
+            lv_obj_set_pos(primary_btn, 24, 262);  lv_obj_set_size(primary_btn, 84, 36);
+            lv_obj_set_pos(bt_mute_btn, 116, 262); lv_obj_set_size(bt_mute_btn, 70, 36);
+            lv_obj_set_pos(secondary_btn, 194, 262); lv_obj_set_size(secondary_btn, 100, 36);
+        }
+    } else if (narrow) {
+        lv_obj_set_pos(primary_btn, 14, 262);   lv_obj_set_size(primary_btn, 100, 36);
+        lv_obj_set_pos(secondary_btn, 120, 262); lv_obj_set_size(secondary_btn, 112, 36);
+    } else {
+        lv_obj_set_pos(primary_btn, 54, 262);   lv_obj_set_size(primary_btn, 130, 36);
+        lv_obj_set_pos(secondary_btn, 190, 262); lv_obj_set_size(secondary_btn, 110, 36);
+    }
+}
+
+static void apply_home_layout(void) {
+    if (!phone_card || !bt_card || !audio_card) return;
+    bool big = M && M->state == BT_PLAYING;
+    if ((int)big == home_layout_mode) return;
+    home_layout_mode = big ? 1 : 0;
+
+    int pw = big ? 210 : 234;
+    int bw = big ? 260 : 328;
+    int aw = big ? 282 : 194;
+
+    lv_obj_set_width(phone_card, pw);
+    lv_obj_set_pos(bt_card, 12 + pw + 12, 50);
+    lv_obj_set_width(bt_card, bw);
+    lv_obj_set_pos(audio_card, 12 + pw + 12 + bw + 12, 50);
+    lv_obj_set_width(audio_card, aw);
+
+    if (big) {
+        lv_obj_set_width(phone_source, 76);
+        lv_obj_set_pos(phone_source, 120, 12);
+        lv_obj_set_width(device_name, 126);
+        lv_obj_set_style_text_font(device_name, &lv_font_montserrat_14, 0);
+        lv_obj_set_width(device_status, 126);
+        lv_obj_set_width(device_mac, 126);
+        lv_obj_set_width(signal_lbl, 90);
+        lv_obj_set_pos(battery_lbl, 108, 100);
+        lv_obj_set_width(phone_divider, 182);
+        lv_obj_set_width(phone_hint1, 182);
+        lv_obj_set_width(phone_hint2, 182);
+        lv_obj_set_width(phone_hint3, 182);
+        lv_obj_set_pos(disconnect_btn, 14, 268); lv_obj_set_size(disconnect_btn, 104, 36);
+        lv_obj_set_pos(call_btn, 126, 268);      lv_obj_set_size(call_btn, 70, 36);
+    } else {
+        lv_obj_set_width(phone_source, 76);
+        lv_obj_set_pos(phone_source, 144, 12);
+        lv_obj_set_width(device_name, 150);
+        lv_obj_set_style_text_font(device_name, &lv_font_montserrat_16, 0);
+        lv_obj_set_width(device_status, 150);
+        lv_obj_set_width(device_mac, 150);
+        lv_obj_set_width(signal_lbl, 100);
+        lv_obj_set_pos(battery_lbl, 120, 100);
+        lv_obj_set_width(phone_divider, 206);
+        lv_obj_set_width(phone_hint1, 206);
+        lv_obj_set_width(phone_hint2, 206);
+        lv_obj_set_width(phone_hint3, 206);
+        lv_obj_set_pos(disconnect_btn, 14, 268); lv_obj_set_size(disconnect_btn, 130, 36);
+        lv_obj_set_pos(call_btn, 150, 268);      lv_obj_set_size(call_btn, 70, 36);
+    }
+
+    int bcx = bw / 2;
+    lv_obj_set_pos(bt_arc, bcx - 75, 32);
+    lv_obj_set_pos(bt_circle, bcx - 65, 42);
+    lv_obj_set_pos(bt_name_lbl, bw - 108, 12);
+    lv_obj_set_width(bt_name_lbl, 94);
+    lv_obj_set_width(bt_title, bw - 28);
+    lv_obj_set_width(bt_sub, bw - 28);
+    layout_bt_actions(bt_sim_connected(M->state), big);
+
+    lv_obj_set_pos(audio_source, aw - 104, 12);
+    lv_obj_set_width(audio_source, 90);
+    int d = big ? 170 : 150;
+    lv_obj_set_pos(art_circle, (aw - d) / 2, big ? 18 : 20);
+    lv_obj_set_size(art_circle, d, d);
+    lv_obj_set_pos(track_lbl, 8, big ? 198 : 182);
+    lv_obj_set_width(track_lbl, aw - 16);
+    lv_obj_set_style_text_font(track_lbl, big ? &lv_font_montserrat_18 : &lv_font_montserrat_16, 0);
+    lv_obj_set_pos(artist_lbl, 8, big ? 222 : 204);
+    lv_obj_set_width(artist_lbl, aw - 16);
+    lv_obj_set_pos(time_pos_lbl, 8, big ? 238 : 220);
+    lv_obj_set_width(time_pos_lbl, aw - 16);
+    if (big) {
+        lv_obj_set_pos(prev_btn, 62, 258);
+        lv_obj_set_pos(play_btn, 114, 252);
+        lv_obj_set_pos(next_btn, 178, 258);
+    } else {
+        lv_obj_set_pos(prev_btn, 26, 246);
+        lv_obj_set_pos(play_btn, 70, 240);
+        lv_obj_set_pos(next_btn, 126, 246);
+    }
+}
 static void update_bt(void) {
     bool connected = bt_sim_connected(M->state);
     int value = 0;
@@ -769,6 +907,7 @@ static void update_bt(void) {
         if (connected) lv_obj_remove_flag(bt_mute_btn, LV_OBJ_FLAG_HIDDEN);
         else lv_obj_add_flag(bt_mute_btn, LV_OBJ_FLAG_HIDDEN);
     }
+    layout_bt_actions(connected, lv_obj_get_width(bt_card) < 300);
 
     uint32_t dot = C_MUTED;
     if (connected) dot = C_GREEN;
@@ -806,13 +945,40 @@ static void update_audio(void) {
 void ui_update(void) {
     if (!M) return;
 
-    if (M->state == BT_PLAYING && last_bt_state != BT_PLAYING) player_expanded = true;
     if (M->state != BT_PLAYING) player_expanded = false;
     if (M->state != BT_ACTIVE) call_target[0] = '\0';
 
+    apply_home_layout();
     update_phone();
     update_bt();
     update_audio();
+    if (bt_resume_after_radio && screen_idx < 0 && M->state == BT_CONNECTED &&
+        (last_bt_state == BT_INCOMING || last_bt_state == BT_ACTIVE)) {
+        bt_resume_after_radio = false;
+        bt_sim_set_state(M, BT_PLAYING);
+    }
+
+    if (now_playing_lbl) {
+        char line[128];
+        if (active_src == SRC_RADIO && panels_radio_on()) {
+            snprintf(line, sizeof(line), "%s", panels_radio_summary());
+        } else if (M->state == BT_PLAYING) {
+            const bt_track_t *t = bt_sim_track(M);
+            snprintf(line, sizeof(line), "BT  |  %s  |  %s", t->title, t->artist);
+        } else if (M->state == BT_CONNECTED) {
+            snprintf(line, sizeof(line), "BT  |  connected, nothing playing");
+        } else if (M->state == BT_INCOMING) {
+            snprintf(line, sizeof(line), "BT  |  incoming call");
+        } else if (M->state == BT_ACTIVE) {
+            snprintf(line, sizeof(line), "BT  |  call in progress");
+        } else if (panels_radio_on()) {
+            snprintf(line, sizeof(line), "%s", panels_radio_summary());
+        } else {
+            snprintf(line, sizeof(line), "No media");
+        }
+        set_text_if(now_playing_lbl, line);
+    }
+
     update_player();
     update_player_visibility();
     update_call_banner();
@@ -965,6 +1131,7 @@ void ui_init(bt_model_t *model) {
     /* ── top bar (no weather) ───────────────────────────────── */
     time_label = label(scr, "00:00", 16, 4, 92, 34, &lv_font_montserrat_26, C_TEXT, LV_TEXT_ALIGN_LEFT);
     date_label = label(scr, "", 112, 12, 260, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
+    now_playing_lbl = label(scr, "", 386, 13, 300, 16, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
     symbol(scr, LV_SYMBOL_BLUETOOTH, &lv_font_montserrat_18, C_SOFT, 710, 10, 22, 22);
     top_bt_dot = circle(scr, 728, 25, 6, C_GREEN);
@@ -974,7 +1141,8 @@ void ui_init(bt_model_t *model) {
     lv_obj_add_event_cb(vol_btn, volume_open_cb, LV_EVENT_CLICKED, NULL);
 
     /* ── phone card ─────────────────────────────────────────── */
-    lv_obj_t *phone = card(home, 12, 50, 234, 318);
+    phone_card = card(home, 12, 50, 234, 318);
+    lv_obj_t *phone = phone_card;
     label(phone, "PHONE", 14, 12, 100, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -985,16 +1153,16 @@ void ui_init(bt_model_t *model) {
     device_status = label(phone, "Connected", 70, 58, 150, 14, &lv_font_montserrat_12, C_GREEN, LV_TEXT_ALIGN_LEFT);
     device_mac = label(phone, BT_DEVICE_MAC, 70, 76, 150, 12, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
-    label(phone, "Signal 5/5", 14, 100, 100, 14, &lv_font_montserrat_10, C_SOFT, LV_TEXT_ALIGN_LEFT);
-    label(phone, "Battery 82%", 120, 100, 100, 14, &lv_font_montserrat_10, C_SOFT, LV_TEXT_ALIGN_LEFT);
+    signal_lbl = label(phone, "Signal 5/5", 14, 100, 100, 14, &lv_font_montserrat_10, C_SOFT, LV_TEXT_ALIGN_LEFT);
+    battery_lbl = label(phone, "Battery 82%", 120, 100, 100, 14, &lv_font_montserrat_10, C_SOFT, LV_TEXT_ALIGN_LEFT);
 
-    box(phone, 14, 120, 206, 1, C_BTN, 0);
-    label(phone, "Phone connects to the car", 14, 136, 206, 14, &lv_font_montserrat_12,
-          C_SOFT, LV_TEXT_ALIGN_LEFT);
-    label(phone, "Open Bluetooth on your phone", 14, 156, 206, 12, &lv_font_montserrat_10,
-          C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(phone, "and select " BT_LOCAL_NAME ".", 14, 174, 206, 12, &lv_font_montserrat_10,
-          C_MUTED, LV_TEXT_ALIGN_LEFT);
+    phone_divider = box(phone, 14, 120, 206, 1, C_BTN, 0);
+    phone_hint1 = label(phone, "Phone connects to the car", 14, 136, 206, 14, &lv_font_montserrat_12,
+                        C_SOFT, LV_TEXT_ALIGN_LEFT);
+    phone_hint2 = label(phone, "Open Bluetooth on your phone", 14, 156, 206, 12, &lv_font_montserrat_10,
+                        C_MUTED, LV_TEXT_ALIGN_LEFT);
+    phone_hint3 = label(phone, "and select " BT_LOCAL_NAME ".", 14, 174, 206, 12, &lv_font_montserrat_10,
+                        C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     disconnect_btn = button(phone, "Disconnect", 14, 268, 130, 36, C_INNER, C_TEXT,
                             &lv_font_montserrat_12, sc_cb, &disconnect_lbl);
@@ -1002,7 +1170,8 @@ void ui_init(bt_model_t *model) {
                       &lv_font_montserrat_12, call_open_cb, NULL);
 
     /* ── bluetooth card ─────────────────────────────────────── */
-    lv_obj_t *bt = card(home, 256, 50, 328, 318);
+    bt_card = card(home, 256, 50, 328, 318);
+    lv_obj_t *bt = bt_card;
     label(bt, "BLUETOOTH", 14, 12, 120, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     bt_name_lbl = label(bt, BT_LOCAL_NAME, 220, 12, 94, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -1041,7 +1210,8 @@ void ui_init(bt_model_t *model) {
 
 
     /* ── audio card ─────────────────────────────────────────── */
-    lv_obj_t *audio = card(home, 594, 50, 194, 318);
+    audio_card = card(home, 594, 50, 194, 318);
+    lv_obj_t *audio = audio_card;
     label(audio, "AUDIO", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -1078,7 +1248,7 @@ void ui_init(bt_model_t *model) {
     }
 
     panels_init(scr, on_home, on_accent, on_clock, on_set_time, on_volume,
-                on_theme, on_night, on_saver, on_radio_start, on_radio_mute,
+                on_theme, on_night, on_saver, on_radio_power, on_radio_mute,
                 on_saver_timeout);
     build_player(scr);
     call_panel_init(scr, on_call_close, on_outgoing_call);

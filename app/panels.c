@@ -33,7 +33,7 @@ static void (*cb_volume)(int);
 static void (*cb_theme)(bool);
 static void (*cb_night)(bool);
 static void (*cb_saver)(bool);
-static void (*cb_radio_start)(void);
+static void (*cb_radio_power)(bool);
 static void (*cb_volume_mute)(bool);
 static void (*cb_saver_timeout)(int);
 
@@ -127,6 +127,7 @@ static bool radio_scale_sync = false;
 static lv_obj_t *radio_hint_lbl;
 static lv_obj_t *radio_rds_lbl;
 static lv_obj_t *radio_mute_lbl;
+static lv_obj_t *radio_power_lbl;
 static lv_obj_t *radio_save_lbl;
 static lv_obj_t *radio_fm_lbl;
 static lv_obj_t *radio_am_lbl;
@@ -134,6 +135,7 @@ static lv_obj_t *radio_preset_btns[6];
 
 static bool radio_on = true;
 static bool radio_mute = false;
+static char radio_summary[96] = "RADIO  off";
 static bool radio_am = false;
 static bool radio_save_mode = false;
 
@@ -219,14 +221,22 @@ static void radio_update(void) {
 
     if (!radio_on) {
         lv_label_set_text(radio_rds_lbl, "RDS  -  off");
+        snprintf(radio_summary, sizeof(radio_summary), "RADIO  off");
     } else if (radio_am) {
         lv_label_set_text(radio_rds_lbl, "AM band  -  RDS not available");
+        snprintf(radio_summary, sizeof(radio_summary), "RADIO  %.0f kHz", radio_am_freq);
     } else {
         int slot = rds_slot();
         lv_label_set_text_fmt(radio_rds_lbl, "RDS  -  %s", RDS_NAMES[slot]);
+        snprintf(radio_summary, sizeof(radio_summary), "RADIO  %.1f MHz  |  %s",
+                 radio_fm_freq, RDS_NAMES[slot]);
     }
 
     lv_label_set_text(radio_mute_lbl, radio_mute ? LV_SYMBOL_MUTE : LV_SYMBOL_VOLUME_MAX);
+    if (radio_power_lbl) {
+        lv_obj_set_style_bg_color(lv_obj_get_parent(radio_power_lbl),
+                                  col(radio_on ? 0xFE3211 : C_INNER), 0);
+    }
 
     lv_obj_set_style_bg_color(lv_obj_get_parent(radio_save_lbl),
                               col(radio_save_mode ? 0xFE3211 : C_INNER), 0);
@@ -269,6 +279,14 @@ static void radio_band_cb(lv_event_t *e) {
     radio_am = am;
     radio_save_mode = false;
     radio_update();
+}
+
+static void radio_power_cb(lv_event_t *e) {
+    (void)e;
+    radio_on = !radio_on;
+    if (!radio_on) radio_save_mode = false;
+    radio_update();
+    if (cb_radio_power) cb_radio_power(radio_on);
 }
 
 static void radio_scale_cb(lv_event_t *e) {
@@ -356,6 +374,8 @@ static void build_radio(lv_obj_t *parent) {
         lv_obj_add_event_cb(radio_preset_btns[i], radio_preset_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
+    button(radio_panel, LV_SYMBOL_POWER, 80, 266, 90, 34, 0xFE3211,
+           &lv_font_montserrat_18, radio_power_cb, &radio_power_lbl);
     button(radio_panel, LV_SYMBOL_SAVE, 238, 266, 160, 34, C_INNER,
            &lv_font_montserrat_16, radio_save_cb, &radio_save_lbl);
     button(radio_panel, LV_SYMBOL_MUTE, 508, 266, 90, 34, C_INNER,
@@ -1104,7 +1124,7 @@ static void build_settings(lv_obj_t *parent) {
     }
 
     label(settings_panel, "ABOUT", 24, 214, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "CAR_482 / v0.7.0 / LVGL", 120, 214, 320, 14,
+    label(settings_panel, "CAR_482 / v0.8.0 / LVGL", 120, 214, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
@@ -1148,7 +1168,7 @@ static void build_settings(lv_obj_t *parent) {
 
 /* ── public API ──────────────────────────────────────────────── */
 
-void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long), void (*on_volume)(int), void (*on_theme)(bool), void (*on_night)(bool), void (*on_saver)(bool), void (*on_radio_start)(void), void (*on_volume_mute)(bool), void (*on_saver_timeout)(int)) {
+void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint32_t), void (*on_clock)(bool), void (*on_set_time)(long), void (*on_volume)(int), void (*on_theme)(bool), void (*on_night)(bool), void (*on_saver)(bool), void (*on_radio_power)(bool), void (*on_volume_mute)(bool), void (*on_saver_timeout)(int)) {
     cb_home = on_home;
     cb_accent = on_accent;
     cb_clock = on_clock;
@@ -1157,7 +1177,7 @@ void panels_init(lv_obj_t *parent, void (*on_home)(void), void (*on_accent)(uint
     cb_theme = on_theme;
     cb_night = on_night;
     cb_saver = on_saver;
-    cb_radio_start = on_radio_start;
+    cb_radio_power = on_radio_power;
     cb_volume_mute = on_volume_mute;
     cb_saver_timeout = on_saver_timeout;
 
@@ -1175,6 +1195,14 @@ void panels_set_boot_volume(int value) {
 void panels_set_saver_timeout(int seconds) {
     saver_timeout = seconds;
     if (settings_panel) settings_refresh();
+}
+
+const char *panels_radio_summary(void) {
+    return radio_summary;
+}
+
+bool panels_radio_on(void) {
+    return radio_on;
 }
 
 void panels_set_radio_mute(bool muted) {

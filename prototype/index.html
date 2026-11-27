@@ -96,6 +96,7 @@
   .topbar{position:absolute;left:0;right:0;top:0;height:50px}
   .clock{position:absolute;left:16px;top:4px;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1}
   .date{position:absolute;left:112px;top:13px;font-size:12px;color:var(--muted);white-space:nowrap;margin:0}
+  .now-bar{position:absolute;left:386px;top:13px;width:300px;text-align:center;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .top-right{position:absolute;right:24px;top:8px;height:32px;display:flex;align-items:flex-start;gap:10px;margin:0}
   .status-bt{width:22px;height:22px;position:relative;display:grid;place-items:center;opacity:.9;margin-top:2px}
   .status-bt .dot{position:absolute;right:-1px;bottom:1px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--bg)}
@@ -256,6 +257,21 @@
   .dock-item.active .dock-label{color:var(--text);font-weight:600}
 
 
+  /* music focus: audio card grows, Bluetooth card shrinks */
+  #stage.music-focus .phone-card{left:12px;width:210px}
+  #stage.music-focus .bt-card{left:234px;width:260px}
+  #stage.music-focus .audio-card{left:506px;width:282px}
+  #stage.music-focus .device-name{font-size:13px}
+  #stage.music-focus .phone-actions .btn{font-size:10px;padding:0 8px}
+  #stage.music-focus .bt-actions .btn{font-size:10px;padding:0 4px}
+  #stage.music-focus .bt-actions .btn.primary{min-width:66px}
+  #stage.music-focus #btnMute{width:54px}
+  #stage.music-focus #btnSecondary{width:88px}
+  #stage.music-focus .bt-sub{max-width:232px}
+  #stage.music-focus .art-wrap{width:170px;height:170px;margin-top:18px}
+  #stage.music-focus .art svg{width:70px;height:70px}
+  #stage.music-focus .track{font-size:18px}
+
   /* ── app panels: Radio / Files / Settings ───────────────── */
   .app-panel{
     position:absolute;left:12px;top:50px;width:776px;height:318px;
@@ -286,7 +302,8 @@
   .radio-presets .btn{flex:1;height:32px;font-size:12px}
   .radio-presets .btn.sel{box-shadow:0 0 0 2px var(--accent)}
   .radio-bottom{display:flex;justify-content:space-between;margin-top:6px}
-  .radio-bottom .btn{width:180px;height:32px;font-size:12px}
+  .radio-bottom .btn{width:150px;height:32px;font-size:12px}
+  #radioPower{width:64px}
   .files-sources{display:flex;align-items:center;gap:8px;margin-top:4px}
   .files-sources .sub-label{margin-right:4px}
   .files-sources .clock-btn{padding:4px 12px;font-size:11px}
@@ -541,6 +558,7 @@
   <header class="topbar">
     <div class="clock" id="clock">17:37</div>
     <div class="date" id="date">Thursday, 26 November</div>
+    <div class="now-bar" id="nowBar"></div>
     <div class="top-right">
       <div class="status-bt" title="Bluetooth status">
         <svg width="17" height="17" style="color:var(--soft)"><use href="#i-bt"/></svg>
@@ -658,6 +676,7 @@
       <button class="btn ghost" data-preset="5">6</button>
     </div>
     <div class="radio-bottom">
+      <button class="btn primary radio-ic" id="radioPower" title="Power"><svg><use href="#i-power"/></svg></button>
       <button class="btn ghost radio-ic" id="radioSave" title="Save preset"><svg><use href="#i-save"/></svg></button>
       <button class="btn ghost radio-ic" id="radioMute" title="Mute"><svg><use id="muteIcon" href="#i-mute"/></svg></button>
     </div>
@@ -762,7 +781,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.7.0</b>
+          <span>UI</span><b>LVGL 9.3 / v0.8.0</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -921,6 +940,7 @@
   let btVolume = defaultVolume;
   let btSavedVolume = defaultVolume;
   let btMuted = false;
+  let btWasPlaying = false;
   let radioVolume = defaultVolume;
   let radioSavedVolume = defaultVolume;
   let activeSource = 'bt';
@@ -1177,6 +1197,33 @@
     el('btnMute').style.display = connected ? '' : 'none';
     renderPlayer();
     renderIncomingBanner();
+    renderHomeLayout();
+    renderNowBar();
+  }
+
+  function renderNowBar() {
+    let text = 'No media';
+    if (activeSource === 'radio' && radioOn) {
+      text = radioAm ? `RADIO ${Math.round(freqAm)} kHz`
+        : `RADIO ${freqFm.toFixed(1)} MHz | ${RDS_NAMES[rdsSlot()]}`;
+    } else if (state.mode === 'playing') {
+      const t = tracks[state.track];
+      text = `BT | ${t.title} | ${t.artist}`;
+    } else if (state.mode === 'connected') {
+      text = 'BT | connected, nothing playing';
+    } else if (state.mode === 'incoming') {
+      text = 'BT | incoming call';
+    } else if (state.mode === 'active') {
+      text = 'BT | call in progress';
+    } else if (radioOn) {
+      text = radioAm ? `RADIO ${Math.round(freqAm)} kHz`
+        : `RADIO ${freqFm.toFixed(1)} MHz | ${RDS_NAMES[rdsSlot()]}`;
+    }
+    el('nowBar').textContent = text;
+  }
+
+  function renderHomeLayout() {
+    el('stage').classList.toggle('music-focus', state.mode === 'playing');
   }
 
   function renderIncomingBanner() {
@@ -1199,7 +1246,6 @@
     const prev = state.mode;
     if (next === 'incoming' && prev === 'playing') state.interrupted = true;
     if (next !== 'incoming' && next !== 'active') state.interrupted = false;
-    if (next === 'playing' && prev !== 'playing') playerExpanded = true;
     if (next !== 'playing') playerExpanded = false;
     if (next !== 'active' && next !== 'incoming') state.callTarget = '';
     if (next === 'active' && !state.callTarget) state.callTarget = '+381 60 123 4567';
@@ -1392,13 +1438,21 @@
 
   function showScreen(name) {
     screen = name;
-    if (name === 'radio') activeSource = 'radio';
-    else if (name === 'home') activeSource = 'bt';
+    if (name === 'radio' && radioOn) {
+      activeSource = 'radio';
+      if (state.mode === 'playing') { btWasPlaying = true; state.mode = 'connected'; }
+    } else if (name === 'home') {
+      activeSource = 'bt';
+      if (btWasPlaying && state.mode === 'connected') { btWasPlaying = false; state.mode = 'playing'; }
+    }
     Object.entries(PANELS).forEach(([key, panel]) => panel.classList.toggle('show', key === name));
     closeCallPanel();
     setDockActive(name);
     renderPlayer();
     renderIncomingBanner();
+    renderHomeLayout();
+    renderNowBar();
+    render();
     if (name === 'radio') renderRadio();
     if (name === 'files') renderFiles();
     if (name === 'settings') renderSettings();
@@ -1429,6 +1483,7 @@
       const i = Number(b.dataset.preset);
       b.classList.toggle('sel', radioOn && Math.abs(radioFreq() - bandPresets()[i]) < (radioAm ? 1 : 0.05));
     });
+    renderNowBar();
   }
 
   document.querySelectorAll('[data-radio]').forEach(b => b.addEventListener('click', () => {
@@ -1467,6 +1522,25 @@
   });
   el('bandFm').addEventListener('click', () => { radioAm = false; radioSaveMode = false; renderRadio(); });
   el('bandAm').addEventListener('click', () => { radioAm = true; radioSaveMode = false; renderRadio(); });
+  el('radioPower').addEventListener('click', () => {
+    radioOn = !radioOn;
+    if (!radioOn) radioSaveMode = false;
+    renderRadio();
+    if (radioOn) {
+      activeSource = 'radio';
+      radioVolume = defaultVolume;
+      radioSavedVolume = defaultVolume;
+      if (state.mode === 'playing') { btWasPlaying = true; state.mode = 'connected'; }
+      renderVolume();
+      showVolume();
+    } else {
+      activeSource = 'bt';
+      if (btWasPlaying) { btWasPlaying = false; state.mode = 'playing'; }
+      renderVolume();
+      showVolume();
+    }
+    render();
+  });
   el('radioMute').addEventListener('click', () => {
     if (!radioMute) {
       radioSavedVolume = radioVolume;

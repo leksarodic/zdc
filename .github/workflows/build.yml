@@ -59,6 +59,10 @@ jobs:
         run: |
           file build-arm/strada-ui-fb
           file build-arm/strada-ui-fb | grep -q "ARM"
+      - name: Binary size
+        run: |
+          ls -lh build-arm/strada-ui-fb
+          arm-linux-gnueabi-size build-arm/strada-ui-fb
       - name: Run ARMv5 tests under QEMU
         run: |
           sudo apt-get install -y --no-install-recommends qemu-user

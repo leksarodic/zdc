@@ -17,7 +17,10 @@ void ui_set_volume(int value);
 void ui_volume_up(void);
 void ui_volume_down(void);
 void ui_set_saver_timeout(int seconds);
+void ui_set_radio_mute(bool muted);
 void ui_open_file(const char *path);
+#ifdef STRADA_USE_SDL
 void ui_screenshot(const char *path);
+#endif
 
 #endif

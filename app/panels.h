@@ -17,7 +17,7 @@ void panels_init(lv_obj_t *parent,
                  void (*on_night)(bool),
                  void (*on_saver)(bool),
                  void (*on_radio_start)(void),
-                 void (*on_volume_osd)(void),
+                 void (*on_volume_mute)(bool),
                  void (*on_saver_timeout)(int));
 void panels_show(int idx);
 void panels_hide(void);
@@ -25,6 +25,7 @@ void panels_set_files_root(const char *root);
 void panels_set_now(long epoch);
 void panels_set_boot_volume(int value);
 void panels_set_saver_timeout(int seconds);
+void panels_set_radio_mute(bool muted);
 void panels_set_modes(bool light, bool night, bool saver);
 void panels_open_file(const char *path);
 

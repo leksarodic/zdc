@@ -54,6 +54,10 @@ screenshot: build
 	@$(PYTHON) tools/ppm_to_png.py artifacts/files-photo.ppm artifacts/files-photo.png
 	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call-interrupt.ppm --frames 30 --state connected --interrupt
 	@$(PYTHON) tools/ppm_to_png.py artifacts/call-interrupt.ppm artifacts/call-interrupt.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/call-banner.ppm --frames 30 --state incoming --panel radio
+	@$(PYTHON) tools/ppm_to_png.py artifacts/call-banner.ppm artifacts/call-banner.png
+	@$(XVFB) ./$(BUILD)/strada-ui --screenshot artifacts/radio-muted.ppm --frames 30 --state connected --panel radio --radio-mute
+	@$(PYTHON) tools/ppm_to_png.py artifacts/radio-muted.ppm artifacts/radio-muted.png
 
 arm:
 	$(CMAKE) -S . -B build-arm \

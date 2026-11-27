@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     lv_linux_fbdev_set_file(disp, fb);
-    lv_linux_fbdev_set_force_refresh(disp, true);
+    lv_linux_fbdev_set_force_refresh(disp, false);
     lv_display_set_default(disp);
 
     if (touch && touch[0]) {

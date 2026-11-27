@@ -31,7 +31,11 @@ static time_t clock_base;
 static time_t clock_base_at;
 static bool clock_base_set = false;
 static int screen_idx = -1;
-static int volume = 70;          /* current volume, changed by VOL+ / VOL- */
+typedef enum { SRC_BT = 0, SRC_RADIO = 1 } audio_source_t;
+static audio_source_t active_src = SRC_BT;
+static int radio_volume = 70;
+static int bt_volume = 70;
+static bool radio_muted = false;
 static int boot_volume = 70;     /* Settings slider: level used at power-on */
 static int saver_timeout_sec = 30;
 static bool night_dim = false;
@@ -40,7 +44,12 @@ static bool saver_enabled = true;
 static lv_obj_t *vol_osd;
 static lv_obj_t *vol_bar;
 static lv_obj_t *vol_pct;
+static lv_obj_t *vol_icon;
+static lv_obj_t *vol_src_lbl;
 static lv_timer_t *osd_timer;
+
+static lv_obj_t *call_banner;
+static lv_obj_t *call_banner_name;
 
 static lv_obj_t *dim_overlay;
 static lv_obj_t *saver;
@@ -96,7 +105,6 @@ static lv_obj_t *prev_btn;
 static lv_obj_t *next_btn;
 
 static lv_timer_t *tick_timer;
-static lv_timer_t *clock_timer;
 
 static lv_color_t col(uint32_t hex) {
     return lv_color_hex(hex);
@@ -186,6 +194,8 @@ static lv_obj_t *icon_center(lv_obj_t *parent, const char *sym, const lv_font_t 
     return l;
 }
 
+static void clock_update(void);
+
 static void pc_cb(lv_event_t *e) { (void)e; bt_sim_primary(M); ui_update(); }
 static void sc_cb(lv_event_t *e) { (void)e; bt_sim_secondary(M); ui_update(); }
 static void next_cb(lv_event_t *e) { (void)e; bt_sim_next(M); ui_update(); }
@@ -200,6 +210,7 @@ static void tick_cb(lv_timer_t *t) {
     (void)t;
     bt_sim_tick(M, 1);
     ui_update();
+    clock_update();
 }
 
 static time_t clock_now(void) {
@@ -236,11 +247,6 @@ static void clock_update(void) {
     }
 }
 
-static void clock_cb(lv_timer_t *t) {
-    (void)t;
-    clock_update();
-}
-
 static void set_text_if(lv_obj_t *l, const char *s) {
     const char *cur = lv_label_get_text(l);
     if (!cur || strcmp(cur, s) != 0) lv_label_set_text(l, s);
@@ -262,9 +268,12 @@ static void update_dock(int screen) {
 }
 
 static void update_player_visibility(void);
+static void update_call_banner(void);
 
 static void show_screen(int idx) {
     screen_idx = idx;
+    if (idx == 0) active_src = SRC_RADIO;
+    else if (idx < 0) active_src = SRC_BT;
     call_panel_hide();
     if (idx < 0) {
         if (home) lv_obj_remove_flag(home, LV_OBJ_FLAG_HIDDEN);
@@ -276,6 +285,7 @@ static void show_screen(int idx) {
     }
     update_dock(idx);
     update_player_visibility();
+    update_call_banner();
 }
 
 static void on_home(void) { show_screen(-1); }
@@ -306,8 +316,25 @@ static void osd_hide_cb(lv_timer_t *t) {
     lv_timer_pause(t);
 }
 
+static int *active_volume(void) {
+    return active_src == SRC_RADIO ? &radio_volume : &bt_volume;
+}
+
+static void volume_render(void) {
+    bool muted = active_src == SRC_RADIO && radio_muted;
+    int v = *active_volume();
+    if (vol_icon) lv_label_set_text(vol_icon, muted ? LV_SYMBOL_MUTE : LV_SYMBOL_VOLUME_MAX);
+    if (vol_src_lbl) lv_label_set_text(vol_src_lbl, active_src == SRC_RADIO ? "RADIO" : "BLUETOOTH");
+    if (vol_bar) lv_bar_set_value(vol_bar, muted ? 0 : v, LV_ANIM_OFF);
+    if (vol_pct) {
+        if (muted) lv_label_set_text(vol_pct, "MUTED");
+        else lv_label_set_text_fmt(vol_pct, "%d%%", v);
+    }
+}
+
 static void volume_show(void) {
     if (!vol_osd) return;
+    volume_render();
     lv_obj_remove_flag(vol_osd, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(vol_osd);
     if (dim_overlay && night_dim) {
@@ -332,7 +359,8 @@ static void settings_load(void) {
         while ((c = fgetc(f)) != EOF && c != '\n') {}
     }
     fclose(f);
-    volume = boot_volume;
+    radio_volume = boot_volume;
+    bt_volume = boot_volume;
 }
 
 static void settings_save(void) {
@@ -345,15 +373,14 @@ static void settings_save(void) {
 static void volume_apply(int v, bool show) {
     if (v < 0) v = 0;
     if (v > 100) v = 100;
-    volume = v;
-    if (vol_bar) lv_bar_set_value(vol_bar, v, LV_ANIM_OFF);
-    if (vol_pct) lv_label_set_text_fmt(vol_pct, "%d%%", v);
+    *active_volume() = v;
     if (show) volume_show();
+    else volume_render();
 }
 
 static void volume_open_cb(lv_event_t *e) { (void)e; show_screen(2); volume_show(); }
-static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(volume + 5, true); }
-static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(volume - 5, true); }
+static void volume_up_cb(lv_event_t *e) { (void)e; volume_apply(*active_volume() + 5, true); }
+static void volume_down_cb(lv_event_t *e) { (void)e; volume_apply(*active_volume() - 5, true); }
 static void on_volume(int v) {
     if (v < 0) v = 0;
     if (v > 100) v = 100;
@@ -362,10 +389,14 @@ static void on_volume(int v) {
 }
 
 static void on_radio_start(void) {
-    volume_apply(boot_volume, true);
+    radio_volume = boot_volume;
+    active_src = SRC_RADIO;
+    volume_render();
+    volume_show();
 }
 
-static void on_volume_osd(void) {
+static void on_radio_mute(bool muted) {
+    radio_muted = muted;
     volume_show();
 }
 
@@ -374,6 +405,31 @@ static void on_saver_timeout(int seconds) {
     saver_timeout_sec = seconds;
     settings_save();
     panels_set_saver_timeout(seconds);
+}
+
+static void call_banner_answer_cb(lv_event_t *e) {
+    (void)e;
+    if (M && M->state == BT_INCOMING) bt_sim_primary(M);
+    show_screen(-1);
+    ui_update();
+}
+
+static void call_banner_reject_cb(lv_event_t *e) {
+    (void)e;
+    if (M && M->state == BT_INCOMING) bt_sim_secondary(M);
+    ui_update();
+}
+
+static void update_call_banner(void) {
+    if (!call_banner) return;
+    bool show = M && M->state == BT_INCOMING && screen_idx >= 0;
+    if (show) {
+        if (call_banner_name) lv_label_set_text(call_banner_name, BT_DEVICE_NAME "  /  +381 60 123 4567");
+        lv_obj_remove_flag(call_banner, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_foreground(call_banner);
+    } else {
+        lv_obj_add_flag(call_banner, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 /* ── theme and night mode ───────────────────────────────────── */
@@ -436,9 +492,10 @@ void ui_set_screensaver(bool on) { on_saver(on); }
 void ui_show_screensaver(void) { saver_show_now(); }
 void ui_show_volume(void) { volume_show(); }
 void ui_set_volume(int v) { volume_apply(v, false); }
-void ui_volume_up(void) { volume_apply(volume + 5, true); }
-void ui_volume_down(void) { volume_apply(volume - 5, true); }
+void ui_volume_up(void) { volume_apply(*active_volume() + 5, true); }
+void ui_volume_down(void) { volume_apply(*active_volume() - 5, true); }
 void ui_set_saver_timeout(int seconds) { on_saver_timeout(seconds); }
+void ui_set_radio_mute(bool muted) { panels_set_radio_mute(muted); }
 void ui_open_file(const char *path) { panels_open_file(path); }
 
 static void dock_cb(lv_event_t *e) {
@@ -676,6 +733,7 @@ void ui_update(void) {
     update_audio();
     update_player();
     update_player_visibility();
+    update_call_banner();
     last_bt_state = M->state;
 }
 
@@ -727,24 +785,39 @@ static void build_volume_osd(lv_obj_t *scr) {
 
     button(vol_osd, "-", 14, 18, 40, 34, C_INNER, C_TEXT, &lv_font_montserrat_18,
            volume_down_cb, NULL);
-    symbol(vol_osd, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_18, C_SOFT, 62, 22, 32, 26);
+    vol_icon = symbol(vol_osd, LV_SYMBOL_VOLUME_MAX, &lv_font_montserrat_18, C_SOFT, 62, 22, 32, 26);
+    vol_src_lbl = label(vol_osd, "BLUETOOTH", 104, 7, 166, 12,
+                        &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_LEFT);
 
     vol_bar = lv_bar_create(vol_osd);
-    lv_obj_set_pos(vol_bar, 104, 29);
+    lv_obj_set_pos(vol_bar, 104, 30);
     lv_obj_set_size(vol_bar, 166, 12);
     lv_bar_set_range(vol_bar, 0, 100);
-    lv_bar_set_value(vol_bar, volume, LV_ANIM_OFF);
+    lv_bar_set_value(vol_bar, bt_volume, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(vol_bar, col(C_BTN), LV_PART_MAIN);
     lv_obj_set_style_bg_color(vol_bar, col(accent), LV_PART_INDICATOR);
     lv_obj_set_style_radius(vol_bar, 6, LV_PART_MAIN);
     lv_obj_set_style_radius(vol_bar, 6, LV_PART_INDICATOR);
 
-    vol_pct = label(vol_osd, "70%", 274, 22, 36, 26, &lv_font_montserrat_12, C_TEXT, LV_TEXT_ALIGN_RIGHT);
+    vol_pct = label(vol_osd, "70%", 262, 22, 50, 26, &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_RIGHT);
     button(vol_osd, "+", 314, 18, 34, 34, C_INNER, C_TEXT, &lv_font_montserrat_18,
            volume_up_cb, NULL);
 
     osd_timer = lv_timer_create(osd_hide_cb, 1800, NULL);
     lv_timer_pause(osd_timer);
+}
+
+static void build_call_banner(lv_obj_t *scr) {
+    call_banner = box(scr, 190, 60, 420, 96, C_CARD, 16);
+    lv_obj_add_flag(call_banner, LV_OBJ_FLAG_HIDDEN);
+    label(call_banner, "INCOMING CALL", 16, 10, 200, 14,
+          &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_LEFT);
+    call_banner_name = label(call_banner, BT_DEVICE_NAME, 16, 28, 388, 20,
+                             &lv_font_montserrat_14, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    button(call_banner, "Answer", 16, 56, 180, 30, C_GREEN, C_TEXT,
+           &lv_font_montserrat_12, call_banner_answer_cb, NULL);
+    button(call_banner, "Reject", 224, 56, 180, 30, C_INNER, C_TEXT,
+           &lv_font_montserrat_12, call_banner_reject_cb, NULL);
 }
 
 static void build_overlays(lv_obj_t *scr) {
@@ -899,12 +972,15 @@ void ui_init(bt_model_t *model) {
     }
 
     panels_init(scr, on_home, on_accent, on_clock, on_set_time, on_volume,
-                on_theme, on_night, on_saver, on_radio_start, on_volume_osd,
+                on_theme, on_night, on_saver, on_radio_start, on_radio_mute,
                 on_saver_timeout);
     build_player(scr);
     call_panel_init(scr, on_call_close, on_outgoing_call);
     build_volume_osd(scr);
-    volume_apply(volume, false);
+    build_call_banner(scr);
+    radio_volume = boot_volume;
+    bt_volume = boot_volume;
+    volume_apply(bt_volume, false);
     panels_set_boot_volume(boot_volume);
     panels_set_saver_timeout(saver_timeout_sec);
     build_overlays(scr);
@@ -914,10 +990,8 @@ void ui_init(bt_model_t *model) {
     clock_update();
 
     tick_timer = lv_timer_create(tick_cb, 1000, NULL);
-    clock_timer = lv_timer_create(clock_cb, 1000, NULL);
     idle_timer = lv_timer_create(idle_cb, 1000, NULL);
     (void)tick_timer;
-    (void)clock_timer;
     (void)idle_timer;
 }
 
@@ -933,6 +1007,7 @@ void ui_show_call(void) {
     if (M && bt_sim_connected(M->state)) call_panel_show();
 }
 
+#ifdef STRADA_USE_SDL
 void ui_screenshot(const char *path) {
     lv_refr_now(NULL);
     lv_draw_buf_t *buf = lv_snapshot_take(lv_screen_active(), LV_COLOR_FORMAT_RGB888);
@@ -954,3 +1029,4 @@ void ui_screenshot(const char *path) {
     fclose(f);
     lv_draw_buf_destroy(buf);
 }
+#endif

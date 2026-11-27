@@ -21,7 +21,9 @@ A StradaOS-inspired **800×480** UI for the Chinese **7010B** car MP5 radio, wit
 | Active call | [active.png](docs/screenshots/active.png) |
 | Error | [error.png](docs/screenshots/error.png) |
 | Call popup | [call.png](docs/screenshots/call.png) |
+| Incoming call over Radio | [call-banner.png](docs/screenshots/call-banner.png) |
 | Music paused for call | [call-interrupt.png](docs/screenshots/call-interrupt.png) |
+| Radio muted + volume popup | [radio-muted.png](docs/screenshots/radio-muted.png) |
 | Volume overlay | [volume.png](docs/screenshots/volume.png) |
 | Light theme | [light.png](docs/screenshots/light.png) |
 | Light settings | [light-settings.png](docs/screenshots/light-settings.png) |
@@ -45,6 +47,9 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * **Save preset**: press the save icon, then 1–6 to store the current station; the hint line tells you when save mode is active
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
 * **RDS** shows the tuned station name only, for example `RDS - Jazz FM`; AM shows `RDS not available`
+* **Radio mute** shows a crossed speaker, and the volume popup shows `MUTED`
+* FM/AM are mutually exclusive radio-button pairs
+* Radio has no top-right close button; leave it through the dock
 * Power and mute states; the old “Stereo / 5 bars” line is gone
 * Simulated tuner and RDS in the emulator; on hardware those map to the MCU/BT UART protocol
 
@@ -92,6 +97,8 @@ The top-bar speaker button opens **Settings and the volume popup together**, wit
 - Linux framebuffer: `--buttons /dev/input/event1` maps `KEY_VOLUMEUP` / `KEY_VOLUMEDOWN`.
 - Browser test bar: **HW VOL− / VOL+ / MODE** buttons.
 - Boot volume is separate from current volume: the Settings slider sets the boot/radio-start level; VOL+ / VOL− change current volume only.
+- Radio and Bluetooth keep **separate volume levels**. The popup labels the active source (`RADIO` or `BLUETOOTH`).
+- Bluetooth stays connected while Radio is on; an incoming call shows an Answer/Reject banner over Radio/Files/Settings.
 
 ### Theme, night dim and screensaver
 
@@ -117,7 +124,9 @@ Pressing Play maximises the player automatically. It shows a large album art, tr
 
 The phone card **Call** button opens a **560×280 popup** with recent contacts and a dial pad, over a dimmed scrim. Each recent entry shows both the **name and number**. Pick a contact or dial a number, then press **Call**; the active-call screen shows the number and timer. The scrim closes the popup when tapped, and the close button is intentionally small.
 
-The paired-device list on the Bluetooth page has been removed. The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select CAR_482 on your phone**. The car advertises; the phone connects to the car.
+The paired-device list on the Bluetooth page has been removed. The pairing copy is phone-first: **Pair from your phone**, **Open Bluetooth on your phone**, **Select CAR_482 on your phone.** The car advertises; the phone connects to the car.
+
+Bluetooth remains connected when Radio is on. An incoming call overlays an Answer/Reject banner on any panel; answering opens the call screen, rejecting returns to what you were doing.
 
 ### Music interrupted by a call
 
@@ -283,6 +292,12 @@ The stock update path is encoded in `app_config.fex` and `update.mod`:
 - `update.mod` uses `FULLIMG_00000000`, `modupdate`, `update_nor.c`, `IMAGEWTY` and `spinor` page-program commands, then restarts.
 
 Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UPDATE.md](docs/FIRMWARE_UPDATE.md). The repo's `7010b-CAR_482.img` is a full SPI dump for a programmer, not the vendor `ePDKv100.img` package.
+
+## Real-device status
+
+The stock 7010B runs Melis/ePDK, not Linux, so `strada-ui-fb` is **not** a drop-in stock replacement. The Linux framebuffer build is real and uses real fbdev/evdev/files, but Bluetooth and calls are still simulated and WAV output is SDL-only. See [docs/REAL_DEVICE.md](docs/REAL_DEVICE.md) for the exact gap, hardware checklist and a systemd example.
+
+Performance tuning for the low-spec target is documented in [docs/PERFORMANCE.md](docs/PERFORMANCE.md): 16-bit color, 2 MiB LVGL heap, partial refresh, `-Os`, widget subset and one main 1 Hz timer.
 
 ## QEMU testing
 

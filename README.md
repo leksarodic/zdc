@@ -284,6 +284,10 @@ The stock update path is encoded in `app_config.fex` and `update.mod`:
 
 Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UPDATE.md](docs/FIRMWARE_UPDATE.md). The repo's `7010b-CAR_482.img` is a full SPI dump for a programmer, not the vendor `ePDKv100.img` package.
 
+## QEMU testing
+
+`make qemu-test` cross-compiles the Bluetooth/UART tests as a static ARMv5TE binary and runs them under `qemu-arm`. The SDL and browser builds cover UI behavior; the stock Melis firmware cannot boot in QEMU without a custom F1C200s machine model. See [docs/QEMU.md](docs/QEMU.md).
+
 ## Releases and updates
 
 - `VERSION` is the UI version.

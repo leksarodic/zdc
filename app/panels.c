@@ -103,18 +103,18 @@ static void close_cb(lv_event_t *e) {
     if (cb_home) cb_home();
 }
 
-static lv_obj_t *panel_header(lv_obj_t *panel, const char *title, const char *right) {
+static lv_obj_t *panel_header(lv_obj_t *panel, const char *title, const char *right, bool show_close) {
     label(panel, title, 18, 12, 260, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
     lv_obj_t *r = NULL;
     if (right && right[0]) {
         r = label(panel, right, 500, 12, 200, 18, &lv_font_montserrat_12, 0xFE3211, LV_TEXT_ALIGN_RIGHT);
     }
-    button(panel, LV_SYMBOL_CLOSE, 726, 8, 32, 32, C_INNER, &lv_font_montserrat_12, close_cb, NULL);
+    if (show_close) button(panel, LV_SYMBOL_CLOSE, 726, 8, 32, 32, C_INNER, &lv_font_montserrat_12, close_cb, NULL);
     return r;
 }
 
 static lv_obj_t *make_panel(lv_obj_t *parent) {
-    lv_obj_t *p = box(parent, 12, 50, 776, 297, C_CARD, 16);
+    lv_obj_t *p = box(parent, 12, 50, 776, 318, C_CARD, 16);
     lv_obj_add_flag(p, LV_OBJ_FLAG_HIDDEN);
     return p;
 }
@@ -216,10 +216,10 @@ static void radio_update(void) {
 
     lv_obj_set_style_bg_color(lv_obj_get_parent(radio_save_lbl),
                               col(radio_save_mode ? 0xFE3211 : C_INNER), 0);
-    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_fm_lbl), col(radio_am ? C_INNER : C_BTN), 0);
-    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_am_lbl), col(radio_am ? C_BTN : C_INNER), 0);
-    lv_obj_set_style_text_color(radio_fm_lbl, col(radio_am ? C_MUTED : C_TEXT), 0);
-    lv_obj_set_style_text_color(radio_am_lbl, col(radio_am ? C_TEXT : C_MUTED), 0);
+    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_fm_lbl), col(radio_am ? C_INNER : 0xFE3211), 0);
+    lv_obj_set_style_bg_color(lv_obj_get_parent(radio_am_lbl), col(radio_am ? 0xFE3211 : C_INNER), 0);
+    lv_obj_set_style_text_color(radio_fm_lbl, col(radio_am ? C_MUTED : 0xFFFFFF), 0);
+    lv_obj_set_style_text_color(radio_am_lbl, col(radio_am ? 0xFFFFFF : C_MUTED), 0);
 
     for (int i = 0; i < 6; i++) {
         double *p = band_presets();
@@ -295,7 +295,7 @@ static void radio_save_cb(lv_event_t *e) {
 
 static void build_radio(lv_obj_t *parent) {
     radio_panel = make_panel(parent);
-    panel_header(radio_panel, "RADIO", "FM / AM");
+    panel_header(radio_panel, "RADIO", "", false);
 
     radio_freq_lbl = label(radio_panel, "98.1 MHz", 0, 30, 776, 64,
                            &lv_font_montserrat_40, C_TEXT, LV_TEXT_ALIGN_CENTER);
@@ -304,10 +304,10 @@ static void build_radio(lv_obj_t *parent) {
     radio_rds_lbl = label(radio_panel, "RDS  -  off", 0, 110, 776, 14,
                           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    lv_obj_t *fm = button(radio_panel, "FM", 596, 34, 54, 28, C_BTN,
+    lv_obj_t *fm = button(radio_panel, "FM", 650, 34, 54, 28, C_BTN,
                           &lv_font_montserrat_12, NULL, &radio_fm_lbl);
     lv_obj_add_event_cb(fm, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)0);
-    lv_obj_t *am = button(radio_panel, "AM", 656, 34, 54, 28, C_INNER,
+    lv_obj_t *am = button(radio_panel, "AM", 710, 34, 54, 28, C_INNER,
                           &lv_font_montserrat_12, NULL, &radio_am_lbl);
     lv_obj_add_event_cb(am, radio_band_cb, LV_EVENT_CLICKED, (void *)(intptr_t)1);
     (void)fm; (void)am;
@@ -330,11 +330,11 @@ static void build_radio(lv_obj_t *parent) {
         lv_obj_add_event_cb(radio_preset_btns[i], radio_preset_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }
 
-    button(radio_panel, LV_SYMBOL_POWER, 120, 244, 90, 34, 0xFE3211,
+    button(radio_panel, LV_SYMBOL_POWER, 120, 264, 90, 34, 0xFE3211,
            &lv_font_montserrat_18, radio_power_cb, &radio_power_lbl);
-    button(radio_panel, LV_SYMBOL_SAVE, 328, 244, 120, 34, C_INNER,
+    button(radio_panel, LV_SYMBOL_SAVE, 328, 264, 120, 34, C_INNER,
            &lv_font_montserrat_16, radio_save_cb, &radio_save_lbl);
-    button(radio_panel, LV_SYMBOL_MUTE, 566, 244, 90, 34, C_INNER,
+    button(radio_panel, LV_SYMBOL_MUTE, 566, 264, 90, 34, C_INNER,
            &lv_font_montserrat_16, radio_mute_cb, &radio_mute_lbl);
 
     presets_load();
@@ -683,7 +683,7 @@ static void files_refresh_cb(lv_event_t *e) {
 
 static void build_files(lv_obj_t *parent) {
     files_panel = make_panel(parent);
-    files_status_lbl = panel_header(files_panel, "FILES", "USB / SD");
+    files_status_lbl = panel_header(files_panel, "FILES", "USB / SD", true);
 
     files_path_lbl = label(files_panel, file_root, 18, 38, 700, 16,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
@@ -700,18 +700,18 @@ static void build_files(lv_obj_t *parent) {
     button(files_panel, LV_SYMBOL_UP, 610, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_up_cb, NULL);
     button(files_panel, LV_SYMBOL_REFRESH, 672, 58, 54, 30, C_INNER, &lv_font_montserrat_12, files_refresh_cb, NULL);
 
-    files_list = box(files_panel, 18, 94, 740, 134, C_CARD, 8);
+    files_list = box(files_panel, 18, 94, 740, 150, C_CARD, 8);
     lv_obj_set_style_bg_opa(files_list, LV_OPA_TRANSP, 0);
     lv_obj_set_flex_flow(files_list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(files_list, 4, 0);
     lv_obj_set_style_pad_all(files_list, 2, 0);
     lv_obj_set_scroll_dir(files_list, LV_DIR_VER);
 
-    files_info_lbl = label(files_panel, "", 18, 230, 740, 18,
+    files_info_lbl = label(files_panel, "", 18, 246, 740, 18,
                            &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     lv_label_set_long_mode(files_info_lbl, LV_LABEL_LONG_MODE_CLIP);
 
-    music_box = box(files_panel, 18, 250, 740, 38, C_INNER, 8);
+    music_box = box(files_panel, 18, 266, 740, 38, C_INNER, 8);
     lv_obj_add_flag(music_box, LV_OBJ_FLAG_HIDDEN);
     music_title = label(music_box, "", 10, 3, 520, 14, &lv_font_montserrat_10, C_TEXT,
                         LV_TEXT_ALIGN_LEFT);
@@ -932,7 +932,7 @@ static void settings_reset_cb(lv_event_t *e) {
 
 static void build_settings(lv_obj_t *parent) {
     settings_panel = make_panel(parent);
-    panel_header(settings_panel, "SETTINGS", "CAR_482 / 7010B");
+    panel_header(settings_panel, "SETTINGS", "CAR_482 / 7010B", true);
 
     label(settings_panel, "ACCENT", 24, 44, 90, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     for (int i = 0; i < 5; i++) {
@@ -1002,7 +1002,7 @@ static void build_settings(lv_obj_t *parent) {
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
     label(settings_panel, "BT 55 AA LEN CMD DATA CHK", 120, 230, 320, 14,
           &lv_font_montserrat_10, C_TEXT, LV_TEXT_ALIGN_LEFT);
-    label(settings_panel, "Experimental - use at your own risk", 24, 266, 420, 12,
+    label(settings_panel, "Experimental - use at your own risk", 24, 286, 420, 12,
           &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
 
     button(settings_panel, "Reset UI", 606, 250, 140, 32, C_INNER, &lv_font_montserrat_12, settings_reset_cb, NULL);

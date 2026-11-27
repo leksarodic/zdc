@@ -1,6 +1,8 @@
 CMAKE ?= cmake
 PYTHON ?= python3
 BT_NAME ?= CAR_482
+ARM_CC ?= arm-linux-gnueabi-gcc
+QEMU ?= qemu-arm
 BUILD ?= build
 UNAME_S := $(shell uname -s)
 
@@ -8,7 +10,7 @@ ifeq ($(UNAME_S),Linux)
 XVFB ?= xvfb-run -a
 endif
 
-.PHONY: all build test emulator screenshot arm image verify-image clean
+.PHONY: all build test emulator screenshot arm qemu-test image verify-image clean
 
 all: build
 
@@ -59,6 +61,12 @@ arm:
 		-DSTRADA_BUILD_SDL=OFF -DSTRADA_BUILD_FBDEV=ON \
 		-DCMAKE_BUILD_TYPE=Release
 	$(CMAKE) --build build-arm -j
+
+qemu-test:
+	mkdir -p $(BUILD)
+	$(ARM_CC) -static -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft -O2 -Iapp \
+		tests/test_bt.c app/bt_sim.c app/bt_uart.c -o $(BUILD)/test_bt_arm
+	$(QEMU) ./$(BUILD)/test_bt_arm
 
 image:
 	mkdir -p artifacts

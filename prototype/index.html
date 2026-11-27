@@ -114,7 +114,7 @@
 
   /* ── cards ──────────────────────────────────────────────── */
   .card{
-    position:absolute;top:50px;height:297px;border-radius:16px;
+    position:absolute;top:50px;height:318px;border-radius:16px;
     background:var(--card);
     padding:14px 14px;
     overflow:hidden;
@@ -235,25 +235,25 @@
 
   /* ── dock ───────────────────────────────────────────────── */
   .dock{
-    position:absolute;left:0;right:0;bottom:0;height:104px;background:var(--dock);
+    position:absolute;left:0;right:0;bottom:0;height:88px;background:var(--dock);
     border-top:1px solid rgba(255,255,255,.035);
-    display:flex;align-items:flex-start;justify-content:space-around;padding:10px 18px 0;
+    display:flex;align-items:flex-start;justify-content:space-around;padding:8px 18px 0;
   }
   .dock-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;cursor:pointer}
   .dock-ic{
-    width:50px;height:50px;border-radius:50%;background:var(--circle);
+    width:42px;height:42px;border-radius:50%;background:var(--circle);
     display:grid;place-items:center;transition:background .15s ease, box-shadow .15s ease;
   }
   .dock-item:hover .dock-ic{background:#2B2F38}
   .dock-item.active .dock-ic{background:#2C3039;box-shadow:0 0 0 2px var(--accent)}
-  .dock-ic svg{width:24px;height:24px}
-  .dock-label{font-size:10.5px;color:var(--soft);white-space:nowrap}
+  .dock-ic svg{width:21px;height:21px}
+  .dock-label{font-size:10px;color:var(--soft);white-space:nowrap}
   .dock-item.active .dock-label{color:var(--text);font-weight:600}
 
 
   /* ── app panels: Radio / Files / Settings ───────────────── */
   .app-panel{
-    position:absolute;left:12.5px;top:50px;width:775px;height:297px;
+    position:absolute;left:12.5px;top:50px;width:775px;height:318px;
     border-radius:16px;background:var(--card);padding:14px 18px;
     display:none;z-index:6;overflow:hidden;
   }
@@ -265,9 +265,10 @@
     width:30px;height:30px;font-size:16px;line-height:1;cursor:pointer;
   }
   .panel-close:hover{background:var(--btn)}
-  .radio-top{position:absolute;right:54px;top:12px;height:24px}
+  .radio-top{position:absolute;right:18px;top:12px;height:24px}
   .radio-band{display:flex;gap:6px}
-  .radio-band .clock-btn{padding:3px 12px;font-size:11px}
+  .radio-band .clock-btn{padding:3px 12px;font-size:11px;background:var(--inner);color:var(--muted)}
+  .radio-band .clock-btn.sel{background:var(--accent);color:#fff}
   .radio-freq{font-size:48px;font-weight:600;text-align:center;letter-spacing:-.02em;margin-top:8px}
   .radio-hint{text-align:center;font-size:10px;color:var(--muted);height:12px;line-height:12px}
   .radio-row{display:flex;gap:10px;margin-top:6px}
@@ -580,7 +581,7 @@
 
   <!-- RADIO PANEL -->
   <section class="app-panel" id="radioPanel">
-    <div class="panel-head"><span class="label">Radio</span><span class="source">FM / AM</span><button class="panel-close" data-close>×</button></div>
+    <div class="panel-head"><span class="label">Radio</span></div>
     <div class="radio-top">
       <div class="radio-band">
         <button class="clock-btn sel" id="bandFm">FM</button>

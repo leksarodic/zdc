@@ -680,7 +680,7 @@ void ui_update(void) {
 }
 
 static void build_player(lv_obj_t *scr) {
-    player_panel = card(scr, 12, 50, 776, 297);
+    player_panel = card(scr, 12, 50, 776, 318);
     lv_obj_add_flag(player_panel, LV_OBJ_FLAG_HIDDEN);
 
     label(player_panel, "NOW PLAYING", 18, 12, 200, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_LEFT);
@@ -797,7 +797,7 @@ void ui_init(bt_model_t *model) {
     lv_obj_add_event_cb(vol_btn, volume_open_cb, LV_EVENT_CLICKED, NULL);
 
     /* ── phone card ─────────────────────────────────────────── */
-    lv_obj_t *phone = card(home, 12, 50, 234, 297);
+    lv_obj_t *phone = card(home, 12, 50, 234, 318);
     label(phone, "PHONE", 14, 12, 100, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     phone_source = label(phone, "A2DP", 144, 12, 76, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -819,13 +819,13 @@ void ui_init(bt_model_t *model) {
     label(phone, "and select " BT_LOCAL_NAME ".", 14, 174, 206, 12, &lv_font_montserrat_10,
           C_MUTED, LV_TEXT_ALIGN_LEFT);
 
-    disconnect_btn = button(phone, "Disconnect", 14, 245, 130, 36, C_INNER, C_TEXT,
+    disconnect_btn = button(phone, "Disconnect", 14, 268, 130, 36, C_INNER, C_TEXT,
                             &lv_font_montserrat_12, sc_cb, &disconnect_lbl);
-    call_btn = button(phone, "Call", 150, 245, 70, 36, C_INNER, C_TEXT,
+    call_btn = button(phone, "Call", 150, 268, 70, 36, C_INNER, C_TEXT,
                       &lv_font_montserrat_12, call_open_cb, NULL);
 
     /* ── bluetooth card ─────────────────────────────────────── */
-    lv_obj_t *bt = card(home, 256, 50, 328, 297);
+    lv_obj_t *bt = card(home, 256, 50, 328, 318);
     label(bt, "BLUETOOTH", 14, 12, 120, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     bt_name_lbl = label(bt, BT_LOCAL_NAME, 220, 12, 94, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -855,14 +855,14 @@ void ui_init(bt_model_t *model) {
     bt_title = label(bt, "Connected", 14, 186, 300, 28, &lv_font_montserrat_22, C_TEXT, LV_TEXT_ALIGN_CENTER);
     bt_sub = label(bt, "", 14, 212, 300, 18, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    primary_btn = button(bt, "Play", 54, 238, 130, 36, accent, 0xFFFFFF,
+    primary_btn = button(bt, "Play", 54, 262, 130, 36, accent, 0xFFFFFF,
                          &lv_font_montserrat_12, pc_cb, &primary_lbl);
-    secondary_btn = button(bt, "Disconnect", 190, 238, 110, 36, C_INNER, C_TEXT,
+    secondary_btn = button(bt, "Disconnect", 190, 262, 110, 36, C_INNER, C_TEXT,
                            &lv_font_montserrat_12, sc_cb, &secondary_lbl);
 
 
     /* ── audio card ─────────────────────────────────────────── */
-    lv_obj_t *audio = card(home, 594, 50, 194, 297);
+    lv_obj_t *audio = card(home, 594, 50, 194, 318);
     label(audio, "AUDIO", 14, 12, 80, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_LEFT);
     audio_source = label(audio, "BLUETOOTH", 90, 12, 90, 14, &lv_font_montserrat_10, accent, LV_TEXT_ALIGN_RIGHT);
 
@@ -874,26 +874,26 @@ void ui_init(bt_model_t *model) {
     artist_lbl = label(audio, "Demo Artist", 8, 190, 178, 16, &lv_font_montserrat_12, C_MUTED, LV_TEXT_ALIGN_CENTER);
     time_pos_lbl = label(audio, "1:08 / 3:35", 8, 206, 178, 14, &lv_font_montserrat_10, C_MUTED, LV_TEXT_ALIGN_CENTER);
 
-    prev_btn = button(audio, LV_SYMBOL_PREV, 30, 230, 42, 42, C_BTN, 0xFFFFFF,
+    prev_btn = button(audio, LV_SYMBOL_PREV, 30, 242, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, prev_cb, NULL);
     lv_obj_set_style_radius(prev_btn, LV_RADIUS_CIRCLE, 0);
-    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 224, 54, 54, accent, 0xFFFFFF,
+    play_btn = button(audio, LV_SYMBOL_PLAY, 70, 236, 54, 54, accent, 0xFFFFFF,
                       &lv_font_montserrat_24, pc_cb, &play_lbl);
     lv_obj_set_style_radius(play_btn, LV_RADIUS_CIRCLE, 0);
-    next_btn = button(audio, LV_SYMBOL_NEXT, 130, 230, 42, 42, C_BTN, 0xFFFFFF,
+    next_btn = button(audio, LV_SYMBOL_NEXT, 130, 242, 42, 42, C_BTN, 0xFFFFFF,
                       &lv_font_montserrat_18, next_cb, NULL);
     lv_obj_set_style_radius(next_btn, LV_RADIUS_CIRCLE, 0);
 
     /* ── dock: Radio, Bluetooth, Files, Settings ────────────── */
-    lv_obj_t *dock = box(scr, 0, 376, 800, 104, C_DOCK, 0);
+    lv_obj_t *dock = box(scr, 0, 392, 800, 88, C_DOCK, 0);
     const char *dock_icons[] = { LV_SYMBOL_AUDIO, LV_SYMBOL_BLUETOOTH, LV_SYMBOL_DIRECTORY, LV_SYMBOL_SETTINGS };
     const char *dock_names[] = { "Radio", "Bluetooth", "Files", "Settings" };
     for (int i = 0; i < 4; i++) {
         int slot = 180 + i * 110;
-        lv_obj_t *c = circle(dock, slot + 30, 8, 50, C_CIRCLE);
+        lv_obj_t *c = circle(dock, slot + 35, 6, 40, C_CIRCLE);
         dock_circles[i] = c;
-        icon_center(c, dock_icons[i], &lv_font_montserrat_24, 0xFFFFFF);
-        dock_labels[i] = label(dock, dock_names[i], slot + 5, 62, 100, 16, &lv_font_montserrat_12,
+        icon_center(c, dock_icons[i], &lv_font_montserrat_20, 0xFFFFFF);
+        dock_labels[i] = label(dock, dock_names[i], slot + 5, 50, 100, 14, &lv_font_montserrat_10,
                                i == 1 ? C_TEXT : C_SOFT, LV_TEXT_ALIGN_CENTER);
         lv_obj_add_event_cb(c, dock_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
     }

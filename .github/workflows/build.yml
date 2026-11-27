@@ -59,6 +59,12 @@ jobs:
         run: |
           file build-arm/strada-ui-fb
           file build-arm/strada-ui-fb | grep -q "ARM"
+      - name: Run ARMv5 tests under QEMU
+        run: |
+          sudo apt-get install -y --no-install-recommends qemu-user
+          arm-linux-gnueabi-gcc -static -march=armv5te -mtune=arm926ej-s -mfloat-abi=soft \
+            -O2 -Iapp tests/test_bt.c app/bt_sim.c app/bt_uart.c -o build-arm/test_bt_arm
+          qemu-arm ./build-arm/test_bt_arm
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:

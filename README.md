@@ -127,11 +127,11 @@ Switch **Theme → Light** for a daytime palette. The screensaver follows the th
 
 ![Screensaver](docs/screenshots/screensaver.png)
 
-### Now Playing
+### Music
 
-![Now Playing](docs/screenshots/playing.png)
+![Music](docs/screenshots/playing.png)
 
-The Bluetooth page now has two blocks: a **Phone** status block and a large **Music** block. The Music block has the album art with **overlay prev / play-pause / next buttons**, track info, Mute and Call. The phone block holds connection status, signal/battery, Disconnect and How to connect. Tap the art outside the buttons to open the full Now Playing panel.
+The Bluetooth page has two blocks: a **Phone** status block and a large **Music** block. The Music block has the album art with **overlay prev / play-pause / next buttons**, track info, Mute and Call. The phone block holds connection status, signal/battery, Disconnect and How to connect. The Music card is the only player; there is no separate full-screen player.
 
 ### Call
 

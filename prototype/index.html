@@ -137,7 +137,6 @@
   .music-actions .btn{height:36px;font-size:12px}
   #btnMute{width:90px}
   #btnCallSim{width:110px}
-  .music-hint{position:absolute;left:240px;top:272px;width:230px;font-size:10px;color:var(--muted)}
   .call-info{display:none;position:absolute;left:30px;top:58px;width:424px}
   .ci-name{font-size:28px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
   .ci-number{font-size:18px;color:var(--soft);margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -146,8 +145,7 @@
   .audio-card.call-mode .track,
   .audio-card.call-mode .artist,
   .audio-card.call-mode .time,
-  .audio-card.call-mode .music-status,
-  .audio-card.call-mode .music-hint{display:none}
+  .audio-card.call-mode .music-status{display:none}
   .audio-card.call-mode .call-info{display:block}
   .audio-card.call-mode .music-actions{left:110px;top:228px;gap:12px}
   .audio-card.call-mode #btnMute,
@@ -399,6 +397,7 @@
   .settings-info{position:absolute;right:146px;bottom:16px;width:100px;height:28px;font-size:11px}
   .settings-modal{position:absolute;left:150px;top:52px;width:476px;height:210px;background:var(--card);border:1px solid var(--btn);border-radius:14px;padding:18px;display:none;z-index:20;box-shadow:0 20px 50px rgba(0,0,0,.45)}
   .settings-modal.show{display:block}
+  #resetModal{left:220px;top:78px;width:360px;height:auto;padding-bottom:16px}
   #disclaimerModal{left:50px;top:28px;width:676px;height:250px}
   .sm-title{font-size:15px;font-weight:700;color:var(--text)}
   .sm-text{font-size:11px;line-height:1.55;color:var(--muted);margin-top:12px;white-space:pre-wrap}
@@ -665,7 +664,6 @@
       <button class="btn ghost" id="btnMute">Mute</button>
       <button class="btn ghost" id="btnCallSim">Call</button>
     </div>
-    <div class="music-hint" id="musicHint">Tap album art for full player</div>
   </section>
 
   <!-- DOCK -->
@@ -767,8 +765,8 @@
         </div>
         <div class="settings-row">
           <span>Volume on boot</span>
-          <input type="range" id="volumeRange" min="0" max="100" value="70">
-          <span class="value" id="volumeValue">70%</span>
+          <input type="range" id="volumeRange" min="0" max="100" value="15">
+          <span class="value" id="volumeValue">15%</span>
         </div>
         <div class="settings-row">
           <span>Theme</span>
@@ -811,7 +809,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.9.3</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.4</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -857,7 +855,7 @@
   <!-- CALL -->
   <div class="call-scrim" id="callScrim"></div>
   <section class="app-panel call-panel" id="callPanel">
-    <div class="panel-head"><span class="label">Call</span><span class="source">Hands-free</span><button class="panel-close" data-call-close>×</button></div>
+    <div class="panel-head"><span class="label">Call</span><button class="panel-close" data-call-close>×</button></div>
     <div class="call-body">
       <div class="call-recent">
         <div class="sub-label">Recent</div>
@@ -930,7 +928,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.9.3</span>
+  <span class="tb-ver">web v0.9.4</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -962,9 +960,10 @@
   const el = (id) => document.getElementById(id);
 
   let clock24 = true;
-  let defaultVolume = 70;
+  let defaultVolume = 15;
   try {
-    const dv = Number(localStorage.getItem('strada.defaultVolume'));
+    const raw = localStorage.getItem('strada.defaultVolume');
+    const dv = raw === null ? NaN : Number(raw);
     if (Number.isFinite(dv) && dv >= 0 && dv <= 100) defaultVolume = dv;
   } catch (e) {}
   let btVolume = defaultVolume;
@@ -1931,12 +1930,12 @@
   function resetUiNow() {
     setAccent('#FE3211');
     setClock(true);
-    setBootVolume(70);
-    btVolume = 70;
-    btSavedVolume = 70;
+    setBootVolume(15);
+    btVolume = 15;
+    btSavedVolume = 15;
     btMuted = false;
-    radioVolume = 70;
-    radioSavedVolume = 70;
+    radioVolume = 15;
+    radioSavedVolume = 15;
     radioMute = false;
     setVolume(70, false);
     setTheme(false);

@@ -92,7 +92,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Accent color swatches (red, orange, green, blue, purple) update the whole UI
 * 24 h / 12 h clock switch
 * **Date and time setting** — in-device +/- buttons, no browser or system popups
-* **Volume on boot** slider: sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
+* **Volume on boot** slider (default **15%**): sets the volume used at power-on and when radio starts. VOL+ / VOL− change the current volume only, so the boot level is not overwritten by normal listening. Saved in `strada.settings` (native) and `localStorage` (browser).
 * **Reset UI** asks for confirmation; **Disclaimer** opens the safety text in-app.
 * **Dark / Light theme** — the whole 800×480 UI recolors immediately
 * **Night dim** — a 50% black overlay for night driving

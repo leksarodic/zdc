@@ -3,7 +3,7 @@
 ## Versioning
 
 - `VERSION` is the current UI version.
-- Tags use `vMAJOR.MINOR.PATCH` (for example `v0.9.3`).
+- Tags use `vMAJOR.MINOR.PATCH` (for example `v0.9.4`).
 - Every push to `main` builds and tests the emulator, the ARMv5 framebuffer binary and the patched SPI image.
 - A tag matching `v*` also publishes a GitHub Release with the build artifacts.
 
@@ -26,8 +26,8 @@ $EDITOR VERSION README.md
 
 # 3. Commit, tag and push
 git add VERSION README.md
-git commit -m "release: v0.9.3"
-git tag v0.9.3
+git commit -m "release: v0.9.4"
+git tag v0.9.4
 git push origin main --tags
 ```
 

@@ -335,7 +335,7 @@ Performance tuning for the low-spec target is documented in [docs/PERFORMANCE.md
 
 ## QEMU testing
 
-`make qemu-test` cross-compiles the Bluetooth/UART tests as a static ARMv5TE binary and runs them under `qemu-arm`. The SDL and browser builds cover UI behavior; the stock Melis firmware cannot boot in QEMU without a custom F1C200s machine model. See [docs/QEMU.md](docs/QEMU.md).
+`make qemu-test` cross-compiles the Bluetooth/UART tests as a static ARMv5TE binary and runs them under `qemu-arm`. On macOS or any Docker host, `make qemu-docker` does the same without installing the toolchain locally. The SDL and browser builds cover UI behavior; the stock Melis firmware cannot boot in QEMU without a custom F1C200s machine model. See [docs/QEMU.md](docs/QEMU.md).
 
 ## Releases and updates
 

@@ -68,7 +68,10 @@ void bt_sim_primary(bt_model_t *m) {
     case BT_PAIRING: bt_sim_set_state(m, BT_READY); break;
     case BT_CONNECTED: bt_sim_set_state(m, BT_PLAYING); break;
     case BT_PLAYING: bt_sim_set_state(m, BT_CONNECTED); break;
-    case BT_INCOMING: bt_sim_set_state(m, BT_ACTIVE); break;
+    case BT_INCOMING:
+        m->call_seconds = 0;
+        bt_sim_set_state(m, BT_ACTIVE);
+        break;
     case BT_ACTIVE:
         if (m->music_interrupted) {
             m->music_interrupted = false;

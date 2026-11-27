@@ -42,6 +42,9 @@ static void test_state(void) {
     assert(m.music_interrupted);
     bt_sim_primary(&m);
     assert(m.state == BT_ACTIVE);
+    assert(m.call_seconds == 0);
+    bt_sim_tick(&m, 3);
+    assert(m.call_seconds == 3);
     assert(bt_sim_music_interrupted(&m));
     bt_sim_secondary(&m);
     assert(m.muted);

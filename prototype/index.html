@@ -792,7 +792,7 @@
         <div class="sub-label" style="margin-top:12px">About</div>
         <div class="about-grid">
           <span>Bluetooth</span><b>CAR_482</b>
-          <span>UI</span><b>LVGL 9.3 / v0.9.1</b>
+          <span>UI</span><b>LVGL 9.3 / v0.9.2</b>
           <span>BT link</span><b>55 AA LEN CMD DATA CHK</b>
         </div>
       </div>
@@ -911,7 +911,7 @@
 <div id="testbar">
   <span class="tb-title">TEST</span>
   <span class="tb-state" id="testState">connected</span>
-  <span class="tb-ver">web v0.9.1</span>
+  <span class="tb-ver">web v0.9.2</span>
   <span class="tb-sep"></span>
   <button data-state="off">Off</button>
   <button data-state="ready">Ready</button>
@@ -1141,7 +1141,7 @@
     el('btnDisconnect').classList.toggle('primary', !connected && m !== 'off');
     el('musicStatus').textContent = connected ? (m === 'playing' ? 'Playing / A2DP'
       : m === 'incoming' ? 'Incoming call'
-      : m === 'active' ? 'Call in progress' : 'Connected / A2DP')
+      : m === 'active' ? `In call ${fmt(state.callSec || 0)}` : 'Connected / A2DP')
       : 'No phone connected';
     el('musicStatus').style.color = connected ? 'var(--green)' : 'var(--muted)';
 
@@ -1235,7 +1235,7 @@
     } else if (state.mode === 'incoming') {
       text = 'BT | incoming call';
     } else if (state.mode === 'active') {
-      text = 'BT | call in progress';
+      text = `BT | in call ${fmt(state.callSec || 0)}`;
     } else if (state.mode === 'ready' || state.mode === 'off' || state.mode === 'error') {
       text = 'No media';
     } else if (radioOn) {
@@ -1294,16 +1294,19 @@
         }
       }, 1600);
     }
-    if (next === 'incoming') {
+    if (next === 'incoming') state.callSec = 0;
+    if (next === 'incoming' || next === 'active') {
       clearInterval(state.callTimer);
       state.callTimer = setInterval(() => {
         if (state.mode === 'active') {
           state.callSec = (state.callSec || 0) + 1;
           el('btSub').textContent = `${fmt(state.callSec)} / car audio`;
+          el('musicStatus').textContent = `In call ${fmt(state.callSec)}`;
+          renderIncomingBanner();
+          renderNowBar();
         }
       }, 1000);
-    }
-    if (next !== 'active') {
+    } else {
       clearInterval(state.callTimer);
       state.callSec = 0;
     }

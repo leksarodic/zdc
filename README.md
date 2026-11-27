@@ -54,7 +54,7 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 * Presets persist in `strada.conf` when the working directory is writable (native) and in `localStorage` (browser)
 * **RDS** shows the tuned station name only, for example `RDS - Jazz FM`; AM shows `RDS not available`
 * **Radio mute** shows a crossed speaker and a `MUTED` volume popup. The last radio volume is remembered and restored when you unmute.
-* **Quick tuning slider** for FM/AM; no power button, the radio panel is always live
+* **Quick tuning slider** for FM/AM, plus a power button for safety
 * FM/AM are mutually exclusive radio-button pairs
 * Radio has no top-right close button; leave it through the dock
 * Power and mute states; the old “Stereo / 5 bars” line is gone
@@ -104,6 +104,8 @@ The dock is no longer placeholder-only. The three app screens are real LVGL scre
 
 The top-bar speaker button opens the **volume popup on the current screen** (Radio or Bluetooth), with **- / +**, a live bar, source label and percentage. It no longer jumps to Settings. The popup also appears from **VOL+ / VOL−**, and when Radio or Bluetooth mute is pressed. It hides after 1.8 s.
 
+Audio sources do not overlap: entering Radio pauses Bluetooth music (the BT link stays connected for calls); returning to Bluetooth resumes it. Radio has a power button for safety. The top bar shows the current source and what is playing, including RDS when available.
+
 - Native SDL: `+` / `-` (and keypad `+` / `-`) simulate VOL+ / VOL−.
 - Linux framebuffer: `--buttons /dev/input/event1` maps `KEY_VOLUMEUP` / `KEY_VOLUMEDOWN`.
 - Browser test bar: **HW VOL− / VOL+ / MODE** buttons.
@@ -127,7 +129,7 @@ Switch **Theme → Light** for a daytime palette. The screensaver follows the th
 
 ![Now Playing](docs/screenshots/playing.png)
 
-Pressing Play maximises the player automatically. It shows a large album art, track, artist, elapsed time, progress bar and prev/pause/next. Minimise with the top-right button; tap the album art on the home card to reopen it.
+When Bluetooth music is playing, the Audio card grows wider than the Bluetooth status card, with larger album art and track text. The full Now Playing panel opens when you tap the album art; it is not forced over the home screen.
 
 ### Call
 
@@ -310,6 +312,14 @@ The stock update path is encoded in `app_config.fex` and `update.mod`:
 - `update.mod` uses `FULLIMG_00000000`, `modupdate`, `update_nor.c`, `IMAGEWTY` and `spinor` page-program commands, then restarts.
 
 Observed strings and the safe interpretation are documented in [docs/FIRMWARE_UPDATE.md](docs/FIRMWARE_UPDATE.md). The repo's `7010b-CAR_482.img` is a full SPI dump for a programmer, not the vendor `ePDKv100.img` package.
+
+## Audio source arbitration
+
+- Radio page → radio audio is active; Bluetooth music is paused but the link stays connected for calls.
+- Bluetooth page → Bluetooth audio is active; radio is not audible.
+- Radio power button off → Bluetooth music resumes.
+- Bluetooth mute and radio mute are independent and restore their last volume.
+- The top-middle label shows `BT | song | artist` or `RADIO frequency | RDS name`.
 
 ## Real-device status
 
